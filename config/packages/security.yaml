@@ -1,0 +1,37 @@
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\InMemoryUser: plaintext
+
+    providers:
+        app_users:
+            id: App\Security\EnvUserProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        mcp:
+            pattern: ^/mcp
+            stateless: true
+            custom_authenticators:
+                - App\Security\BearerTokenAuthenticator
+
+        main:
+            lazy: true
+            provider: app_users
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                default_target_path: admin_dashboard
+                enable_csrf: true
+            logout:
+                path: app_logout
+                target: app_login
+
+    access_control:
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/health, roles: PUBLIC_ACCESS }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/mcp, roles: ROLE_API }
+        - { path: ^/admin, roles: ROLE_ADMIN }
