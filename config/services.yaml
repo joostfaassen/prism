@@ -1,0 +1,49 @@
+parameters:
+    app.auth_user: '%env(APP_AUTH_USER)%'
+    app.auth_password: '%env(APP_AUTH_PASSWORD)%'
+    app.mcp_bearer_token: '%env(MCP_BEARER_TOKEN)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Kernel.php'
+
+    App\Imap\ImapConfigLoader:
+        arguments:
+            $configPath: '%kernel.project_dir%/joost-bridge.config.yaml'
+
+    App\Bunq\BunqConfigLoader:
+        arguments:
+            $configPath: '%kernel.project_dir%/joost-bridge.config.yaml'
+
+    App\Calendar\CalendarConfigLoader:
+        arguments:
+            $configPath: '%kernel.project_dir%/joost-bridge.config.yaml'
+
+    App\Security\EnvUserProvider:
+        arguments:
+            $username: '%app.auth_user%'
+            $password: '%app.auth_password%'
+
+    App\Security\BearerTokenAuthenticator:
+        arguments:
+            $bearerToken: '%app.mcp_bearer_token%'
+
+    App\Cyans\CyansService:
+        arguments:
+            $cyansDsn: '%env(CYANS_DSN)%'
+            $cyansUsername: '%env(CYANS_USERNAME)%'
+
+    App\Mcp\McpHandler:
+        arguments:
+            $tools: !tagged_iterator app.mcp_tool
+
+    _instanceof:
+        App\Mcp\Tool\ToolInterface:
+            tags: ['app.mcp_tool']
