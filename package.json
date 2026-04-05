@@ -1,7 +1,7 @@
 {
-    "name": "joost-bridge",
+    "name": "prism",
     "version": "1.0.0",
-    "description": "Joost Bridge - MCP Tool Bridge",
+    "description": "Prism — MCP Tool Server",
     "private": true,
     "scripts": {
         "dev-server": "encore dev-server",

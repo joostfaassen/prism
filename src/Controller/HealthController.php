@@ -18,8 +18,8 @@ class HealthController extends AbstractController
     public function index(): JsonResponse
     {
         return new JsonResponse([
-            'name' => 'joost-bridge',
-            'description' => 'MCP Tool Bridge',
+            'name' => 'prism',
+            'description' => 'Prism — MCP Tool Server',
             'version' => '1.0.0',
         ]);
     }

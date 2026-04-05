@@ -1,6 +1,6 @@
 {
-    "name": "joostfaassen/joost-bridge",
-    "description": "MCP Tool Bridge - Expose custom API tools over the Model Context Protocol",
+    "name": "joostfaassen/prism",
+    "description": "Prism — Expose custom API tools over the Model Context Protocol",
     "type": "project",
     "license": "MIT",
     "require": {

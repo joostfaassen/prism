@@ -1,4 +1,4 @@
-# Joost Bridge — Future MCP Tools Roadmap
+# Prism — Future MCP Tools Roadmap
 
 ## IMAP Mail Bridge
 - [ ] Multi-account IMAP configuration (named accounts in `.env.local`)

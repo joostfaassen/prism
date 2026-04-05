@@ -22,4 +22,4 @@ yarn-error.log
 *.swo
 
 docker-compose.yml
-joost-bridge.config.yaml
+prism.config.yaml
