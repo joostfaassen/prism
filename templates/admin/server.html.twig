@@ -1,0 +1,202 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ server.label }} — {{ activeTab|capitalize }}{% endblock %}
+
+{% block body %}
+<div class="min-h-full relative">
+    <div class="absolute inset-0 bg-gradient-to-br from-cyan-950 via-slate-950 to-blue-950"></div>
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.4) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 40%), radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 40%);"></div>
+
+    <div class="relative z-10">
+        <nav class="border-b border-slate-800 bg-slate-900 bg-opacity-40">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <a href="{{ path('admin_dashboard') }}" class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                        </svg>
+                    </a>
+                    <a href="{{ path('admin_dashboard') }}" class="text-lg font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Prism</a>
+                    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    <span class="text-sm font-medium text-slate-300">{{ server.name }}</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-slate-400 hidden sm:inline font-mono">{{ app.user.userIdentifier }}</span>
+                    <a href="{{ path('app_logout') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">Sign Out</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            {# Header #}
+            <div class="mb-8">
+                <div class="flex items-center gap-2 mb-3">
+                    <a href="{{ path('admin_dashboard') }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                        All servers
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3m-19.5 0a4.5 4.5 0 0 1 .9-2.7L5.737 5.1a3.375 3.375 0 0 1 2.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 0 1 .9 2.7m0 0a3 3 0 0 1-3 3m0 3h.008v.008h-.008v-.008Zm0-6h.008v.008h-.008v-.008Zm-3 6h.008v.008h-.008v-.008Zm0-6h.008v.008h-.008v-.008Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">{{ server.label }}</h1>
+                        <p class="text-slate-400 text-sm">{{ server.accountCount }} account{{ server.accountCount != 1 ? 's' : '' }} &middot; {{ server.toolCount }} tool{{ server.toolCount != 1 ? 's' : '' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {# ──── Tabs ──── #}
+            {% set tabs = {
+                configuration: {label: 'Configuration', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />'},
+                accounts: {label: 'Accounts', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />'},
+                tools: {label: 'Tools', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />'},
+                audit: {label: 'Audit', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />'}
+            } %}
+            <div class="mb-10 border-b border-slate-800">
+                <nav class="flex -mb-px" role="tablist">
+                    {% for key, tab in tabs %}
+                    <a href="{{ path('admin_server_tab', {serverName: server.name, tab: key}) }}"
+                       role="tab"
+                       aria-selected="{{ activeTab == key ? 'true' : 'false' }}"
+                       class="flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 mr-1
+                              {{ activeTab == key
+                                 ? 'border-cyan-400 text-cyan-300'
+                                 : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-slate-600' }}">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">{{ tab.icon|raw }}</svg>
+                        {{ tab.label }}
+                        {% if key == 'accounts' %}
+                        <span class="text-xs font-mono px-2 py-0.5 rounded-full {{ activeTab == key ? 'bg-cyan-900 text-cyan-300' : 'bg-slate-800 text-slate-500' }}">{{ server.accountCount }}</span>
+                        {% elseif key == 'tools' %}
+                        <span class="text-xs font-mono px-2 py-0.5 rounded-full {{ activeTab == key ? 'bg-cyan-900 text-cyan-300' : 'bg-slate-800 text-slate-500' }}">{{ server.toolCount }}</span>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </nav>
+            </div>
+
+            {# ──── Tab: Configuration ──── #}
+            {% if activeTab == 'configuration' %}
+            <div class="space-y-6">
+                <div class="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+                    <h2 class="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" /></svg>
+                        Connection
+                    </h2>
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-2 font-mono">MCP Endpoint</label>
+                            <code class="block text-sm text-cyan-300 bg-slate-800 rounded-lg px-4 py-3 font-mono break-all">{{ server.mcpUrl }}</code>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-2 font-mono">Auth Header</label>
+                            <code class="block text-sm text-blue-300 bg-slate-800 rounded-lg px-4 py-3 font-mono">Authorization: Bearer &lt;token&gt;</code>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label class="block text-xs text-slate-500 mb-2 font-mono">Cursor .mcp.json</label>
+                        <pre class="text-sm text-emerald-300 bg-slate-800 rounded-lg px-4 py-3 font-mono overflow-x-auto">{
+  "mcpServers": {
+    "{{ server.name }}": {
+      "url": "{{ server.mcpUrl }}",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ──── Tab: Accounts ──── #}
+            {% if activeTab == 'accounts' %}
+                {% if server.accountsByType is not empty %}
+                <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                    {% for type, accounts in server.accountsByType %}
+                    <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                        <div class="flex items-center gap-3 mb-5">
+                            <span class="font-mono text-xs font-semibold text-violet-300 bg-violet-950 px-3.5 py-1.5 rounded-lg uppercase tracking-wider">{{ type }}</span>
+                            <span class="text-xs text-slate-500 font-mono">&times; {{ accounts|length }}</span>
+                        </div>
+                        <ul class="space-y-3">
+                            {% for account in accounts %}
+                            <li class="flex items-center gap-3 bg-slate-800 rounded-lg px-4 py-3">
+                                <span class="w-2 h-2 bg-cyan-400 rounded-full flex-shrink-0"></span>
+                                <div class="min-w-0 flex-1">
+                                    <span class="block text-sm text-slate-200 truncate" title="{{ account.name }}">{{ account.label }}</span>
+                                    <span class="block text-xs text-slate-500 font-mono mt-0.5">{{ account.name }}</span>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-16 text-slate-500">
+                    <p class="text-sm">No accounts configured for this server.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {# ──── Tab: Tools ──── #}
+            {% if activeTab == 'tools' %}
+                {% if server.tools is not empty %}
+                <div class="space-y-3">
+                    {% for tool in server.tools %}
+                    <a href="{{ path('admin_tool_detail', {serverName: server.name, toolName: tool.name}) }}"
+                       class="group flex items-center justify-between bg-slate-900 border border-slate-800 hover:border-cyan-800 rounded-xl px-6 py-4 transition-all duration-200 hover:bg-slate-900 hover:bg-opacity-80">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="w-10 h-10 rounded-lg bg-cyan-950 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />
+                                </svg>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="block text-sm font-semibold text-white font-mono group-hover:text-cyan-300 transition-colors">{{ tool.name }}</span>
+                                <p class="text-xs text-slate-500 truncate mt-0.5">{{ tool.description }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 flex-shrink-0 ml-4">
+                            {% if tool.accountType %}
+                            <span class="text-xs font-mono font-semibold text-violet-300 bg-violet-950 px-3 py-1.5 rounded-lg">{{ tool.accountType }}</span>
+                            {% endif %}
+                            <svg class="w-4 h-4 text-slate-600 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                            </svg>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-16 text-slate-500">
+                    <p class="text-sm">No tools available for this server.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {# ──── Tab: Audit ──── #}
+            {% if activeTab == 'audit' %}
+            <div class="text-center py-20">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-800 mb-4">
+                    <svg class="w-8 h-8 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-400 mb-2">Audit Log</h3>
+                <p class="text-sm text-slate-600 max-w-md mx-auto">Request and response logging will appear here. This feature is planned for a future release.</p>
+            </div>
+            {% endif %}
+
+            <div class="mt-16 pt-8 border-t border-slate-800 text-center">
+                <p class="text-xs text-slate-600 font-mono">Prism &bull; MCP Protocol v2024-11-05 &bull; Built with Symfony</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
