@@ -2,47 +2,16 @@
 
 namespace App\Bunq;
 
-use Symfony\Component\Yaml\Yaml;
+use App\Config\PrismConfigLoader;
+use App\Config\ServerContext;
 
 class BunqConfigLoader
 {
-    /** @var array<string, BunqAccountConfig>|null */
-    private ?array $accounts = null;
-    private ?string $apiKey = null;
-    private ?string $environment = null;
-
     public function __construct(
-        private readonly string $configPath,
+        private readonly PrismConfigLoader $configLoader,
+        private readonly ServerContext $serverContext,
+        private readonly string $projectDir,
     ) {
-    }
-
-    public function getApiKey(): string
-    {
-        $this->load();
-
-        if ($this->apiKey === null || $this->apiKey === '' || $this->apiKey === 'your-bunq-api-key-here') {
-            throw new \RuntimeException('bunq API key not configured in joost-bridge.config.yaml');
-        }
-
-        return $this->apiKey;
-    }
-
-    public function getEnvironment(): string
-    {
-        $this->load();
-
-        return $this->environment ?? 'production';
-    }
-
-    public function getContextFilePath(): string
-    {
-        $dir = dirname($this->configPath) . '/var/bunq';
-
-        if (!is_dir($dir)) {
-            mkdir($dir, 0700, true);
-        }
-
-        return $dir . '/context.conf';
     }
 
     /**
@@ -50,9 +19,14 @@ class BunqConfigLoader
      */
     public function getAccounts(): array
     {
-        $this->load();
+        $raw = $this->configLoader->getAccountsByTypeForServer('bunq', $this->serverContext);
+        $accounts = [];
 
-        return $this->accounts;
+        foreach ($raw as $key => $cfg) {
+            $accounts[$key] = $this->buildAccountConfig($key, $cfg);
+        }
+
+        return $accounts;
     }
 
     public function getAccount(string $key): BunqAccountConfig
@@ -72,9 +46,6 @@ class BunqConfigLoader
     }
 
     /**
-     * Resolve an accounts parameter to a list of account keys.
-     * Accepts: "*" for all, "key1,key2" for CSV, or a single key.
-     *
      * @return list<string>
      */
     public function resolveAccountKeys(string $accountsParam): array
@@ -93,29 +64,33 @@ class BunqConfigLoader
         return array_values($keys);
     }
 
-    private function load(): void
+    /**
+     * Context files are keyed by API key hash so accounts sharing the same
+     * API key reuse a single bunq session.
+     */
+    public function getContextFilePath(string $apiKey): string
     {
-        if ($this->accounts !== null) {
-            return;
+        $hash = substr(md5($apiKey), 0, 8);
+        $dir = $this->projectDir . '/var/bunq';
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0700, true);
         }
 
-        if (!file_exists($this->configPath)) {
-            throw new \RuntimeException(sprintf('Config file not found: %s', $this->configPath));
-        }
+        return $dir . '/context-' . $hash . '.conf';
+    }
 
-        $config = Yaml::parseFile($this->configPath);
-        $bunq = $config['bunq'] ?? [];
-
-        $this->apiKey = $bunq['api_key'] ?? null;
-        $this->environment = $bunq['environment'] ?? 'production';
-        $this->accounts = [];
-
-        foreach (($bunq['accounts'] ?? []) as $key => $cfg) {
-            $this->accounts[$key] = new BunqAccountConfig(
-                key: $key,
-                label: $cfg['label'] ?? $key,
-                monetaryAccountId: $cfg['monetary_account_id'] ?? null,
-            );
-        }
+    /**
+     * @param array<string, mixed> $cfg
+     */
+    private function buildAccountConfig(string $key, array $cfg): BunqAccountConfig
+    {
+        return new BunqAccountConfig(
+            key: $key,
+            label: $cfg['label'] ?? $key,
+            apiKey: $cfg['api_key'] ?? '',
+            environment: $cfg['environment'] ?? 'production',
+            monetaryAccountId: $cfg['monetary_account_id'] ?? null,
+        );
     }
 }

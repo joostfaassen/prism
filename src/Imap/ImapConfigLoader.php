@@ -2,15 +2,14 @@
 
 namespace App\Imap;
 
-use Symfony\Component\Yaml\Yaml;
+use App\Config\PrismConfigLoader;
+use App\Config\ServerContext;
 
 class ImapConfigLoader
 {
-    /** @var array<string, ImapAccountConfig>|null */
-    private ?array $accounts = null;
-
     public function __construct(
-        private readonly string $configPath,
+        private readonly PrismConfigLoader $configLoader,
+        private readonly ServerContext $serverContext,
     ) {
     }
 
@@ -19,20 +18,11 @@ class ImapConfigLoader
      */
     public function getAccounts(): array
     {
-        if ($this->accounts !== null) {
-            return $this->accounts;
-        }
+        $raw = $this->configLoader->getAccountsByTypeForServer('imap', $this->serverContext);
+        $accounts = [];
 
-        if (!file_exists($this->configPath)) {
-            throw new \RuntimeException(sprintf('Config file not found: %s', $this->configPath));
-        }
-
-        $config = Yaml::parseFile($this->configPath);
-        $accounts = $config['imap']['accounts'] ?? [];
-        $this->accounts = [];
-
-        foreach ($accounts as $id => $cfg) {
-            $this->accounts[$id] = new ImapAccountConfig(
+        foreach ($raw as $id => $cfg) {
+            $accounts[$id] = new ImapAccountConfig(
                 id: $id,
                 label: $cfg['label'] ?? $id,
                 host: $cfg['host'],
@@ -44,7 +34,7 @@ class ImapConfigLoader
             );
         }
 
-        return $this->accounts;
+        return $accounts;
     }
 
     public function getAccount(string $id): ImapAccountConfig

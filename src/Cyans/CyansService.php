@@ -6,48 +6,31 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CyansService
 {
-    private string $baseUrl;
-    private string $authUser;
-    private string $authPassword;
-
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        string $cyansDsn,
-        private readonly string $cyansUsername,
+        private readonly CyansConfigLoader $configLoader,
     ) {
-        $parsed = parse_url($cyansDsn);
-
-        if ($parsed === false || !isset($parsed['host'])) {
-            throw new \InvalidArgumentException('Invalid CYANS_DSN: cannot parse URL');
-        }
-
-        $scheme = $parsed['scheme'] ?? 'https';
-        $host = $parsed['host'];
-        $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
-        $this->baseUrl = "{$scheme}://{$host}{$port}/api/v1";
-        $this->authUser = $parsed['user'] ?? '';
-        $this->authPassword = $parsed['pass'] ?? '';
     }
 
-    public function getDefaultUsername(): string
+    public function getDefaultUsername(?string $accountKey = null): string
     {
-        return $this->cyansUsername;
+        return $this->resolveAccount($accountKey)->username;
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getUserState(string $username): array
+    public function getUserState(string $username, ?string $accountKey = null): array
     {
-        return $this->request('GET', "/users/{$username}");
+        return $this->request('GET', "/users/{$username}", accountKey: $accountKey);
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function getOpenTopics(string $username): array
+    public function getOpenTopics(string $username, ?string $accountKey = null): array
     {
-        $state = $this->getUserState($username);
+        $state = $this->getUserState($username, $accountKey);
         $topics = $state['topics'] ?? [];
         $open = [];
 
@@ -69,22 +52,17 @@ class CyansService
     /**
      * @return array<string, mixed>
      */
-    public function getTopicDetails(string $topicId): array
+    public function getTopicDetails(string $topicId, ?string $accountKey = null): array
     {
-        return $this->request('GET', "/topics/{$topicId}");
+        return $this->request('GET', "/topics/{$topicId}", accountKey: $accountKey);
     }
 
     /**
-     * Search topics for the given user by matching subject/message text.
-     *
-     * The Cyans API has no search endpoint, so this fetches the user state
-     * and filters topics client-side.
-     *
      * @return list<array<string, mixed>>
      */
-    public function searchTopics(string $username, string $query): array
+    public function searchTopics(string $username, string $query, ?string $accountKey = null): array
     {
-        $state = $this->getUserState($username);
+        $state = $this->getUserState($username, $accountKey);
         $topics = $state['topics'] ?? [];
         $queryLower = mb_strtolower($query);
         $results = [];
@@ -108,25 +86,54 @@ class CyansService
     /**
      * @return array{status: string, message: string}
      */
-    public function addPost(string $topicId, string $message, ?string $author = null): array
+    public function addPost(string $topicId, string $message, ?string $author = null, ?string $accountKey = null): array
     {
-        $author ??= $this->cyansUsername;
+        $account = $this->resolveAccount($accountKey);
+        $author ??= $account->username;
 
         return $this->request('POST', "/topics/{$topicId}/add-post", [
             'json' => [
                 'author' => $author,
                 'message' => $message,
             ],
-        ]);
+        ], $accountKey);
+    }
+
+    private function resolveAccount(?string $accountKey): CyansAccountConfig
+    {
+        if ($accountKey !== null) {
+            return $this->configLoader->getAccount($accountKey);
+        }
+
+        $accounts = $this->configLoader->getAccounts();
+        if (empty($accounts)) {
+            throw new \RuntimeException('No Cyans accounts configured');
+        }
+
+        return reset($accounts);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function request(string $method, string $path, array $options = []): array
+    private function request(string $method, string $path, array $options = [], ?string $accountKey = null): array
     {
-        $response = $this->httpClient->request($method, $this->baseUrl . $path, array_merge([
-            'auth_basic' => [$this->authUser, $this->authPassword],
+        $account = $this->resolveAccount($accountKey);
+        $parsed = parse_url($account->dsn);
+
+        if ($parsed === false || !isset($parsed['host'])) {
+            throw new \InvalidArgumentException('Invalid Cyans DSN: cannot parse URL');
+        }
+
+        $scheme = $parsed['scheme'] ?? 'https';
+        $host = $parsed['host'];
+        $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+        $baseUrl = "{$scheme}://{$host}{$port}/api/v1";
+        $authUser = $parsed['user'] ?? '';
+        $authPassword = $parsed['pass'] ?? '';
+
+        $response = $this->httpClient->request($method, $baseUrl . $path, array_merge([
+            'auth_basic' => [$authUser, $authPassword],
         ], $options));
 
         $statusCode = $response->getStatusCode();

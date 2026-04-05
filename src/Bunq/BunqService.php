@@ -14,7 +14,8 @@ use bunq\Util\BunqEnumApiEnvironmentType;
 
 class BunqService
 {
-    private bool $contextLoaded = false;
+    /** @var array<string, bool> Tracks which API key contexts have been loaded */
+    private array $loadedContexts = [];
 
     private const MAX_PAGES = 20;
     private const PAGE_SIZE = 200;
@@ -45,9 +46,9 @@ class BunqService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listMonetaryAccounts(): array
+    public function listMonetaryAccounts(?string $accountKey = null): array
     {
-        $this->ensureContext();
+        $this->ensureContext($accountKey);
 
         $accounts = MonetaryAccountApiObject::listing()->getValue();
         $result = [];
@@ -80,8 +81,6 @@ class BunqService
         ?string $dateTo = null,
         int $limit = 50,
     ): array {
-        $this->ensureContext();
-
         $accountKeys = $this->configLoader->resolveAccountKeys($accountsParam);
         $fromDate = $dateFrom !== null ? new \DateTimeImmutable($dateFrom . ' 00:00:00') : null;
         $toDate = $dateTo !== null ? new \DateTimeImmutable($dateTo . ' 23:59:59') : null;
@@ -91,6 +90,7 @@ class BunqService
 
         foreach ($accountKeys as $key) {
             $account = $this->configLoader->getAccount($key);
+            $this->ensureContext($key);
             $monetaryAccountId = $account->monetaryAccountId;
             $collected = [];
             $params = ['count' => min($perAccountLimit, self::PAGE_SIZE)];
@@ -146,7 +146,7 @@ class BunqService
      */
     public function getTransaction(int $paymentId, ?int $monetaryAccountId = null): array
     {
-        $this->ensureContext();
+        $this->ensureContextFromAnyAccount();
 
         $payment = PaymentApiObject::get($paymentId, $monetaryAccountId)->getValue();
 
@@ -158,7 +158,7 @@ class BunqService
      */
     public function getTransactionNotes(int $paymentId, ?int $monetaryAccountId = null): array
     {
-        $this->ensureContext();
+        $this->ensureContextFromAnyAccount();
 
         $textNotes = [];
         $attachments = [];
@@ -174,7 +174,6 @@ class BunqService
                 ];
             }
         } catch (\Throwable) {
-            // No text notes or endpoint not available
         }
 
         try {
@@ -199,7 +198,6 @@ class BunqService
                 ];
             }
         } catch (\Throwable) {
-            // No attachments or endpoint not available
         }
 
         return [
@@ -208,34 +206,59 @@ class BunqService
         ];
     }
 
-    private function ensureContext(): void
+    private function ensureContext(?string $accountKey = null): void
     {
-        if ($this->contextLoaded) {
+        $account = $accountKey !== null
+            ? $this->configLoader->getAccount($accountKey)
+            : $this->getFirstAccount();
+
+        $apiKeyHash = md5($account->apiKey);
+
+        if (isset($this->loadedContexts[$apiKeyHash])) {
             return;
         }
 
-        $contextFile = $this->configLoader->getContextFilePath();
+        $contextFile = $this->configLoader->getContextFilePath($account->apiKey);
 
         if (file_exists($contextFile)) {
             $apiContext = ApiContext::restore($contextFile);
             $apiContext->ensureSessionActive();
             $apiContext->save($contextFile);
         } else {
-            $envType = $this->configLoader->getEnvironment() === 'sandbox'
+            $envType = $account->environment === 'sandbox'
                 ? BunqEnumApiEnvironmentType::SANDBOX()
                 : BunqEnumApiEnvironmentType::PRODUCTION();
 
             $apiContext = ApiContext::create(
                 $envType,
-                $this->configLoader->getApiKey(),
-                'joost-bridge',
+                $account->apiKey,
+                'prism',
             );
 
             $apiContext->save($contextFile);
         }
 
         BunqContext::loadApiContext($apiContext);
-        $this->contextLoaded = true;
+        $this->loadedContexts[$apiKeyHash] = true;
+    }
+
+    private function ensureContextFromAnyAccount(): void
+    {
+        if (!empty($this->loadedContexts)) {
+            return;
+        }
+
+        $this->ensureContext();
+    }
+
+    private function getFirstAccount(): BunqAccountConfig
+    {
+        $accounts = $this->configLoader->getAccounts();
+        if (empty($accounts)) {
+            throw new \RuntimeException('No bunq accounts configured');
+        }
+
+        return reset($accounts);
     }
 
     /**
