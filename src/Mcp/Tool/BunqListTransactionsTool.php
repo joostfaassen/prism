@@ -49,6 +49,11 @@ class BunqListTransactionsTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'bunq';
+    }
+
     public function execute(array $arguments): array
     {
         $accounts = $arguments['accounts'] ?? '';

@@ -35,6 +35,11 @@ class CyansGetTopicDetailsTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'cyans';
+    }
+
     public function execute(array $arguments): array
     {
         $topicId = $arguments['topic_id'] ?? '';

@@ -39,6 +39,11 @@ class CyansSearchTopicsTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'cyans';
+    }
+
     public function execute(array $arguments): array
     {
         $query = $arguments['query'] ?? '';

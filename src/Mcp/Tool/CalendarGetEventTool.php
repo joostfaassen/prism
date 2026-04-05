@@ -39,6 +39,11 @@ class CalendarGetEventTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'calendar';
+    }
+
     public function execute(array $arguments): array
     {
         $calendarKey = $arguments['calendar'] ?? '';

@@ -51,6 +51,11 @@ class ImapGetMessageTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'imap';
+    }
+
     public function execute(array $arguments): array
     {
         $account = $arguments['account'] ?? '';

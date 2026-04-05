@@ -29,6 +29,11 @@ class SumTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return null;
+    }
+
     public function execute(array $arguments): array
     {
         $values = $arguments['values'] ?? [];

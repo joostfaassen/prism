@@ -40,6 +40,11 @@ class BunqGetTransactionTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'bunq';
+    }
+
     public function execute(array $arguments): array
     {
         $paymentId = $arguments['payment_id'] ?? null;

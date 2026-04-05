@@ -35,6 +35,11 @@ class CyansGetTopicsTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'cyans';
+    }
+
     public function execute(array $arguments): array
     {
         $username = $arguments['username'] ?? $this->cyansService->getDefaultUsername();

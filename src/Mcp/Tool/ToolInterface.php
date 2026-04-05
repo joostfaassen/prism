@@ -16,6 +16,12 @@ interface ToolInterface
     public function getInputSchema(): array;
 
     /**
+     * The account type this tool operates on (e.g. 'bunq', 'imap', 'calendar', 'cyans').
+     * Return null for utility tools that don't require account access.
+     */
+    public function getAccountType(): ?string;
+
+    /**
      * Execute the tool with the given arguments.
      *
      * @return array{content: list<array{type: string, text: string}>, isError?: bool}

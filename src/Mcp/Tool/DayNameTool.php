@@ -29,6 +29,11 @@ class DayNameTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return null;
+    }
+
     public function execute(array $arguments): array
     {
         $dateString = $arguments['date'] ?? '';

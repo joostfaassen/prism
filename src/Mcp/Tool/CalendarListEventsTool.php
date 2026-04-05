@@ -45,6 +45,11 @@ class CalendarListEventsTool implements ToolInterface
         ];
     }
 
+    public function getAccountType(): ?string
+    {
+        return 'calendar';
+    }
+
     public function execute(array $arguments): array
     {
         $calendars = $arguments['calendars'] ?? '';
