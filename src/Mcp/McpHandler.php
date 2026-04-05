@@ -2,12 +2,12 @@
 
 namespace App\Mcp;
 
+use App\Config\ServerContext;
 use App\Mcp\Tool\ToolInterface;
 
 class McpHandler
 {
     private const PROTOCOL_VERSION = '2024-11-05';
-    private const SERVER_NAME = 'joost-bridge';
     private const SERVER_VERSION = '1.0.0';
 
     /** @var array<string, ToolInterface> */
@@ -16,8 +16,10 @@ class McpHandler
     /**
      * @param iterable<ToolInterface> $tools
      */
-    public function __construct(iterable $tools)
-    {
+    public function __construct(
+        iterable $tools,
+        private readonly ServerContext $serverContext,
+    ) {
         foreach ($tools as $tool) {
             $this->toolMap[$tool->getName()] = $tool;
         }
@@ -65,15 +67,43 @@ class McpHandler
         return array_values($this->toolMap);
     }
 
+    public function getTool(string $name): ?ToolInterface
+    {
+        return $this->toolMap[$name] ?? null;
+    }
+
+    /**
+     * @return list<ToolInterface>
+     */
+    public function getToolsForServer(): array
+    {
+        if (!$this->serverContext->hasServer()) {
+            return $this->getTools();
+        }
+
+        $server = $this->serverContext->getServer();
+
+        return array_values(array_filter(
+            $this->toolMap,
+            fn(ToolInterface $tool) => $tool->getAccountType() === null
+                || $server->hasAccountType($tool->getAccountType()),
+        ));
+    }
+
     private function handleInitialize(): array
     {
+        $serverName = 'prism';
+        if ($this->serverContext->hasServer()) {
+            $serverName .= '/' . $this->serverContext->getServerName();
+        }
+
         return [
             'protocolVersion' => self::PROTOCOL_VERSION,
             'capabilities' => [
                 'tools' => new \stdClass(),
             ],
             'serverInfo' => [
-                'name' => self::SERVER_NAME,
+                'name' => $serverName,
                 'version' => self::SERVER_VERSION,
             ],
         ];
@@ -82,7 +112,7 @@ class McpHandler
     private function handleToolsList(): array
     {
         $tools = [];
-        foreach ($this->toolMap as $tool) {
+        foreach ($this->getToolsForServer() as $tool) {
             $tools[] = [
                 'name' => $tool->getName(),
                 'description' => $tool->getDescription(),
@@ -104,6 +134,15 @@ class McpHandler
                 'content' => [['type' => 'text', 'text' => "Unknown tool: {$name}"]],
                 'isError' => true,
             ];
+        }
+
+        if ($this->serverContext->hasServer() && $tool->getAccountType() !== null) {
+            if (!$this->serverContext->getServer()->hasAccountType($tool->getAccountType())) {
+                return [
+                    'content' => [['type' => 'text', 'text' => "Tool \"{$name}\" is not available on this server"]],
+                    'isError' => true,
+                ];
+            }
         }
 
         try {

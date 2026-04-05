@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Config\PrismConfigLoader;
+use App\Config\ServerContext;
 use App\Mcp\McpHandler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,12 +15,36 @@ class McpController extends AbstractController
 {
     public function __construct(
         private readonly McpHandler $mcpHandler,
+        private readonly PrismConfigLoader $configLoader,
+        private readonly ServerContext $serverContext,
     ) {
     }
 
-    #[Route('/mcp', name: 'mcp_endpoint', methods: ['POST'])]
-    public function handle(Request $request): Response
+    #[Route('/mcp/{serverName}', name: 'mcp_endpoint', methods: ['POST'])]
+    public function handle(Request $request, string $serverName): Response
     {
+        try {
+            $server = $this->configLoader->getServer($serverName);
+        } catch (\InvalidArgumentException) {
+            return new JsonResponse([
+                'jsonrpc' => '2.0',
+                'id' => null,
+                'error' => ['code' => -32600, 'message' => 'Unknown server: ' . $serverName],
+            ], 404);
+        }
+
+        if (!$this->serverContext->hasServer()) {
+            $this->serverContext->setServer($server);
+        }
+
+        if ($this->serverContext->getServerName() !== $serverName) {
+            return new JsonResponse([
+                'jsonrpc' => '2.0',
+                'id' => null,
+                'error' => ['code' => -32600, 'message' => 'Token does not match server'],
+            ], 403);
+        }
+
         $body = json_decode($request->getContent(), true);
         if (!is_array($body)) {
             return new JsonResponse([

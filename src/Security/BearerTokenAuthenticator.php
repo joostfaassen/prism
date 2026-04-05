@@ -2,6 +2,8 @@
 
 namespace App\Security;
 
+use App\Config\PrismConfigLoader;
+use App\Config\ServerContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +19,8 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
 class BearerTokenAuthenticator extends AbstractAuthenticator
 {
     public function __construct(
-        private readonly string $bearerToken,
+        private readonly PrismConfigLoader $configLoader,
+        private readonly ServerContext $serverContext,
     ) {
     }
 
@@ -36,11 +39,16 @@ class BearerTokenAuthenticator extends AbstractAuthenticator
             throw new CustomUserMessageAuthenticationException('No bearer token provided');
         }
 
-        if ($this->bearerToken === '' || $tokenString !== $this->bearerToken) {
+        $server = $this->configLoader->findServerByToken($tokenString);
+
+        if ($server === null) {
             throw new CustomUserMessageAuthenticationException('Invalid bearer token');
         }
 
-        $user = new InMemoryUser('mcp-client', null, ['ROLE_API']);
+        $this->serverContext->setServer($server);
+
+        $userIdentifier = 'mcp-client-' . $server->name;
+        $user = new InMemoryUser($userIdentifier, null, ['ROLE_API']);
 
         return new SelfValidatingPassport(
             new UserBadge($user->getUserIdentifier(), fn () => $user)
