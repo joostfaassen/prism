@@ -23,6 +23,15 @@
 - [ ] `cyans_list_resources` — List available resources/endpoints
 - [ ] `cyans_get_resource` — Fetch a specific resource by ID
 
+## Picnic Bridge
+- [x] Picnic API authentication (username/password, cached `x-picnic-auth` token)
+- [x] `picnic_search_products` — Search grocery products
+- [x] `picnic_get_cart` / `picnic_add_to_cart` / `picnic_remove_from_cart` — Shopping cart management
+- [x] `picnic_list_deliveries` / `picnic_get_delivery` — Past and upcoming deliveries
+- [ ] `picnic_get_delivery_position` — Live tracking position for a delivery
+- [ ] `picnic_list_slots` — List available delivery slots
+- [ ] `picnic_set_slot` — Reserve a delivery slot
+
 ## Custom API Bridges (Generic)
 - [ ] Generic REST API bridge pattern (configurable base URL, auth, endpoints)
 - [ ] `api_get` — Generic GET request to configured API
