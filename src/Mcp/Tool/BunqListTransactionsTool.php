@@ -19,7 +19,7 @@ class BunqListTransactionsTool implements ToolInterface
     public function getDescription(): string
     {
         return 'List transactions across one or more bunq bank accounts. Supports date range filtering. '
-            . 'Use account key (e.g. "jf-personal"), comma-separated keys (e.g. "jf-personal,joost-lindsey-shared"), '
+            . 'Use account key (e.g. "personal"), comma-separated keys (e.g. "personal,shared-household"), '
             . 'or "*" for all configured accounts.';
     }
 

@@ -10,6 +10,7 @@ class BunqAccountConfig
         public readonly string $apiKey,
         public readonly string $environment = 'production',
         public readonly ?int $monetaryAccountId = null,
+        public readonly ?string $configFile = null,
     ) {
     }
 }

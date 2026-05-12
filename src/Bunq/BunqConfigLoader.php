@@ -91,6 +91,7 @@ class BunqConfigLoader
             apiKey: $cfg['api_key'] ?? '',
             environment: $cfg['environment'] ?? 'production',
             monetaryAccountId: $cfg['monetary_account_id'] ?? null,
+            configFile: $cfg['config_file'] ?? null,
         );
     }
 }

@@ -54,22 +54,66 @@ class BunqService
         $result = [];
 
         foreach ($accounts as $account) {
-            $bank = $account->getMonetaryAccountBank();
-            if ($bank === null) {
+            $inner = $account->getMonetaryAccountBank()
+                ?? $account->getMonetaryAccountJoint()
+                ?? $account->getMonetaryAccountSavings()
+                ?? $account->getMonetaryAccountExternal()
+                ?? $account->getMonetaryAccountExternalSavings();
+
+            if ($inner === null) {
                 continue;
             }
 
-            $balance = $bank->getBalance();
+            $balance = $inner->getBalance();
+            $iban = $this->extractIban($inner->getAlias() ?? []);
+
             $result[] = [
-                'id' => $bank->getId(),
-                'description' => $bank->getDescription(),
+                'id' => $inner->getId(),
+                'description' => $inner->getDescription(),
                 'currency' => $balance instanceof AmountObject ? $balance->getCurrency() : null,
                 'balance' => $balance instanceof AmountObject ? $balance->getValue() : null,
-                'status' => $bank->getStatus(),
+                'iban' => $iban,
+                'status' => $inner->getStatus(),
+                'type' => $this->resolveAccountType($account),
             ];
         }
 
         return $result;
+    }
+
+    private function resolveAccountType(MonetaryAccountApiObject $account): string
+    {
+        if ($account->getMonetaryAccountBank() !== null) {
+            return 'bank';
+        }
+        if ($account->getMonetaryAccountJoint() !== null) {
+            return 'joint';
+        }
+        if ($account->getMonetaryAccountSavings() !== null) {
+            return 'savings';
+        }
+        if ($account->getMonetaryAccountExternal() !== null) {
+            return 'external';
+        }
+        if ($account->getMonetaryAccountExternalSavings() !== null) {
+            return 'external_savings';
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * @param array<mixed> $aliases
+     */
+    private function extractIban(array $aliases): ?string
+    {
+        foreach ($aliases as $alias) {
+            if (is_object($alias) && method_exists($alias, 'getType') && $alias->getType() === 'IBAN') {
+                return $alias->getValue();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -91,54 +135,123 @@ class BunqService
         foreach ($accountKeys as $key) {
             $account = $this->configLoader->getAccount($key);
             $this->ensureContext($key);
-            $monetaryAccountId = $account->monetaryAccountId;
-            $collected = [];
-            $params = ['count' => min($perAccountLimit, self::PAGE_SIZE)];
-            $reachedStartBoundary = false;
 
-            for ($page = 0; $page < self::MAX_PAGES; $page++) {
-                $response = PaymentApiObject::listing($monetaryAccountId, $params);
-                $payments = $response->getValue();
+            $monetaryAccountIds = $this->resolveMonetaryAccountIds($account);
 
-                if (empty($payments)) {
-                    break;
-                }
+            foreach ($monetaryAccountIds as $monetaryAccountId) {
+                $resultKey = count($monetaryAccountIds) > 1
+                    ? $key . '/' . $monetaryAccountId
+                    : $key;
 
-                foreach ($payments as $payment) {
-                    $paymentDate = new \DateTimeImmutable($payment->getCreated());
+                $collected = $this->fetchPaymentsForAccount(
+                    $monetaryAccountId,
+                    $key,
+                    $fromDate,
+                    $toDate,
+                    $perAccountLimit,
+                );
 
-                    if ($toDate !== null && $paymentDate > $toDate) {
-                        continue;
-                    }
-
-                    if ($fromDate !== null && $paymentDate < $fromDate) {
-                        $reachedStartBoundary = true;
-                        break;
-                    }
-
-                    $collected[] = $this->formatPaymentSummary($payment, $key);
-
-                    if (count($collected) >= $perAccountLimit) {
-                        break 2;
-                    }
-                }
-
-                if ($reachedStartBoundary) {
-                    break;
-                }
-
-                $pagination = $response->getPagination();
-                if ($pagination === null || !$pagination->hasPreviousPage()) {
-                    break;
-                }
-
-                $params = $pagination->getUrlParamsPreviousPage();
+                $results[$resultKey] = $collected;
             }
-
-            $results[$key] = $collected;
         }
 
         return $results;
+    }
+
+    /**
+     * When monetary_account_id is null, discovers all active monetary accounts.
+     *
+     * @return list<int>
+     */
+    private function resolveMonetaryAccountIds(BunqAccountConfig $account): array
+    {
+        if ($account->monetaryAccountId !== null) {
+            return [$account->monetaryAccountId];
+        }
+
+        $monetaryAccounts = MonetaryAccountApiObject::listing()->getValue();
+        $ids = [];
+
+        foreach ($monetaryAccounts as $ma) {
+            $inner = $ma->getMonetaryAccountBank()
+                ?? $ma->getMonetaryAccountJoint()
+                ?? $ma->getMonetaryAccountSavings()
+                ?? $ma->getMonetaryAccountExternal()
+                ?? $ma->getMonetaryAccountExternalSavings();
+
+            if ($inner === null) {
+                continue;
+            }
+
+            if ($inner->getStatus() === 'ACTIVE') {
+                $ids[] = $inner->getId();
+            }
+        }
+
+        if (empty($ids)) {
+            throw new \RuntimeException(sprintf(
+                'No active monetary accounts found for bunq account "%s"',
+                $account->key,
+            ));
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchPaymentsForAccount(
+        int $monetaryAccountId,
+        string $accountKey,
+        ?\DateTimeImmutable $fromDate,
+        ?\DateTimeImmutable $toDate,
+        int $perAccountLimit,
+    ): array {
+        $collected = [];
+        $params = ['count' => min($perAccountLimit, self::PAGE_SIZE)];
+        $reachedStartBoundary = false;
+
+        for ($page = 0; $page < self::MAX_PAGES; $page++) {
+            $response = PaymentApiObject::listing($monetaryAccountId, $params);
+            $payments = $response->getValue();
+
+            if (empty($payments)) {
+                break;
+            }
+
+            foreach ($payments as $payment) {
+                $paymentDate = new \DateTimeImmutable($payment->getCreated());
+
+                if ($toDate !== null && $paymentDate > $toDate) {
+                    continue;
+                }
+
+                if ($fromDate !== null && $paymentDate < $fromDate) {
+                    $reachedStartBoundary = true;
+                    break;
+                }
+
+                $collected[] = $this->formatPaymentSummary($payment, $accountKey);
+
+                if (count($collected) >= $perAccountLimit) {
+                    return $collected;
+                }
+            }
+
+            if ($reachedStartBoundary) {
+                break;
+            }
+
+            $pagination = $response->getPagination();
+            if ($pagination === null || !$pagination->hasPreviousPage()) {
+                break;
+            }
+
+            $params = $pagination->getUrlParamsPreviousPage();
+        }
+
+        return $collected;
     }
 
     /**
@@ -212,34 +325,51 @@ class BunqService
             ? $this->configLoader->getAccount($accountKey)
             : $this->getFirstAccount();
 
-        $apiKeyHash = md5($account->apiKey);
+        $contextKey = $account->configFile ?? md5($account->apiKey);
 
-        if (isset($this->loadedContexts[$apiKeyHash])) {
+        if (isset($this->loadedContexts[$contextKey])) {
             return;
         }
 
-        $contextFile = $this->configLoader->getContextFilePath($account->apiKey);
+        if ($account->configFile !== null) {
+            if (!file_exists($account->configFile)) {
+                throw new \RuntimeException('bunq config file not found: ' . $account->configFile);
+            }
 
-        if (file_exists($contextFile)) {
-            $apiContext = ApiContext::restore($contextFile);
+            $apiContext = ApiContext::restore($account->configFile);
             $apiContext->ensureSessionActive();
-            $apiContext->save($contextFile);
+            $apiContext->save($account->configFile);
         } else {
-            $envType = $account->environment === 'sandbox'
-                ? BunqEnumApiEnvironmentType::SANDBOX()
-                : BunqEnumApiEnvironmentType::PRODUCTION();
+            if ($account->apiKey === '') {
+                throw new \RuntimeException(sprintf(
+                    'bunq account "%s" has no api_key or config_file configured',
+                    $account->key,
+                ));
+            }
 
-            $apiContext = ApiContext::create(
-                $envType,
-                $account->apiKey,
-                'prism',
-            );
+            $contextFile = $this->configLoader->getContextFilePath($account->apiKey);
 
-            $apiContext->save($contextFile);
+            if (file_exists($contextFile)) {
+                $apiContext = ApiContext::restore($contextFile);
+                $apiContext->ensureSessionActive();
+                $apiContext->save($contextFile);
+            } else {
+                $envType = $account->environment === 'sandbox'
+                    ? BunqEnumApiEnvironmentType::SANDBOX()
+                    : BunqEnumApiEnvironmentType::PRODUCTION();
+
+                $apiContext = ApiContext::create(
+                    $envType,
+                    $account->apiKey,
+                    'prism',
+                );
+
+                $apiContext->save($contextFile);
+            }
         }
 
         BunqContext::loadApiContext($apiContext);
-        $this->loadedContexts[$apiKeyHash] = true;
+        $this->loadedContexts[$contextKey] = true;
     }
 
     private function ensureContextFromAnyAccount(): void
@@ -272,6 +402,7 @@ class BunqService
         return [
             'id' => $payment->getId(),
             'account_key' => $accountKey,
+            'monetary_account_id' => $payment->getMonetaryAccountId(),
             'created' => $payment->getCreated(),
             'amount' => $amount instanceof AmountObject ? $amount->getValue() : null,
             'currency' => $amount instanceof AmountObject ? $amount->getCurrency() : null,
