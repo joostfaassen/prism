@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\AgentNotify\AgentNotifyPayload;
+use App\AgentNotify\AgentNotifyService;
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
 use App\Config\ServerContext;
@@ -20,6 +22,7 @@ class AdminController extends AbstractController
         private readonly McpHandler $mcpHandler,
         private readonly PrismConfigLoader $configLoader,
         private readonly ServerContext $serverContext,
+        private readonly AgentNotifyService $agentNotifyService,
     ) {
     }
 
@@ -61,6 +64,8 @@ class AdminController extends AbstractController
                 'accountCount' => count($server->accounts),
                 'typeCounts' => $typeCounts,
                 'toolCount' => $toolCount,
+                'hasHabits' => $server->hasAccountType('habits'),
+                'hasTracking' => $server->hasAccountType('tracking'),
             ];
         }
 
@@ -79,7 +84,36 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/{tab}', name: 'admin_server_tab', methods: ['GET'], requirements: ['tab' => 'configuration|accounts|tools|audit'])]
+    #[Route('/admin/server/{serverName}/agent-notify', name: 'admin_agent_notify_trigger', methods: ['POST'])]
+    public function agentNotifyTrigger(Request $request, string $serverName): JsonResponse
+    {
+        $serverConfig = $this->resolveServer($serverName);
+        $user = $this->getUser();
+        $triggeredBy = $user !== null ? $user->getUserIdentifier() : 'unknown';
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $message = isset($data['message']) ? trim((string) $data['message']) : '';
+        if ($message === '') {
+            $message = 'Prism admin test ping from server "' . $serverName . '".';
+        }
+
+        $result = $this->agentNotifyService->notify(
+            $serverConfig,
+            new AgentNotifyPayload(
+                message: $message,
+                serverName: $serverName,
+                triggeredBy: $triggeredBy,
+            ),
+        );
+
+        return new JsonResponse($result->toArray());
+    }
+
+    #[Route('/admin/server/{serverName}/{tab}', name: 'admin_server_tab', methods: ['GET'], requirements: ['tab' => 'configuration|accounts|tools|audit|agents'])]
     public function serverTab(Request $request, string $serverName, string $tab): Response
     {
         $serverConfig = $this->resolveServer($serverName);
@@ -107,6 +141,11 @@ class AdminController extends AbstractController
             ];
         }
 
+        $agentNotify = $serverConfig->getAgentNotify();
+        $agentNotifyType = is_array($agentNotify) ? (string) ($agentNotify['type'] ?? '') : '';
+        $agentNotifyUrl = is_array($agentNotify) ? (string) ($agentNotify['webhook_url'] ?? '') : '';
+        $agentNotifyEndpointHint = $this->formatWebhookHint($agentNotifyUrl);
+
         return $this->render('admin/server.html.twig', [
             'server' => [
                 'name' => $serverName,
@@ -116,9 +155,32 @@ class AdminController extends AbstractController
                 'tools' => $toolsData,
                 'toolCount' => count($toolsData),
                 'accountCount' => count($serverConfig->accounts),
+                'agentNotifyConfigured' => $serverConfig->hasAgentNotify(),
+                'agentNotifyType' => $agentNotifyType,
+                'agentNotifyEndpointHint' => $agentNotifyEndpointHint,
+                'agentNotifyTriggerUrl' => $this->generateUrl('admin_agent_notify_trigger', ['serverName' => $serverName]),
             ],
-            'activeTab' => $tab,
+            'activeSection' => $tab,
+            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
+            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
         ]);
+    }
+
+    private function formatWebhookHint(string $url): string
+    {
+        if ($url === '') {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '(invalid URL)';
+        }
+
+        $host = $parts['host'] ?? '';
+        $path = $parts['path'] ?? '';
+
+        return $host . ($path !== '' && $path !== '/' ? $path : '');
     }
 
     #[Route('/admin/server/{serverName}/tool/{toolName}', name: 'admin_tool_detail', methods: ['GET'])]
@@ -137,12 +199,20 @@ class AdminController extends AbstractController
 
         $schema = $tool->getInputSchema();
 
+        $tools = $this->mcpHandler->getTools();
+        $serverTools = $this->getToolsForServer($tools, $serverConfig);
+
         return $this->render('admin/tool.html.twig', [
             'server' => [
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $request->getSchemeAndHttpHost() . '/mcp/' . $serverName,
+                'accountCount' => count($serverConfig->accounts),
+                'toolCount' => count($serverTools),
             ],
+            'activeSection' => 'tools',
+            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
+            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
             'tool' => [
                 'name' => $tool->getName(),
                 'description' => $tool->getDescription(),
@@ -200,6 +270,28 @@ class AdminController extends AbstractController
         } catch (\InvalidArgumentException) {
             throw $this->createNotFoundException('Server not found: ' . $serverName);
         }
+    }
+
+    /**
+     * @return array{server: array{name: string, label: string, mcpUrl: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     */
+    private function buildServerAdminShell(Request $request, string $serverName, ServerConfig $serverConfig): array
+    {
+        $tools = $this->mcpHandler->getTools();
+        $serverTools = $this->getToolsForServer($tools, $serverConfig);
+        $baseUrl = $request->getSchemeAndHttpHost();
+
+        return [
+            'server' => [
+                'name' => $serverName,
+                'label' => $serverConfig->label,
+                'mcpUrl' => $baseUrl . '/mcp/' . $serverName,
+                'accountCount' => count($serverConfig->accounts),
+                'toolCount' => count($serverTools),
+            ],
+            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
+            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+        ];
     }
 
     /**
