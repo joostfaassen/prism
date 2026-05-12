@@ -1,0 +1,73 @@
+# Example Prism configuration — copy to prism.config.yaml (gitignored) and customize.
+# Use neutral labels and example.com-style placeholders only. Never commit real names,
+# personal email addresses, or production secrets.
+
+servers:
+  demo-server:
+    label: "Example MCP server"
+    bearer_token: "replace-with-a-long-random-secret"
+    accounts:
+      demo-tracking:
+        type: tracking
+        label: "Example GPS / zones"
+        timezone: "UTC"
+      demo-mail:
+        type: imap
+        label: "Example mailbox"
+        host: "imap.example.com"
+        port: 993
+        encryption: ssl
+        username: "user@example.com"
+        password: "app-specific-password"
+        validate_cert: true
+      demo-slack:
+        type: slack
+        label: "Example Slack workspace"
+        # User OAuth Token (xoxp-...) — actions appear as you.
+        # See setup instructions below.
+        token: "xoxp-replace-with-your-user-token"
+
+# ──────────────────────────────────────────────────────────────────────
+# Slack Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Create a Slack App at https://api.slack.com/apps → "Create New App"
+#    → "From scratch" → give it a name and pick your workspace.
+#
+# 2. Go to "OAuth & Permissions" and add these User Token Scopes:
+#
+#    Reading:
+#      - channels:read         (list public channels)
+#      - groups:read           (list private channels)
+#      - im:read               (list DMs)
+#      - mpim:read             (list group DMs)
+#      - channels:history      (read public channel messages)
+#      - groups:history        (read private channel messages)
+#      - im:history            (read DM messages)
+#      - mpim:history          (read group DM messages)
+#      - users:read            (resolve user IDs to names)
+#
+#    Writing (for posting messages and reactions):
+#      - chat:write            (post messages as yourself)
+#      - reactions:write       (add emoji reactions)
+#
+# 3. Click "Install to Workspace" (or "Reinstall" if already installed)
+#    and authorize the app. You will act as yourself.
+#
+# 4. Copy the "User OAuth Token" (starts with xoxp-) into the config
+#    above as the `token` value.
+#
+# 5. To support multiple workspaces, add multiple slack accounts:
+#
+#    accounts:
+#      work-slack:
+#        type: slack
+#        label: "Work"
+#        token: "xoxp-work-workspace-token"
+#      personal-slack:
+#        type: slack
+#        label: "Personal"
+#        token: "xoxp-personal-workspace-token"
+#
+# Note: Use a User OAuth Token (xoxp-...), NOT a Bot Token (xoxb-...),
+# so that messages and reactions appear as you, not as a bot.

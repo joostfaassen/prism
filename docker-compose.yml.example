@@ -1,0 +1,23 @@
+# Copy to docker-compose.yml and adjust hostnames for your Traefik setup.
+# Do not commit real domains, personal names, or secrets.
+
+services:
+  app:
+    build:
+      context: .
+    environment:
+      - APP_ENV=dev
+    labels:
+      - "app=prism"
+      - "traefik.enable=true"
+      - "traefik.http.routers.prism.rule=Host(`prism.localhost`)"
+      - "traefik.http.routers.prism.entrypoints=web"
+      - "traefik.http.routers.prism.tls.domains.main=localhost"
+    volumes:
+      - '.:/app'
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true

@@ -15,7 +15,7 @@ Prism lets you define multiple *servers*, each with its own bearer token and set
        ▼                    ▼
 ┌──────────────────────────────────┐
 │            Prism                 │
-│  /mcp/kiko      /mcp/gekkie     │
+│  /mcp/server-a  /mcp/server-b   │
 │  ┌──────────┐   ┌──────────┐    │
 │  │ 9 accts  │   │ 3 accts  │    │
 │  │ 17 tools │   │ 11 tools │    │
@@ -55,7 +55,7 @@ Each server exposes the same tool *types* but scoped to its own accounts. A pers
 ### 1. Clone and install
 
 ```bash
-git clone git@github.com:joostfaassen/prism.git
+git clone https://github.com/YOUR_ORG/prism.git
 cd prism
 composer install
 npm install && npx encore dev
