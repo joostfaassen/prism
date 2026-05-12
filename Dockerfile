@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install mbstring exif pcntl bcmath gd zip intl opcache
+RUN docker-php-ext-install mbstring exif pcntl bcmath gd zip intl opcache pdo_mysql
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions imap
