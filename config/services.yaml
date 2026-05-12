@@ -21,6 +21,10 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
+    App\Picnic\PicnicConfigLoader:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
     App\Security\EnvUserProvider:
         arguments:
             $username: '%app.auth_user%'

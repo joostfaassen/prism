@@ -28,7 +28,7 @@ Prism lets you define multiple *servers*, each with its own bearer token and set
 
 Each server exposes the same tool *types* but scoped to its own accounts. A personal server sees all your email accounts; a shared server only sees the shared mailbox.
 
-## Tools (17)
+## Tools (24)
 
 | Category | Tool | Description |
 |---|---|---|
@@ -47,6 +47,13 @@ Each server exposes the same tool *types* but scoped to its own accounts. A pers
 | | `cyans_get_topic_details` | Get full topic with posts |
 | | `cyans_search_topics` | Search topics by subject |
 | | `cyans_add_post` | Add a post to a topic |
+| **Picnic** | `picnic_list_accounts` | List configured Picnic accounts |
+| | `picnic_search_products` | Search grocery products by name |
+| | `picnic_get_cart` | Get the current shopping cart |
+| | `picnic_add_to_cart` | Add a product to the cart |
+| | `picnic_remove_from_cart` | Remove a product from the cart |
+| | `picnic_list_deliveries` | List past and upcoming deliveries (optional state filter) |
+| | `picnic_get_delivery` | Get full details of a single delivery |
 | **Utility** | `day_name` | Get day-of-week for a date |
 | | `sum` | Sum an array of numbers |
 
@@ -84,6 +91,12 @@ servers:
         username: "me@example.com"
         password: "app-password"
         validate_cert: true
+      my-picnic:
+        type: picnic
+        label: "Picnic NL"
+        username: "me@example.com"
+        password: "your-picnic-password"
+        country_code: "nl"
 ```
 
 Set admin credentials:
@@ -139,6 +152,7 @@ Each tab and tool detail page has its own URL for bookmarking.
 | `imap` | `host`, `port`, `username`, `password`, `encryption` | Any IMAP mailbox |
 | `calendar` | `ics_url`, `summary` | Any ICS/iCal feed (Google Calendar, etc.) |
 | `cyans` | `dsn`, `username` | [Cyans](https://cyans.linkorb.com/) topic tracking API |
+| `picnic` | `username`, `password`, `country_code` | [Picnic](https://picnic.app/) grocery delivery (unofficial API) |
 
 ## Tech Stack
 
