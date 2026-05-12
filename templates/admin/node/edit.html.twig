@@ -1,0 +1,90 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}{{ node ? 'Edit' : 'New' }} node — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-8">
+                <div class="flex items-center gap-2 mb-3">
+                    <a href="{{ path('admin_server_nodes', {serverName: server.name}) }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                        Nodes
+                    </a>
+                    {% if node %}
+                    <span class="text-xs text-slate-700">/</span>
+                    <a href="{{ path('admin_node_show', {serverName: server.name, xuid: node.xuid}) }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono">
+                        {{ node.name }}
+                    </a>
+                    {% endif %}
+                </div>
+                <h1 class="text-2xl font-bold text-white">{{ node ? 'Edit node' : 'New node' }}</h1>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% if errors is not empty %}
+            <div class="mb-6 bg-red-950 border border-red-800 rounded-xl px-5 py-4">
+                {% for error in errors %}
+                <p class="text-sm text-red-300">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="max-w-2xl">
+                <form method="post" id="node-form" class="space-y-6">
+                <div class="bg-slate-900 rounded-2xl p-8 border border-slate-800 space-y-6">
+                    <div>
+                        <label for="node_type" class="block text-sm font-medium text-slate-300 mb-2">Type</label>
+                        <select id="node_type" name="node_type" required
+                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                            <option value="">Select a type...</option>
+                            {% for type in types %}
+                            <option value="{{ type.xuid }}"
+                                {% if formData.node_type|default(node ? node.nodeType.xuid : '') == type.xuid %}selected{% endif %}>
+                                {{ type.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-slate-300 mb-2">Name</label>
+                        <input type="text" id="name" name="name"
+                               value="{{ formData.name|default(node ? node.name : '') }}"
+                               required
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                               placeholder="Node name">
+                    </div>
+
+                    <div>
+                        <label for="summary" class="block text-sm font-medium text-slate-300 mb-2">Summary</label>
+                        <textarea id="summary" name="summary" rows="4"
+                                  class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors resize-y"
+                                  placeholder="A brief summary (3-5 sentences)">{{ formData.summary|default(node ? node.summary : '') }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="config" class="block text-sm font-medium text-slate-300 mb-2">Config <span class="text-slate-600 font-normal">(YAML)</span></label>
+                        <textarea id="config" name="config" rows="10"
+                                  class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-sm text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors resize-y font-mono"
+                                  placeholder="key: value&#10;tags:&#10;  - example">{{ formData.config|default(node ? node.config : '') }}</textarea>
+                        <p class="mt-1.5 text-xs text-slate-600">Structured data in YAML format. Accessible to MCP tools as parsed key-value data.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                        {{ node ? 'Save Changes' : 'Create Node' }}
+                    </button>
+                    {% if node %}
+                    <a href="{{ path('admin_node_show', {serverName: server.name, xuid: node.xuid}) }}"
+                       class="text-sm text-slate-400 hover:text-slate-200 transition-colors px-4 py-2.5">Cancel</a>
+                    {% else %}
+                    <a href="{{ path('admin_server_nodes', {serverName: server.name}) }}"
+                       class="text-sm text-slate-400 hover:text-slate-200 transition-colors px-4 py-2.5">Cancel</a>
+                    {% endif %}
+                </div>
+                </form>
+            </div>
+{% endblock %}

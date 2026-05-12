@@ -1,0 +1,68 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}Node Types — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Node Types</h1>
+                    <p class="text-slate-400 text-sm mt-1">{{ types|length }} type{{ types|length != 1 ? 's' : '' }} on {{ server.label }}</p>
+                </div>
+                <a href="{{ path('admin_node_type_new', {serverName: server.name}) }}"
+                   class="inline-flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Add type
+                </a>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% if types is not empty %}
+            <div class="space-y-3">
+                {% for type in types %}
+                <a href="{{ path('admin_node_type_edit', {serverName: server.name, xuid: type.xuid}) }}"
+                   class="group flex items-center justify-between bg-slate-900 border border-slate-800 hover:border-cyan-800 rounded-xl px-6 py-5 transition-all duration-200">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center flex-shrink-0">
+                            <span class="text-sm font-bold text-white">{{ type.name|first|upper }}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="block text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors">{{ type.name }}</span>
+                            {% if type.description %}
+                            <p class="text-xs text-slate-500 truncate mt-0.5 max-w-lg">{{ type.description|slice(0, 120) }}{% if type.description|length > 120 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0 ml-4">
+                        {% set nodeCount = type.nodes|length %}
+                        {% if nodeCount > 0 %}
+                        <span class="text-xs font-mono text-violet-400 bg-violet-950 px-2.5 py-1 rounded-lg">{{ nodeCount }} node{{ nodeCount != 1 ? 's' : '' }}</span>
+                        {% endif %}
+                        {% if type.schema %}
+                        <span class="text-xs font-mono text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-lg">schema</span>
+                        {% endif %}
+                        <svg class="w-4 h-4 text-slate-600 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-20">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-800 mb-4">
+                    <svg class="w-8 h-8 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-400 mb-2">No node types yet</h3>
+                <p class="text-sm text-slate-600 max-w-md mx-auto mb-6">Create node types like Contact, Location, or Project to categorize your nodes.</p>
+                <a href="{{ path('admin_node_type_new', {serverName: server.name}) }}"
+                   class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Add type
+                </a>
+            </div>
+            {% endif %}
+{% endblock %}
