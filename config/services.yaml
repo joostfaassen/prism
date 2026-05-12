@@ -26,10 +26,26 @@ services:
             $username: '%app.auth_user%'
             $password: '%app.auth_password%'
 
+    App\Twilio\TranscriptionStore:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Whisper\WhisperService:
+        arguments:
+            $providers: !tagged_iterator app.whisper_provider
+
     App\Mcp\McpHandler:
         arguments:
             $tools: !tagged_iterator app.mcp_tool
 
+    App\AgentNotify\AgentNotifyService:
+        arguments:
+            $clients: !tagged_iterator app.agent_notify_client
+
     _instanceof:
         App\Mcp\Tool\ToolInterface:
             tags: ['app.mcp_tool']
+        App\Whisper\WhisperProviderInterface:
+            tags: ['app.whisper_provider']
+        App\AgentNotify\AgentNotifyClientInterface:
+            tags: ['app.agent_notify_client']

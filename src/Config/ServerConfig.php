@@ -6,13 +6,30 @@ class ServerConfig
 {
     /**
      * @param array<string, array<string, mixed>> $accounts Account configs keyed by name
+     * @param array<string, mixed>|null          $agentNotify Optional per-server agent webhook (see prism.config.yaml)
      */
     public function __construct(
         public readonly string $name,
         public readonly string $label,
         public readonly string $bearerToken,
         public readonly array $accounts,
+        public readonly ?array $agentNotify = null,
     ) {
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getAgentNotify(): ?array
+    {
+        return $this->agentNotify;
+    }
+
+    public function hasAgentNotify(): bool
+    {
+        return $this->agentNotify !== null
+            && ($this->agentNotify['type'] ?? '') !== ''
+            && ($this->agentNotify['webhook_url'] ?? '') !== '';
     }
 
     /**

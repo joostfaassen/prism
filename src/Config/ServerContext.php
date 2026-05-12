@@ -11,6 +11,11 @@ class ServerContext
         $this->server = $server;
     }
 
+    public function clear(): void
+    {
+        $this->server = null;
+    }
+
     public function getServer(): ServerConfig
     {
         if ($this->server === null) {

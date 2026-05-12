@@ -66,6 +66,16 @@ class PrismConfigLoader
         return $serverContext->getServer()->getAccountsByType($type);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function getWhisperConfig(): array
+    {
+        $this->load();
+
+        return $this->rawConfig['whisper'] ?? [];
+    }
+
     private function load(): void
     {
         if ($this->rawConfig !== null) {
@@ -80,11 +90,17 @@ class PrismConfigLoader
         $this->servers = [];
 
         foreach (($this->rawConfig['servers'] ?? []) as $name => $cfg) {
+            $agentNotify = $cfg['agent_notify'] ?? null;
+            if (!is_array($agentNotify)) {
+                $agentNotify = null;
+            }
+
             $this->servers[$name] = new ServerConfig(
                 name: $name,
                 label: $cfg['label'] ?? $name,
                 bearerToken: $cfg['bearer_token'] ?? '',
                 accounts: $cfg['accounts'] ?? [],
+                agentNotify: $agentNotify,
             );
         }
     }
