@@ -1,0 +1,59 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}Locations (geofences) — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="{{ path('admin_tracking_home', {serverName: server.name}) }}" class="text-xs text-slate-500 hover:text-cyan-400 font-mono">GPS</a>
+                        <span class="text-slate-600">/</span>
+                        <span class="text-xs font-mono text-slate-500">zones</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white">Locations</h1>
+                    <p class="text-slate-400 text-sm mt-1">Named zones with radius for enter/exit detection</p>
+                </div>
+                <a href="{{ path('admin_tracking_zone_new', {serverName: server.name}) }}"
+                   class="inline-flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Add location
+                </a>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% include 'admin/tracking/_subnav.html.twig' with { trackingSubnav: 'zones' } %}
+
+            {% for message in app.flashes('success') %}
+            <div class="mb-6 rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+            <div class="mb-6 rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{{ message }}</div>
+            {% endfor %}
+
+            {% if not serverHasTracking %}
+            <div class="rounded-2xl border border-amber-800/50 bg-amber-950/20 px-6 py-8 text-center mb-8">
+                <p class="text-slate-300 text-sm mb-4">Add a <span class="font-mono text-amber-200/90">tracking</span> account in <code class="text-xs bg-slate-800 px-2 py-1 rounded">prism.config.yaml</code> to enable MCP tools for agents.</p>
+                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View accounts →</a>
+            </div>
+            {% endif %}
+
+            {% if zones is not empty %}
+            <div class="space-y-3">
+                {% for z in zones %}
+                <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-6 py-4 gap-4">
+                    <div class="min-w-0">
+                        <a href="{{ path('admin_tracking_zone_edit', {serverName: server.name, xuid: z.xuid}) }}" class="text-sm font-semibold text-white hover:text-cyan-300">{{ z.name }}</a>
+                        <p class="text-xs font-mono text-slate-500 mt-1">{{ z.latitude }}, {{ z.longitude }} · {{ z.radiusMeters }} m</p>
+                    </div>
+                    <a href="{{ path('admin_tracking_zone_edit', {serverName: server.name, xuid: z.xuid}) }}" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 shrink-0">Edit</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-16 rounded-2xl border border-slate-800 bg-slate-900/50">
+                <p class="text-slate-400 text-sm mb-4">No locations yet. Add coordinates and a radius to detect check-in and check-out.</p>
+                <a href="{{ path('admin_tracking_zone_new', {serverName: server.name}) }}" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Add location</a>
+            </div>
+            {% endif %}
+{% endblock %}

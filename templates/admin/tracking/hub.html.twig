@@ -1,0 +1,80 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}GPS — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <a href="{{ path('admin_dashboard') }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                        All servers
+                    </a>
+                </div>
+                <h1 class="text-2xl font-bold text-white">GPS</h1>
+                <p class="text-slate-400 text-sm mt-1">Devices, geofences, traces, and zone events for <span class="font-mono text-slate-300">{{ server.name }}</span></p>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% include 'admin/tracking/_subnav.html.twig' with { trackingSubnav: 'hub' } %}
+
+            {% for message in app.flashes('success') %}
+            <div class="mb-6 rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+            <div class="mb-6 rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{{ message }}</div>
+            {% endfor %}
+
+            {% if not serverHasTracking %}
+            <div class="rounded-2xl border border-amber-800/50 bg-amber-950/20 px-6 py-8 text-center">
+                <p class="text-slate-300 text-sm mb-4">Add a <span class="font-mono text-amber-200/90">tracking</span> account under this server in <code class="text-xs bg-slate-800 px-2 py-1 rounded">prism.config.yaml</code> to enable the GPS UI, ingest API, and MCP tools.</p>
+                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View accounts →</a>
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-500 mb-2">Ingest base URL (per-device path + secret from each device):</p>
+            <p class="text-sm text-slate-500 mb-6"><code class="inline-block text-xs bg-slate-800 px-3 py-2 rounded text-cyan-300/90 break-all">{{ ingestBaseUrl }}</code></p>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+                <a href="{{ path('admin_tracking_devices', {serverName: server.name}) }}" class="group rounded-2xl border border-slate-800 bg-slate-900/80 p-6 hover:border-cyan-800/60 hover:bg-slate-900 transition-all">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-950/50">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                        </span>
+                        <h2 class="text-lg font-semibold text-white group-hover:text-cyan-200">Devices</h2>
+                    </div>
+                    <p class="text-sm text-slate-500">Ingest URLs, secrets, post format, map color · {{ deviceCount }} device{{ deviceCount != 1 ? 's' : '' }}</p>
+                    <span class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-500 group-hover:text-cyan-400">Open →</span>
+                </a>
+                <a href="{{ path('admin_tracking_zones', {serverName: server.name}) }}" class="group rounded-2xl border border-slate-800 bg-slate-900/80 p-6 hover:border-cyan-800/60 hover:bg-slate-900 transition-all">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-amber-300/90 group-hover:bg-amber-950/30">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                        </span>
+                        <h2 class="text-lg font-semibold text-white group-hover:text-cyan-200">Zones</h2>
+                    </div>
+                    <p class="text-sm text-slate-500">Named geofences for enter/exit · {{ zoneCount }} location{{ zoneCount != 1 ? 's' : '' }}</p>
+                    <span class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-500 group-hover:text-cyan-400">Open →</span>
+                </a>
+                <a href="{{ path('admin_tracking_map', {serverName: server.name}) }}" class="group rounded-2xl border border-slate-800 bg-slate-900/80 p-6 hover:border-cyan-800/60 hover:bg-slate-900 transition-all">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-violet-300/90 group-hover:bg-violet-950/40">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.75-12a.75.75 0 0 0-1.5 0v11.25a.75.75 0 0 0 1.5 0V9.75Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </span>
+                        <h2 class="text-lg font-semibold text-white group-hover:text-cyan-200">Map</h2>
+                    </div>
+                    <p class="text-sm text-slate-500">Daily GPS traces on OpenStreetMap (Leaflet).</p>
+                    <span class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-500 group-hover:text-cyan-400">Open →</span>
+                </a>
+                <a href="{{ path('admin_tracking_zone_events', {serverName: server.name}) }}" class="group rounded-2xl border border-slate-800 bg-slate-900/80 p-6 hover:border-cyan-800/60 hover:bg-slate-900 transition-all">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-emerald-300/90 group-hover:bg-emerald-950/30">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-3 3m3-3 3 3" /></svg>
+                        </span>
+                        <h2 class="text-lg font-semibold text-white group-hover:text-cyan-200">Zone log</h2>
+                    </div>
+                    <p class="text-sm text-slate-500">Enter/exit events and JSON API for a calendar day.</p>
+                    <span class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-500 group-hover:text-cyan-400">Open →</span>
+                </a>
+            </div>
+            {% endif %}
+{% endblock %}

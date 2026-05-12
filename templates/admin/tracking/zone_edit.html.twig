@@ -1,0 +1,78 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}{{ zone ? 'Edit location' : 'New location' }} — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-8">
+                <div class="flex items-center gap-2 mb-2">
+                    <a href="{{ path('admin_tracking_home', {serverName: server.name}) }}" class="text-xs text-slate-500 hover:text-cyan-400 font-mono">GPS</a>
+                    <span class="text-slate-600">/</span>
+                    <a href="{{ path('admin_tracking_zones', {serverName: server.name}) }}" class="text-xs text-slate-500 hover:text-cyan-400 font-mono">zones</a>
+                    <span class="text-slate-600">/</span>
+                    <span class="text-xs font-mono text-slate-500">{{ zone ? 'edit' : 'new' }}</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white">{{ zone ? 'Edit location' : 'New location' }}</h1>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% include 'admin/tracking/_subnav.html.twig' with { trackingSubnav: 'zones' } %}
+
+            {% for message in app.flashes('success') %}
+            <div class="mb-6 rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+            <div class="mb-6 rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{{ message }}</div>
+            {% endfor %}
+
+            {% if errors is not empty %}
+            <div class="mb-6 rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                <ul class="list-disc list-inside">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            </div>
+            {% endif %}
+
+            <form method="post" class="max-w-xl space-y-5 bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-2 font-mono">Slug</label>
+                    <input type="text" name="slug" value="{{ formData.slug|e('html_attr') }}" required pattern="[a-z0-9][a-z0-9_-]*"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono" />
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-2 font-mono">Name</label>
+                    <input type="text" name="name" value="{{ formData.name|e('html_attr') }}" required
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white" placeholder="Supermarket" />
+                </div>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-2 font-mono">Latitude</label>
+                        <input type="text" name="latitude" value="{{ formData.latitude|e('html_attr') }}" required
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono" />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-2 font-mono">Longitude</label>
+                        <input type="text" name="longitude" value="{{ formData.longitude|e('html_attr') }}" required
+                               class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-2 font-mono">Radius (meters)</label>
+                    <input type="text" name="radius_meters" value="{{ formData.radius_meters|e('html_attr') }}" required
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono" />
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-2 font-mono">Notes (optional)</label>
+                    <textarea name="notes" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-300">{{ formData.notes }}</textarea>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Save</button>
+                    <a href="{{ path('admin_tracking_zones', {serverName: server.name}) }}" class="text-sm text-slate-400 hover:text-white px-4 py-2.5">Cancel</a>
+                </div>
+            </form>
+
+            {% if zone %}
+            <form method="post" action="{{ path('admin_tracking_zone_delete', {serverName: server.name, xuid: zone.xuid}) }}" class="mt-8 max-w-xl" onsubmit="return confirm('Delete this location?');">
+                <input type="hidden" name="_token" value="{{ csrf_token('tracking_zone_delete') }}" />
+                <button type="submit" class="text-xs text-red-400 hover:text-red-300">Delete location</button>
+            </form>
+            {% endif %}
+{% endblock %}

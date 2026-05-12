@@ -1,0 +1,14 @@
+{# Expects: server (name), trackingSubnav: 'hub'|'devices'|'zones'|'map'|'events' #}
+{% set trackingSubnav = trackingSubnav|default('hub') %}
+<nav class="flex flex-wrap gap-2 mb-8" aria-label="GPS sections">
+    <a href="{{ path('admin_tracking_home', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ trackingSubnav == 'hub' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Overview</a>
+    <a href="{{ path('admin_tracking_devices', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ trackingSubnav == 'devices' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Devices</a>
+    <a href="{{ path('admin_tracking_zones', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ trackingSubnav == 'zones' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Zones</a>
+    <a href="{{ path('admin_tracking_map', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ trackingSubnav == 'map' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Map</a>
+    <a href="{{ path('admin_tracking_zone_events', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ trackingSubnav == 'events' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Zone log</a>
+</nav>
