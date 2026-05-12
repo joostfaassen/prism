@@ -1,0 +1,118 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}{{ isNew ? 'New habit' : 'Edit habit' }} — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-6">
+                <div class="flex items-center gap-2 mb-2 text-xs font-mono text-slate-500">
+                    <a href="{{ path('admin_server_habits', {serverName: server.name}) }}" class="hover:text-cyan-400">Habits</a>
+                    <span class="text-slate-600">/</span>
+                    <a href="{{ path('admin_server_habits_goals', {serverName: server.name}) }}" class="hover:text-cyan-400">definitions</a>
+                    <span class="text-slate-600">/</span>
+                    <span>{{ isNew ? 'new' : 'edit' }}</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white">{{ isNew ? 'New habit' : 'Edit habit' }}</h1>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% include 'admin/habits/_subnav.html.twig' with { habitsSubnav: 'goals' } %}
+
+            {% for message in app.flashes('error') %}
+            <div class="mb-6 rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{{ message }}</div>
+            {% endfor %}
+
+            <form method="post" class="max-w-3xl space-y-8">
+                <input type="hidden" name="_token" value="{{ csrf_token('habits_habit_form') }}">
+
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-5">
+                    <h2 class="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Basics</h2>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">Slug</label>
+                            <input type="text" name="slug" value="{{ form.slug }}" required maxlength="80" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus:ring-2 focus:ring-cyan-500 outline-none" {% if not isNew %}title="Changing slug may break external references"{% endif %}>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">Goal mode</label>
+                            <select name="goal_mode" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                                {% for mode in goalModes %}
+                                <option value="{{ mode }}" {{ form.goal_mode == mode ? 'selected' : '' }}>{{ mode }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5 font-mono">Title</label>
+                        <input type="text" name="title" value="{{ form.title }}" required maxlength="200" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5 font-mono">Description</label>
+                        <textarea name="description" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">{{ form.description }}</textarea>
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-3">
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">Unit</label>
+                            <input type="text" name="unit" value="{{ form.unit }}" maxlength="32" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">Period target</label>
+                            <input type="text" name="period_target" value="{{ form.period_target|default('') }}" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="e.g. 2000 ml">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">Period sessions</label>
+                            <input type="text" name="period_sessions" value="{{ form.period_sessions|default('') }}" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="weekly_sessions">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5 font-mono">Methodology YAML</label>
+                        <textarea name="config_yaml" rows="5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus:ring-2 focus:ring-cyan-500 outline-none">{{ form.config_yaml }}</textarea>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-5">
+                    <h2 class="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Scoring</h2>
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {% set pts = [
+                            ['points_per_unit', 'Per unit'],
+                            ['points_period_win', 'Period win'],
+                            ['points_period_miss', 'Period miss'],
+                            ['points_missed_checkin', 'Missed check-in'],
+                            ['points_relapse', 'Relapse'],
+                            ['points_checkin_ack', 'Check-in ack'],
+                        ] %}
+                        {% for row in pts %}
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">{{ row[1] }}</label>
+                            <input type="number" name="{{ row[0] }}" value="{{ attribute(form, row[0]) }}" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                            <input type="checkbox" name="checkins_enabled" value="1" class="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500" {{ form.checkins_enabled ? 'checked' : '' }}>
+                            Enable agent check-ins
+                        </label>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1.5 font-mono">Check-in grace (hours)</label>
+                            <input type="number" name="checkin_grace_hours" value="{{ form.checkin_grace_hours }}" min="1" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                        </div>
+                    </div>
+                    <input type="hidden" name="active" value="0">
+                    <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="active" value="1" class="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500" {{ form.active ? 'checked' : '' }}>
+                        Habit active
+                    </label>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-3">
+                    <h2 class="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Members</h2>
+                    <p class="text-xs text-slate-500">One username per line (or comma-separated). Must match existing habit users.</p>
+                    <textarea name="members_usernames" rows="5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="joe&#10;alex">{{ form.members_usernames }}</textarea>
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-semibold hover:from-cyan-500 hover:to-blue-500">{{ isNew ? 'Create habit' : 'Save changes' }}</button>
+                    <a href="{{ path('admin_server_habits_goals', {serverName: server.name}) }}" class="px-6 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-sm font-medium hover:bg-slate-800/60">Cancel</a>
+                </div>
+            </form>
+{% endblock %}

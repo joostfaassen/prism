@@ -1,0 +1,60 @@
+{% extends 'admin/server_base.html.twig' %}
+
+{% block title %}{{ isNew ? 'New habit user' : 'Edit user' }} — {{ server.label }}{% endblock %}
+
+{% block server_page_header %}
+            <div class="mb-6">
+                <div class="flex items-center gap-2 mb-2 text-xs font-mono text-slate-500">
+                    <a href="{{ path('admin_server_habits', {serverName: server.name}) }}" class="hover:text-cyan-400">Habits</a>
+                    <span class="text-slate-600">/</span>
+                    <a href="{{ path('admin_server_habits_users', {serverName: server.name}) }}" class="hover:text-cyan-400">users</a>
+                    <span class="text-slate-600">/</span>
+                    <span>{{ isNew ? 'new' : 'edit' }}</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white">{{ isNew ? 'New habit user' : 'Edit habit user' }}</h1>
+            </div>
+{% endblock %}
+
+{% block server_main %}
+            {% include 'admin/habits/_subnav.html.twig' with { habitsSubnav: 'users' } %}
+
+            {% for message in app.flashes('error') %}
+            <div class="mb-6 rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{{ message }}</div>
+            {% endfor %}
+
+            <form method="post" class="max-w-2xl space-y-6">
+                <input type="hidden" name="_token" value="{{ csrf_token('habits_user_form') }}">
+
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-5">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5 font-mono">Username</label>
+                        {% if isNew %}
+                        <input type="text" name="username" value="{{ form.username }}" required maxlength="64" pattern="[a-z0-9_-]+" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="joe" autocomplete="off">
+                        <p class="text-xs text-slate-600 mt-1.5">Lowercase letters, numbers, underscore, hyphen only.</p>
+                        {% else %}
+                        <input type="text" value="{{ form.username }}" disabled class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-400 cursor-not-allowed">
+                        <p class="text-xs text-slate-600 mt-1.5">Username cannot be changed here.</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5 font-mono">Display name</label>
+                        <input type="text" name="display_name" value="{{ form.display_name }}" required maxlength="255" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1.5 font-mono">Config YAML</label>
+                        <textarea name="config_yaml" rows="8" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white font-mono focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="identity: …&#10;cue: …">{{ form.config_yaml }}</textarea>
+                    </div>
+                    {% if not isNew %}
+                    <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="active" value="1" class="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500" {{ form.active ? 'checked' : '' }}>
+                        Active
+                    </label>
+                    {% endif %}
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-semibold hover:from-cyan-500 hover:to-blue-500">{{ isNew ? 'Create user' : 'Save changes' }}</button>
+                    <a href="{{ path('admin_server_habits_users', {serverName: server.name}) }}" class="px-6 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-sm font-medium hover:bg-slate-800/60">Cancel</a>
+                </div>
+            </form>
+{% endblock %}

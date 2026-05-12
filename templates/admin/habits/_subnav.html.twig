@@ -1,0 +1,10 @@
+{# Expects: server (name), habitsSubnav: 'hub'|'users'|'goals' #}
+{% set habitsSubnav = habitsSubnav|default('hub') %}
+<nav class="flex flex-wrap gap-2 mb-8" aria-label="Habits sections">
+    <a href="{{ path('admin_server_habits', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ habitsSubnav == 'hub' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Overview</a>
+    <a href="{{ path('admin_server_habits_users', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ habitsSubnav == 'users' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Users</a>
+    <a href="{{ path('admin_server_habits_goals', {serverName: server.name}) }}"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors {{ habitsSubnav == 'goals' ? 'border-cyan-700 bg-cyan-950/60 text-cyan-200' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600' }}">Habits</a>
+</nav>
