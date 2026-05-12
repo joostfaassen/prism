@@ -1,0 +1,28 @@
+---
+description: Open-source hygiene — no real names, personal domains, or identity-linked examples in repo artifacts
+globs: "**/*"
+alwaysApply: true
+---
+
+# Open Source Hygiene
+
+## Do not use in committed / shared artifacts
+
+- **Real people's names** (given names, surnames, or obvious combinations) in code, docs, comments, placeholders, UI copy, or examples.
+- **Personal or employer-specific hostnames** (e.g. `*.personal-domain.example`) in docs, default configs, or examples — use `example.com`, `example.org`, `*.localhost`, or RFC 2606-style names (`*.invalid`, `*.test`) where a hostname is needed.
+- **Real email addresses** in examples — use `user@example.com`, `alice@example.net`, etc.
+- **Production-looking secrets** — use obvious placeholders (`replace-me`, `changeme`, random-looking fake tokens only in docs).
+
+## Prefer instead
+
+- **Neutral device / account labels:** `example-iphone`, `work-laptop`, `demo-mailbox`, `shared-household`, `personal`.
+- **Neutral server keys:** `demo-server`, `server-a`, `staging`, not pet names or initials that identify a person.
+- **Composer / clone URLs:** `YOUR_ORG/prism` or generic paths — not a personal GitHub path unless the repository is explicitly that public namespace.
+
+## Local-only files (often gitignored)
+
+`prism.config.yaml`, `.env.local`, and `docker-compose.yml` may contain real endpoints for your machine. They should still avoid unnecessary personal data where possible, and **must not be committed**. For sharing or onboarding, maintain **`prism.config.yaml.example`** and **`docker-compose.yml.example`** with scrubbed, generic values.
+
+## When editing
+
+If you add UI placeholders, doc examples, Traefik rules in tracked files, or MCP tool description strings, re-read them as if the repo were public tomorrow.

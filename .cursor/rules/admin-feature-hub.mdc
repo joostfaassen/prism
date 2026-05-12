@@ -1,0 +1,41 @@
+---
+description: Admin “feature hub” pattern for multi-screen server tools (Habits, GPS, etc.)
+globs: templates/admin/**/*.twig
+alwaysApply: false
+---
+
+# Admin feature hub (Prism)
+
+Use this layout for **server-scoped admin areas** that have several screens (list / new / edit / reports), so the **left sidebar stays one item** and **in-feature navigation** lives in the main column.
+
+## URL shape
+
+- **Hub (GET only):** `/admin/server/{serverName}/{feature}` — overview, ingest URLs, links into sub-areas.
+- **Sub-routes:** `{feature}/…` for lists, forms, map, logs — keep RESTful segments (`devices`, `zones`, `map`, …).
+
+## Sidebar (`templates/admin/_server_sidebar.html.twig`)
+
+- **One nav item** per product area (e.g. `Habits`, `GPS`), route **always the hub**.
+- **`activeSection`:** use a **single key** for the whole area (e.g. `habits`, `tracking`) on hub **and** all sub-pages so the sidebar highlight matches Habits.
+
+## In-page navigation
+
+- **`templates/admin/{feature}/_subnav.html.twig`** — horizontal pills: **Overview** (hub) + each major subsection.
+- Pass an explicit flag, e.g. `habitsSubnav: 'hub'|'users'|'goals'` or `trackingSubnav: 'hub'|'devices'|'zones'|'map'|'events'`.
+- **Include the subnav** at the top of `server_main` on hub, list, form, and report templates.
+
+## Hub template
+
+- **`{feature}/hub.html.twig`:** title + short description; if account type missing, **amber callout** + link to Accounts tab (same copy style as Habits).
+- If enabled: show **ingest/API base URL** when relevant; **card grid** linking to each subsection (not nested `<a>` inside `<a>` — use separate card links).
+
+## List / form pages
+
+- **Breadcrumb** in header: `Feature / subsection` (font-mono), linking hub → subsection.
+- **Flashes** after subnav (success / error).
+
+## Controller
+
+- Dedicated `*AdminController` with class-level `#[Route('/admin/server/{serverName}/…')]` prefix; **`home` or empty route** renders the hub (do not redirect to the first list unless you intentionally skip the hub).
+
+**Reference implementations:** `src/Controller/HabitsAdminController.php` + `templates/admin/habits/`; `src/Controller/TrackingAdminController.php` + `templates/admin/tracking/` (hub: `hub.html.twig`, subnav: `_subnav.html.twig`).

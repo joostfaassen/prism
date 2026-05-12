@@ -1,0 +1,56 @@
+---
+description: Entity architecture rule - all root Doctrine entities must be scoped to a server via server_name
+globs: src/Entity/**/*.php
+alwaysApply: false
+---
+
+# Server-Scoped Entities
+
+All root entities in Prism are tied to a **server** via a `server_name` column. This is the core multi-tenancy mechanism — entities belong to the server that created them and are only visible through that server's MCP endpoint or admin UI.
+
+## Required Pattern
+
+Every root entity (top-level, not a child/join entity) MUST:
+
+1. Have a `xuid` column (VARCHAR 22, unique) — see `xuid-identifiers` rule
+2. Have a `server_name` column (VARCHAR 64, indexed)
+3. Accept `serverName` as the first constructor argument
+4. Have a unique constraint that includes `server_name` (e.g. `server_name` + `name`)
+5. Be queried through a repository method that filters by server name
+
+```php
+#[ORM\Entity(repositoryClass: ThingRepository::class)]
+#[ORM\Table(name: 'thing')]
+#[ORM\Index(columns: ['server_name'], name: 'idx_thing_server')]
+#[ORM\UniqueConstraint(columns: ['server_name', 'name'])]
+class Thing
+{
+    #[ORM\Column(length: 64)]
+    private string $serverName;
+
+    public function __construct(string $serverName, string $name)
+    {
+        $this->serverName = $serverName;
+        // ...
+    }
+}
+```
+
+## Repository Pattern
+
+Repositories must always scope queries by server:
+
+```php
+public function findByServer(string $serverName): array
+{
+    return $this->createQueryBuilder('t')
+        ->andWhere('t.serverName = :server')
+        ->setParameter('server', $serverName)
+        ->getQuery()
+        ->getResult();
+}
+```
+
+## Why
+
+Different MCP servers see different data. A node created on server "alpha" must not appear on server "beta". The `server_name` column enforces this at the data level.

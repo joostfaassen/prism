@@ -1,0 +1,38 @@
+---
+description: Schema management rule - use doctrine:schema:update --force instead of migrations
+globs: src/Entity/**/*.php
+alwaysApply: false
+---
+
+# Schema Management (No Migrations)
+
+Prism does **not** use Doctrine Migrations. Schema changes are applied directly using:
+
+```bash
+docker compose exec app php bin/console doctrine:schema:update --force
+```
+
+Or abbreviated:
+
+```bash
+docker compose exec app php bin/console d:s:u --force
+```
+
+## After Entity Changes
+
+Whenever you create or modify a Doctrine entity (`src/Entity/*.php`), run the schema update command to apply changes to the database.
+
+## Preview Changes First (Optional)
+
+To see what SQL would run without executing:
+
+```bash
+docker compose exec app php bin/console doctrine:schema:update --dump-sql
+```
+
+## Why No Migrations
+
+- Prism is a single-instance application, not a distributed service
+- Schema changes are always applied alongside the code that requires them
+- This avoids migration version tracking complexity and drift
+- The `doctrine:schema:update` command is idempotent — safe to run repeatedly

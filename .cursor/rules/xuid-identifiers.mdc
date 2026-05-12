@@ -1,0 +1,63 @@
+---
+description: XUID convention - all entities use XUIDs as public identifiers, never expose internal database IDs
+globs: src/Entity/**/*.php, src/Controller/**/*.php, src/Mcp/Tool/**/*.php
+alwaysApply: false
+---
+
+# XUID Entity Identifiers
+
+All entities in Prism use **XUIDs** (URL-friendly compressed UUIDs from [linkorb/xuid](https://github.com/linkorb/xuid)) as their public identifier. Internal auto-increment IDs are never exposed in URLs, MCP tool inputs/outputs, or API responses.
+
+## Required Pattern
+
+Every entity MUST:
+
+1. Have a `xuid` column (VARCHAR 22, unique, indexed)
+2. Generate the XUID in the constructor via `Xuid::getXuid()`
+3. Expose `getXuid()` but **not** `getId()` in public-facing interfaces
+
+```php
+use Xuid\Xuid;
+
+#[ORM\Column(length: 22, unique: true)]
+private string $xuid;
+
+public function __construct(...)
+{
+    $this->xuid = Xuid::getXuid();
+}
+```
+
+## Where XUIDs Are Used
+
+| Context | Use XUID | Use internal ID |
+|---|---|---|
+| URLs (admin routes) | Yes | Never |
+| MCP tool input/output | Yes | Never |
+| `toArray()` / API responses | Yes | Never |
+| Doctrine relations (FK) | No (use internal ID) | Yes |
+| Repository queries (internal) | Either | Either |
+
+## Repository Pattern
+
+Repositories should have a `findOneByXuid()` method and server-scoped variants:
+
+```php
+public function findOneByServerAndXuid(string $serverName, string $xuid): ?Node
+{
+    return $this->createQueryBuilder('n')
+        ->andWhere('n.serverName = :server')
+        ->andWhere('n.xuid = :xuid')
+        ->setParameter('server', $serverName)
+        ->setParameter('xuid', $xuid)
+        ->getQuery()
+        ->getOneOrNullResult();
+}
+```
+
+## Why
+
+- XUIDs are unguessable (no sequential IDs in URLs)
+- Shorter than UUIDs (22 chars vs 36)
+- URL-safe without encoding
+- Decouple public identifiers from database internals
