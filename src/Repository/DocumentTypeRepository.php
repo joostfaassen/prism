@@ -2,22 +2,22 @@
 
 namespace App\Repository;
 
-use App\Entity\NodeType;
+use App\Entity\DocumentType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<NodeType>
+ * @extends ServiceEntityRepository<DocumentType>
  */
-class NodeTypeRepository extends ServiceEntityRepository
+class DocumentTypeRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, NodeType::class);
+        parent::__construct($registry, DocumentType::class);
     }
 
     /**
-     * @return list<NodeType>
+     * @return list<DocumentType>
      */
     public function findByServer(string $serverName): array
     {
@@ -29,7 +29,7 @@ class NodeTypeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findOneByServerAndName(string $serverName, string $name): ?NodeType
+    public function findOneByServerAndName(string $serverName, string $name): ?DocumentType
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.serverName = :server')
@@ -40,7 +40,7 @@ class NodeTypeRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    public function findOneByServerAndXuid(string $serverName, string $xuid): ?NodeType
+    public function findOneByServerAndXuid(string $serverName, string $xuid): ?DocumentType
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.serverName = :server')
@@ -51,7 +51,7 @@ class NodeTypeRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    public function findOneByXuid(string $xuid): ?NodeType
+    public function findOneByXuid(string $xuid): ?DocumentType
     {
         return $this->findOneBy(['xuid' => $xuid]);
     }

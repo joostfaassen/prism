@@ -36,10 +36,11 @@ Each server exposes the same tool *types* but scoped to its own accounts. A pers
 | | `bunq_list_transactions` | List transactions with date/amount filters |
 | | `bunq_get_transaction` | Get full transaction details |
 | | `bunq_get_transaction_notes` | Get notes and attachments on a transaction |
-| **IMAP** | `imap_list_accounts` | List configured email accounts |
-| | `imap_list_folders` | List mailbox folders with unread counts |
-| | `imap_search` | Search emails by sender, subject, date, flags |
-| | `imap_get_message` | Fetch full email content |
+| **Email** | `email_list_accounts` | List configured email accounts |
+| | `email_list_folders` | List mailbox folders with unread counts |
+| | `email_search` | Search emails by sender, subject, date, flags |
+| | `email_get_messages` | Fetch one or many messages (same-folder or folder+uid combos) |
+| | `email_send` | Send a new message or reply (markdown, threaded, saved to Sent) |
 | **Calendar** | `calendar_list_calendars` | List configured ICS calendars |
 | | `calendar_list_events` | List upcoming events with date range filter |
 | | `calendar_get_event` | Get event details by UID |
@@ -83,14 +84,22 @@ servers:
     bearer_token: "generate-a-random-token"
     accounts:
       my-email:
-        type: imap
+        type: email
         label: "Personal Email"
-        host: "imap.example.com"
-        port: 993
-        encryption: ssl
-        username: "me@example.com"
-        password: "app-password"
-        validate_cert: true
+        imap:
+          host: "imap.example.com"
+          port: 993
+          encryption: ssl
+          username: "me@example.com"
+          password: "app-password"
+          validate_cert: true
+        smtp:
+          host: "smtp.example.com"
+          port: 465
+          encryption: ssl
+        identity:
+          email: "user@example.com"
+          name: "Example User"
       my-picnic:
         type: picnic
         label: "Picnic NL"
@@ -149,7 +158,7 @@ Each tab and tool detail page has its own URL for bookmarking.
 | Type | Config Keys | What It Connects To |
 |---|---|---|
 | `bunq` | `api_key`, `environment`, `monetary_account_id` | [bunq](https://www.bunq.com/) banking API |
-| `imap` | `host`, `port`, `username`, `password`, `encryption` | Any IMAP mailbox |
+| `email` | `imap.*`, `smtp.*`, `identity.*` | Any IMAP mailbox + SMTP relay (read, search, send, save-to-Sent) |
 | `calendar` | `ics_url`, `summary` | Any ICS/iCal feed (Google Calendar, etc.) |
 | `cyans` | `dsn`, `username` | [Cyans](https://cyans.linkorb.com/) topic tracking API |
 | `picnic` | `username`, `password`, `country_code` | [Picnic](https://picnic.app/) grocery delivery (unofficial API) |

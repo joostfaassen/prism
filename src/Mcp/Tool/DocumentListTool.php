@@ -3,24 +3,24 @@
 namespace App\Mcp\Tool;
 
 use App\Config\ServerContext;
-use App\Repository\NodeRepository;
+use App\Repository\DocumentRepository;
 
-class NodeListTool implements ToolInterface
+class DocumentListTool implements ToolInterface
 {
     public function __construct(
-        private readonly NodeRepository $nodeRepository,
+        private readonly DocumentRepository $documentRepository,
         private readonly ServerContext $serverContext,
     ) {
     }
 
     public function getName(): string
     {
-        return 'node_list';
+        return 'document_list';
     }
 
     public function getDescription(): string
     {
-        return 'List all nodes on this server. Optionally filter by type name (e.g. "Contact", "Location"). Returns xuid, type, name, summary, and parsed config data.';
+        return 'List all documents on this server. Optionally filter by type name (e.g. "Contact", "Location"). Returns xuid, type, name, summary, and parsed config data.';
     }
 
     public function getInputSchema(): array
@@ -30,7 +30,7 @@ class NodeListTool implements ToolInterface
             'properties' => [
                 'type' => [
                     'type' => 'string',
-                    'description' => 'Filter by node type name (e.g. "Contact", "Location"). Omit to list all nodes.',
+                    'description' => 'Filter by document type name (e.g. "Contact", "Location"). Omit to list all documents.',
                 ],
             ],
         ];
@@ -46,16 +46,16 @@ class NodeListTool implements ToolInterface
         try {
             $serverName = $this->serverContext->getServerName();
             $typeName = isset($arguments['type']) && trim($arguments['type']) !== '' ? $arguments['type'] : null;
-            $nodes = $this->nodeRepository->findByServer($serverName, $typeName);
+            $documents = $this->documentRepository->findByServer($serverName, $typeName);
 
-            $result = array_map(fn($n) => $n->toArray(), $nodes);
+            $result = array_map(fn($n) => $n->toArray(), $documents);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing nodes: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error listing documents: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

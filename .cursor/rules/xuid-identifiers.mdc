@@ -43,7 +43,7 @@ public function __construct(...)
 Repositories should have a `findOneByXuid()` method and server-scoped variants:
 
 ```php
-public function findOneByServerAndXuid(string $serverName, string $xuid): ?Node
+public function findOneByServerAndXuid(string $serverName, string $xuid): ?Document
 {
     return $this->createQueryBuilder('n')
         ->andWhere('n.serverName = :server')

@@ -3,24 +3,24 @@
 namespace App\Mcp\Tool;
 
 use App\Config\ServerContext;
-use App\Repository\NodeNoteRepository;
+use App\Repository\DocumentNoteRepository;
 
-class NodeNoteGetTool implements ToolInterface
+class DocumentNoteGetTool implements ToolInterface
 {
     public function __construct(
-        private readonly NodeNoteRepository $noteRepository,
+        private readonly DocumentNoteRepository $noteRepository,
         private readonly ServerContext $serverContext,
     ) {
     }
 
     public function getName(): string
     {
-        return 'node_note_get';
+        return 'document_note_get';
     }
 
     public function getDescription(): string
     {
-        return 'Get the full content of a node note by its XUID. Returns summary and detailed content.';
+        return 'Get the full content of a document note by its XUID. Returns summary and detailed content.';
     }
 
     public function getInputSchema(): array
@@ -62,7 +62,7 @@ class NodeNoteGetTool implements ToolInterface
             }
 
             $serverName = $this->serverContext->getServerName();
-            if ($note->getNode()->getServerName() !== $serverName) {
+            if ($note->getDocument()->getServerName() !== $serverName) {
                 return [
                     'content' => [['type' => 'text', 'text' => 'Note not found.']],
                     'isError' => true,

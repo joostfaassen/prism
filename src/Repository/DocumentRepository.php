@@ -2,22 +2,22 @@
 
 namespace App\Repository;
 
-use App\Entity\Node;
+use App\Entity\Document;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Node>
+ * @extends ServiceEntityRepository<Document>
  */
-class NodeRepository extends ServiceEntityRepository
+class DocumentRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Node::class);
+        parent::__construct($registry, Document::class);
     }
 
     /**
-     * @return list<Node>
+     * @return list<Document>
      */
     public function findByServer(string $serverName, ?string $typeName = null): array
     {
@@ -27,7 +27,7 @@ class NodeRepository extends ServiceEntityRepository
             ->orderBy('n.name', 'ASC');
 
         if ($typeName !== null) {
-            $qb->join('n.nodeType', 't')
+            $qb->join('n.documentType', 't')
                 ->andWhere('t.name = :typeName')
                 ->setParameter('typeName', $typeName);
         }
@@ -35,7 +35,7 @@ class NodeRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function findOneByServerAndName(string $serverName, string $name): ?Node
+    public function findOneByServerAndName(string $serverName, string $name): ?Document
     {
         return $this->createQueryBuilder('n')
             ->andWhere('n.serverName = :server')
@@ -46,7 +46,7 @@ class NodeRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    public function findOneByServerAndXuid(string $serverName, string $xuid): ?Node
+    public function findOneByServerAndXuid(string $serverName, string $xuid): ?Document
     {
         return $this->createQueryBuilder('n')
             ->andWhere('n.serverName = :server')
@@ -57,7 +57,7 @@ class NodeRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    public function findOneByXuid(string $xuid): ?Node
+    public function findOneByXuid(string $xuid): ?Document
     {
         return $this->findOneBy(['xuid' => $xuid]);
     }

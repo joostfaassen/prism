@@ -2,19 +2,19 @@
 
 namespace App\Entity;
 
-use App\Repository\NodeRepository;
+use App\Repository\DocumentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Xuid\Xuid;
 
-#[ORM\Entity(repositoryClass: NodeRepository::class)]
-#[ORM\Table(name: 'node')]
-#[ORM\Index(columns: ['server_name'], name: 'idx_node_server')]
-#[ORM\Index(columns: ['xuid'], name: 'idx_node_xuid')]
+#[ORM\Entity(repositoryClass: DocumentRepository::class)]
+#[ORM\Table(name: 'document')]
+#[ORM\Index(columns: ['server_name'], name: 'idx_document_server')]
+#[ORM\Index(columns: ['xuid'], name: 'idx_document_xuid')]
 #[ORM\UniqueConstraint(columns: ['server_name', 'name'])]
-class Node
+class Document
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -27,9 +27,9 @@ class Node
     #[ORM\Column(length: 64)]
     private string $serverName;
 
-    #[ORM\ManyToOne(targetEntity: NodeType::class, inversedBy: 'nodes')]
+    #[ORM\ManyToOne(targetEntity: DocumentType::class, inversedBy: 'documents')]
     #[ORM\JoinColumn(nullable: false)]
-    private NodeType $nodeType;
+    private DocumentType $documentType;
 
     #[ORM\Column(length: 255)]
     private string $name;
@@ -46,16 +46,16 @@ class Node
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
-    /** @var Collection<int, NodeNote> */
-    #[ORM\OneToMany(targetEntity: NodeNote::class, mappedBy: 'node', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** @var Collection<int, DocumentNote> */
+    #[ORM\OneToMany(targetEntity: DocumentNote::class, mappedBy: 'document', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['summary' => 'ASC'])]
     private Collection $notes;
 
-    public function __construct(string $serverName, NodeType $nodeType, string $name)
+    public function __construct(string $serverName, DocumentType $documentType, string $name)
     {
         $this->xuid = Xuid::getXuid();
         $this->serverName = $serverName;
-        $this->nodeType = $nodeType;
+        $this->documentType = $documentType;
         $this->name = $name;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
@@ -77,14 +77,14 @@ class Node
         return $this->serverName;
     }
 
-    public function getNodeType(): NodeType
+    public function getDocumentType(): DocumentType
     {
-        return $this->nodeType;
+        return $this->documentType;
     }
 
-    public function setNodeType(NodeType $nodeType): self
+    public function setDocumentType(DocumentType $documentType): self
     {
-        $this->nodeType = $nodeType;
+        $this->documentType = $documentType;
         $this->touch();
         return $this;
     }
@@ -152,13 +152,13 @@ class Node
         return $this->updatedAt;
     }
 
-    /** @return Collection<int, NodeNote> */
+    /** @return Collection<int, DocumentNote> */
     public function getNotes(): Collection
     {
         return $this->notes;
     }
 
-    public function addNote(NodeNote $note): self
+    public function addNote(DocumentNote $note): self
     {
         if (!$this->notes->contains($note)) {
             $this->notes->add($note);
@@ -167,7 +167,7 @@ class Node
         return $this;
     }
 
-    public function removeNote(NodeNote $note): self
+    public function removeNote(DocumentNote $note): self
     {
         $this->notes->removeElement($note);
         $this->touch();
@@ -182,8 +182,8 @@ class Node
         $data = [
             'xuid' => $this->xuid,
             'server_name' => $this->serverName,
-            'type' => $this->nodeType->getName(),
-            'type_xuid' => $this->nodeType->getXuid(),
+            'type' => $this->documentType->getName(),
+            'type_xuid' => $this->documentType->getXuid(),
             'name' => $this->name,
             'summary' => $this->summary,
             'config' => $this->getParsedConfig(),
@@ -193,7 +193,7 @@ class Node
 
         if ($includeNotes) {
             $data['notes'] = array_map(
-                fn(NodeNote $n) => ['xuid' => $n->getXuid(), 'summary' => $n->getSummary()],
+                fn(DocumentNote $n) => ['xuid' => $n->getXuid(), 'summary' => $n->getSummary()],
                 $this->notes->toArray(),
             );
         }

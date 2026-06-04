@@ -2,33 +2,33 @@
 
 namespace App\Repository;
 
-use App\Entity\NodeNote;
+use App\Entity\DocumentNote;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<NodeNote>
+ * @extends ServiceEntityRepository<DocumentNote>
  */
-class NodeNoteRepository extends ServiceEntityRepository
+class DocumentNoteRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, NodeNote::class);
+        parent::__construct($registry, DocumentNote::class);
     }
 
-    public function findOneByXuid(string $xuid): ?NodeNote
+    public function findOneByXuid(string $xuid): ?DocumentNote
     {
         return $this->findOneBy(['xuid' => $xuid]);
     }
 
     /**
-     * @return list<NodeNote>
+     * @return list<DocumentNote>
      */
-    public function findByNode(int $nodeId): array
+    public function findByDocument(int $documentId): array
     {
         return $this->createQueryBuilder('n')
-            ->andWhere('n.node = :nodeId')
-            ->setParameter('nodeId', $nodeId)
+            ->andWhere('n.document = :documentId')
+            ->setParameter('documentId', $documentId)
             ->orderBy('n.summary', 'ASC')
             ->getQuery()
             ->getResult();

@@ -1,5 +1,19 @@
 {% extends 'admin/server_base.html.twig' %}
 
+{% macro render_schema_type(schema) %}
+    {%- if schema.type is defined -%}
+        {{ schema.type }}{% if schema.items is defined %}[{{ _self.render_schema_type(schema.items) }}]{% endif %}
+    {%- elseif schema.oneOf is defined -%}
+        {% for sub in schema.oneOf %}{{ _self.render_schema_type(sub) }}{% if not loop.last %} | {% endif %}{% endfor %}
+    {%- elseif schema.anyOf is defined -%}
+        {% for sub in schema.anyOf %}{{ _self.render_schema_type(sub) }}{% if not loop.last %} | {% endif %}{% endfor %}
+    {%- elseif schema.enum is defined -%}
+        enum
+    {%- else -%}
+        any
+    {%- endif -%}
+{% endmacro %}
+
 {% block title %}{{ tool.name }} — {{ server.label }}{% endblock %}
 
 {% block server_page_header %}
@@ -54,7 +68,7 @@
                                         <td class="px-5 py-3 font-mono text-cyan-300 text-xs">{{ propName }}</td>
                                         <td class="px-5 py-3">
                                             <span class="font-mono text-xs text-violet-300 bg-violet-950 px-2.5 py-1 rounded">
-                                                {{ prop.type }}{% if prop.items is defined %}[{{ prop.items.type }}]{% endif %}
+                                                {{ _self.render_schema_type(prop) }}
                                             </span>
                                         </td>
                                         <td class="px-5 py-3">

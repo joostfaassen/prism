@@ -4,7 +4,7 @@
 
 Prism is a **multi-server MCP (Model Context Protocol) bridge** built on Symfony 7.2. It exposes tools for banking, email, calendars, and custom APIs over MCP so that AI clients (Cursor, Claude Desktop, etc.) can interact with them.
 
-The key design idea: you define **servers** in YAML config, each with its own bearer token and a set of **accounts**. Each account has a **type** (e.g. `bunq`, `imap`, `calendar`, `cyans`). Tools are automatically scoped to servers based on which account types that server has. This means different AI clients can connect to different servers and see different sets of tools and data — a single Prism instance serves multiple tenants.
+The key design idea: you define **servers** in YAML config, each with its own bearer token and a set of **accounts**. Each account has a **type** (e.g. `bunq`, `email`, `calendar`, `cyans`). Tools are automatically scoped to servers based on which account types that server has. This means different AI clients can connect to different servers and see different sets of tools and data — a single Prism instance serves multiple tenants.
 
 ## Architecture Overview
 
@@ -38,12 +38,12 @@ Servers are loaded by `PrismConfigLoader` and stored as `ServerConfig` objects.
 
 ### Accounts
 
-Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `imap`, `calendar`, `cyans`, `slack` (extend by adding your own).
+Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout` (extend by adding your own).
 
 Each account type has:
-- An `*AccountConfig` DTO (e.g. `ImapAccountConfig`) — typed value object for credentials
-- An `*ConfigLoader` (e.g. `ImapConfigLoader`) — reads raw YAML into DTOs, scoped to the current server via `ServerContext`
-- An `*Service` (e.g. `ImapService`) — the actual integration logic
+- An `*AccountConfig` DTO (e.g. `EmailAccountConfig`) — typed value object for credentials
+- An `*ConfigLoader` (e.g. `EmailConfigLoader`) — reads raw YAML into DTOs, scoped to the current server via `ServerContext`
+- An `*Service` (e.g. `EmailService`) — the actual integration logic
 
 ### Tools
 
@@ -92,10 +92,11 @@ src/
 │       ├── BunqListTransactionsTool.php
 │       ├── BunqGetTransactionTool.php
 │       ├── BunqGetTransactionNotesTool.php
-│       ├── ImapListAccountsTool.php
-│       ├── ImapListFoldersTool.php
-│       ├── ImapSearchTool.php
-│       ├── ImapGetMessageTool.php
+│       ├── EmailListAccountsTool.php
+│       ├── EmailListFoldersTool.php
+│       ├── EmailSearchTool.php
+│       ├── EmailGetMessagesTool.php
+│       ├── EmailSendTool.php
 │       ├── CalendarListCalendarsTool.php
 │       ├── CalendarListEventsTool.php
 │       ├── CalendarGetEventTool.php
@@ -109,15 +110,30 @@ src/
 │       ├── SlackGetThreadRepliesTool.php
 │       ├── SlackGetUnrespondedMessagesTool.php
 │       ├── SlackAddReactionTool.php
-│       └── SlackPostMessageTool.php
+│       ├── SlackPostMessageTool.php
+│       ├── FreescoutListAccountsTool.php
+│       ├── FreescoutListMailboxesTool.php
+│       ├── FreescoutListConversationsTool.php
+│       ├── FreescoutGetConversationTool.php
+│       ├── FreescoutListUsersTool.php
+│       └── FreescoutCreateThreadTool.php
 ├── Bunq/                        # bunq banking integration
 │   ├── BunqAccountConfig.php
 │   ├── BunqConfigLoader.php
 │   └── BunqService.php
-├── Imap/                        # IMAP email integration
-│   ├── ImapAccountConfig.php
-│   ├── ImapConfigLoader.php
-│   └── ImapService.php
+├── Email/                       # Email integration (IMAP read + SMTP send)
+│   ├── EmailAccountConfig.php
+│   ├── ImapConfig.php
+│   ├── SmtpConfig.php
+│   ├── EmailIdentity.php
+│   ├── EmailConfigLoader.php
+│   ├── ImapClient.php
+│   ├── SmtpMailer.php
+│   ├── MarkdownRenderer.php
+│   ├── MessageComposer.php
+│   ├── ReplyContext.php
+│   ├── ComposedMessage.php
+│   └── EmailService.php
 ├── Calendar/                    # ICS calendar integration
 │   ├── CalendarConfig.php
 │   ├── CalendarConfigLoader.php
@@ -130,6 +146,10 @@ src/
 │   ├── SlackAccountConfig.php
 │   ├── SlackConfigLoader.php
 │   └── SlackService.php
+├── Freescout/                   # Freescout helpdesk integration (REST API)
+│   ├── FreescoutAccountConfig.php
+│   ├── FreescoutConfigLoader.php
+│   └── FreescoutService.php
 └── Security/
     ├── BearerTokenAuthenticator.php  # MCP firewall: Bearer → ServerConfig
     └── EnvUserProvider.php           # Admin login from APP_AUTH_USER/PASSWORD
@@ -137,7 +157,7 @@ src/
 
 ## How to Add a New Integration
 
-Adding a new integration follows a repeatable 4-step pattern. Each existing integration (bunq, imap, calendar, cyans, slack) demonstrates this pattern.
+Adding a new integration follows a repeatable 4-step pattern. Each existing integration (bunq, email, calendar, cyans, slack) demonstrates this pattern.
 
 ### Step 1: Create the Account Config DTO
 
@@ -327,9 +347,15 @@ servers:
     accounts:
       # Add any accounts this server should have access to
       my-email:
-        type: imap
-        host: "imap.example.com"
-        # ... credentials
+        type: email
+        imap:
+          host: "imap.example.com"
+          # ... IMAP credentials
+        smtp:
+          host: "smtp.example.com"
+          # ... SMTP credentials (optional, required for email_send)
+        identity:
+          email: "user@example.com"
 ```
 
 The server instantly gets its own MCP endpoint at `/mcp/new-server` and appears in the admin dashboard.
@@ -430,7 +456,7 @@ There is currently no test suite. When adding tests, use PHPUnit with `tests/` d
 
 ## Conventions
 
-- **Tool names:** lowercase snake_case, prefixed with the account type (e.g. `bunq_list_accounts`, `imap_search`). Utility tools use a descriptive name without prefix.
+- **Tool names:** lowercase snake_case, prefixed with the account type (e.g. `bunq_list_accounts`, `email_search`). Utility tools use a descriptive name without prefix.
 - **Account type strings:** lowercase, match the `type` field in YAML config. Must be consistent between config, `*ConfigLoader`, and `ToolInterface::getAccountType()`.
 - **Tool execute() return format:** Always return `['content' => [['type' => 'text', 'text' => '...']]]`. Add `'isError' => true` for error responses. JSON-encode structured data in the text field.
 - **Error handling:** Catch exceptions in `execute()` and return MCP error format — don't let exceptions bubble up unhandled.

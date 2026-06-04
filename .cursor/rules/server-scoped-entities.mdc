@@ -53,4 +53,4 @@ public function findByServer(string $serverName): array
 
 ## Why
 
-Different MCP servers see different data. A node created on server "alpha" must not appear on server "beta". The `server_name` column enforces this at the data level.
+Different MCP servers see different data. A document created on server "alpha" must not appear on server "beta". The `server_name` column enforces this at the data level.

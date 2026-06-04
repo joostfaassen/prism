@@ -2,19 +2,19 @@
 
 namespace App\Entity;
 
-use App\Repository\NodeTypeRepository;
+use App\Repository\DocumentTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Xuid\Xuid;
 
-#[ORM\Entity(repositoryClass: NodeTypeRepository::class)]
-#[ORM\Table(name: 'node_type')]
-#[ORM\Index(columns: ['server_name'], name: 'idx_node_type_server')]
-#[ORM\Index(columns: ['xuid'], name: 'idx_node_type_xuid')]
+#[ORM\Entity(repositoryClass: DocumentTypeRepository::class)]
+#[ORM\Table(name: 'document_type')]
+#[ORM\Index(columns: ['server_name'], name: 'idx_document_type_server')]
+#[ORM\Index(columns: ['xuid'], name: 'idx_document_type_xuid')]
 #[ORM\UniqueConstraint(columns: ['server_name', 'name'])]
-class NodeType
+class DocumentType
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -42,9 +42,9 @@ class NodeType
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
-    /** @var Collection<int, Node> */
-    #[ORM\OneToMany(targetEntity: Node::class, mappedBy: 'nodeType')]
-    private Collection $nodes;
+    /** @var Collection<int, Document> */
+    #[ORM\OneToMany(targetEntity: Document::class, mappedBy: 'documentType')]
+    private Collection $documents;
 
     public function __construct(string $serverName, string $name)
     {
@@ -53,7 +53,7 @@ class NodeType
         $this->name = $name;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
-        $this->nodes = new ArrayCollection();
+        $this->documents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -124,10 +124,10 @@ class NodeType
         }
     }
 
-    /** @return Collection<int, Node> */
-    public function getNodes(): Collection
+    /** @return Collection<int, Document> */
+    public function getDocuments(): Collection
     {
-        return $this->nodes;
+        return $this->documents;
     }
 
     /**

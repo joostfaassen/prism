@@ -1,13 +1,16 @@
 # Prism — Future MCP Tools Roadmap
 
-## IMAP Mail Bridge
-- [ ] Multi-account IMAP configuration (named accounts in `.env.local`)
-- [ ] `imap_list_folders` — List all mailbox folders for a named account
-- [ ] `imap_search` — Search emails by subject, sender, date range, flags
-- [ ] `imap_fetch_message` — Fetch full email content (headers, body, attachments metadata)
-- [ ] `imap_list_recent` — List recent/unread messages in a folder
-- [ ] `imap_move_message` — Move message between folders
-- [ ] `imap_flag_message` — Set/unset flags (read, starred, etc.)
+## Email Bridge (IMAP + SMTP)
+- [x] Multi-account email configuration (`type: email` accounts in `prism.config.yaml`)
+- [x] `email_list_accounts` — List configured accounts
+- [x] `email_list_folders` — List all mailbox folders for an account
+- [x] `email_search` — Search emails by subject, sender, date range, flags
+- [x] `email_get_messages` — Fetch full email content in bulk (including single-message fetches)
+- [x] `email_send` — Send a new message or threaded reply (markdown body, save-to-Sent)
+- [ ] `email_move_message` — Move message between folders
+- [ ] `email_flag_message` — Set/unset flags (read, starred, etc.)
+- [ ] Attachment support on `email_send`
+- [ ] Drafts: `email_save_draft`
 
 ## bunq Banking Bridge
 - [ ] bunq API authentication (API key + permitted IPs config)

@@ -2,15 +2,15 @@
 
 namespace App\Entity;
 
-use App\Repository\NodeNoteRepository;
+use App\Repository\DocumentNoteRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Xuid\Xuid;
 
-#[ORM\Entity(repositoryClass: NodeNoteRepository::class)]
-#[ORM\Table(name: 'node_note')]
-#[ORM\Index(columns: ['xuid'], name: 'idx_node_note_xuid')]
-class NodeNote
+#[ORM\Entity(repositoryClass: DocumentNoteRepository::class)]
+#[ORM\Table(name: 'document_note')]
+#[ORM\Index(columns: ['xuid'], name: 'idx_document_note_xuid')]
+class DocumentNote
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -20,9 +20,9 @@ class NodeNote
     #[ORM\Column(length: 22, unique: true)]
     private string $xuid;
 
-    #[ORM\ManyToOne(targetEntity: Node::class, inversedBy: 'notes')]
+    #[ORM\ManyToOne(targetEntity: Document::class, inversedBy: 'notes')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private Node $node;
+    private Document $document;
 
     #[ORM\Column(length: 255)]
     private string $summary;
@@ -36,16 +36,16 @@ class NodeNote
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
-    public function __construct(Node $node, string $summary, string $content)
+    public function __construct(Document $document, string $summary, string $content)
     {
         $this->xuid = Xuid::getXuid();
-        $this->node = $node;
+        $this->document = $document;
         $this->summary = $summary;
         $this->content = $content;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
 
-        $node->addNote($this);
+        $document->addNote($this);
     }
 
     public function getId(): ?int
@@ -58,9 +58,9 @@ class NodeNote
         return $this->xuid;
     }
 
-    public function getNode(): Node
+    public function getDocument(): Document
     {
-        return $this->node;
+        return $this->document;
     }
 
     public function getSummary(): string
@@ -104,7 +104,7 @@ class NodeNote
     {
         return [
             'xuid' => $this->xuid,
-            'node_xuid' => $this->node->getXuid(),
+            'document_xuid' => $this->document->getXuid(),
             'summary' => $this->summary,
             'content' => $this->content,
             'created_at' => $this->createdAt->format('c'),

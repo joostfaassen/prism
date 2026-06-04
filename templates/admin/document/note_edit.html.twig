@@ -1,17 +1,17 @@
 {% extends 'admin/server_base.html.twig' %}
 
-{% block title %}{{ note ? 'Edit' : 'New' }} note — {{ node.name }} — {{ server.label }}{% endblock %}
+{% block title %}{{ note ? 'Edit' : 'New' }} note — {{ document.name }} — {{ server.label }}{% endblock %}
 
 {% block server_page_header %}
             <div class="mb-8">
                 <div class="flex items-center gap-2 mb-3">
-                    <a href="{{ path('admin_server_nodes', {serverName: server.name}) }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono flex items-center gap-1">
+                    <a href="{{ path('admin_server_documents', {serverName: server.name}) }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
-                        Nodes
+                        Documents
                     </a>
                     <span class="text-xs text-slate-700">/</span>
-                    <a href="{{ path('admin_node_show', {serverName: server.name, xuid: node.xuid}) }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono">
-                        {{ node.name }}
+                    <a href="{{ path('admin_document_show', {serverName: server.name, xuid: document.xuid}) }}" class="text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono">
+                        {{ document.name }}
                     </a>
                 </div>
                 <h1 class="text-2xl font-bold text-white">{{ note ? 'Edit note' : 'New note' }}</h1>
@@ -58,13 +58,13 @@
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                         {{ note ? 'Save Changes' : 'Create Note' }}
                     </button>
-                    <a href="{{ path('admin_node_show', {serverName: server.name, xuid: node.xuid}) }}"
+                    <a href="{{ path('admin_document_show', {serverName: server.name, xuid: document.xuid}) }}"
                        class="text-sm text-slate-400 hover:text-slate-200 transition-colors px-4 py-2.5">Cancel</a>
                 </div>
                 </form>
 
                 {% if note %}
-                <form method="post" action="{{ path('admin_node_note_delete', {serverName: server.name, nodeXuid: node.xuid, noteXuid: note.xuid}) }}" class="mt-4"
+                <form method="post" action="{{ path('admin_document_note_delete', {serverName: server.name, documentXuid: document.xuid, noteXuid: note.xuid}) }}" class="mt-4"
                       onsubmit="return confirm('Delete this note? This cannot be undone.')">
                     <button type="submit"
                             class="inline-flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors px-4 py-2.5">

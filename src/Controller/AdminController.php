@@ -318,7 +318,7 @@ class AdminController extends AbstractController
         $sample = [];
         foreach ($properties as $name => $prop) {
             $isRequired = in_array($name, $required, true);
-            $type = $prop['type'] ?? 'string';
+            $type = $this->resolveSampleType($prop);
             $description = $prop['description'] ?? '';
             $placeholder = match ($type) {
                 'integer', 'number' => '0',
@@ -344,6 +344,32 @@ class AdminController extends AbstractController
         }
 
         return implode("\n", $sample) . "\n";
+    }
+
+    /**
+     * Pick a single best-effort scalar type out of any JSON Schema fragment —
+     * including the `oneOf` / `anyOf` shapes used for fields that accept e.g.
+     * either a string or a list of strings.
+     *
+     * @param array<string, mixed> $prop
+     */
+    private function resolveSampleType(array $prop): string
+    {
+        if (isset($prop['type']) && is_string($prop['type'])) {
+            return $prop['type'];
+        }
+
+        foreach (['oneOf', 'anyOf'] as $key) {
+            if (isset($prop[$key]) && is_array($prop[$key])) {
+                foreach ($prop[$key] as $sub) {
+                    if (is_array($sub) && isset($sub['type']) && is_string($sub['type'])) {
+                        return $sub['type'];
+                    }
+                }
+            }
+        }
+
+        return 'string';
     }
 
     /**

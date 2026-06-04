@@ -4,13 +4,13 @@ namespace App\Controller;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
-use App\Entity\Node;
-use App\Entity\NodeNote;
+use App\Entity\Document;
+use App\Entity\DocumentNote;
 use App\Mcp\McpHandler;
 use App\Mcp\Tool\ToolInterface;
-use App\Repository\NodeNoteRepository;
-use App\Repository\NodeRepository;
-use App\Repository\NodeTypeRepository;
+use App\Repository\DocumentNoteRepository;
+use App\Repository\DocumentRepository;
+use App\Repository\DocumentTypeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,182 +18,182 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Yaml\Yaml;
 
-class NodeController extends AbstractController
+class DocumentController extends AbstractController
 {
     public function __construct(
         private readonly PrismConfigLoader $configLoader,
-        private readonly NodeRepository $nodeRepository,
-        private readonly NodeTypeRepository $nodeTypeRepository,
-        private readonly NodeNoteRepository $noteRepository,
+        private readonly DocumentRepository $documentRepository,
+        private readonly DocumentTypeRepository $documentTypeRepository,
+        private readonly DocumentNoteRepository $noteRepository,
         private readonly EntityManagerInterface $em,
         private readonly McpHandler $mcpHandler,
     ) {
     }
 
-    // ── Node CRUD ──────────────────────────────────────────────────
+    // ── Document CRUD ──────────────────────────────────────────────────
 
-    #[Route('/admin/server/{serverName}/nodes', name: 'admin_server_nodes', methods: ['GET'])]
+    #[Route('/admin/server/{serverName}/documents', name: 'admin_server_documents', methods: ['GET'])]
     public function list(Request $request, string $serverName): Response
     {
         $serverConfig = $this->resolveServer($serverName);
         $typeFilter = $request->query->get('type');
-        $nodes = $this->nodeRepository->findByServer($serverName, $typeFilter ?: null);
-        $types = $this->nodeTypeRepository->findByServer($serverName);
+        $documents = $this->documentRepository->findByServer($serverName, $typeFilter ?: null);
+        $types = $this->documentTypeRepository->findByServer($serverName);
 
-        return $this->render('admin/node/list.html.twig', [
+        return $this->render('admin/document/list.html.twig', [
             ...$this->navContext($serverName, $serverConfig),
-            'nodes' => $nodes,
+            'documents' => $documents,
             'types' => $types,
             'typeFilter' => $typeFilter,
-            'activeSection' => 'nodes',
+            'activeSection' => 'documents',
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/nodes/new', name: 'admin_node_new', methods: ['GET', 'POST'])]
+    #[Route('/admin/server/{serverName}/documents/new', name: 'admin_document_new', methods: ['GET', 'POST'])]
     public function new(Request $request, string $serverName): Response
     {
         $serverConfig = $this->resolveServer($serverName);
-        $types = $this->nodeTypeRepository->findByServer($serverName);
+        $types = $this->documentTypeRepository->findByServer($serverName);
 
         if ($types === []) {
-            $this->addFlash('error', 'Create at least one node type before adding nodes.');
-            return $this->redirectToRoute('admin_server_node_types', ['serverName' => $serverName]);
+            $this->addFlash('error', 'Create at least one document type before adding documents.');
+            return $this->redirectToRoute('admin_server_document_types', ['serverName' => $serverName]);
         }
 
         if ($request->isMethod('POST')) {
             return $this->handleForm($request, $serverName, null, $types);
         }
 
-        return $this->render('admin/node/edit.html.twig', [
+        return $this->render('admin/document/edit.html.twig', [
             ...$this->navContext($serverName, $serverConfig),
-            'node' => null,
+            'document' => null,
             'types' => $types,
             'errors' => [],
-            'activeSection' => 'nodes',
+            'activeSection' => 'documents',
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/nodes/{xuid}', name: 'admin_node_show', methods: ['GET'])]
+    #[Route('/admin/server/{serverName}/documents/{xuid}', name: 'admin_document_show', methods: ['GET'])]
     public function show(string $serverName, string $xuid): Response
     {
         $serverConfig = $this->resolveServer($serverName);
-        $node = $this->resolveNode($serverName, $xuid);
+        $document = $this->resolveDocument($serverName, $xuid);
 
-        return $this->render('admin/node/show.html.twig', [
+        return $this->render('admin/document/show.html.twig', [
             ...$this->navContext($serverName, $serverConfig),
-            'node' => $node,
-            'activeSection' => 'nodes',
+            'document' => $document,
+            'activeSection' => 'documents',
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/nodes/{xuid}/edit', name: 'admin_node_edit', methods: ['GET', 'POST'])]
+    #[Route('/admin/server/{serverName}/documents/{xuid}/edit', name: 'admin_document_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, string $serverName, string $xuid): Response
     {
         $serverConfig = $this->resolveServer($serverName);
-        $node = $this->resolveNode($serverName, $xuid);
-        $types = $this->nodeTypeRepository->findByServer($serverName);
+        $document = $this->resolveDocument($serverName, $xuid);
+        $types = $this->documentTypeRepository->findByServer($serverName);
 
         if ($request->isMethod('POST')) {
-            return $this->handleForm($request, $serverName, $node, $types);
+            return $this->handleForm($request, $serverName, $document, $types);
         }
 
-        return $this->render('admin/node/edit.html.twig', [
+        return $this->render('admin/document/edit.html.twig', [
             ...$this->navContext($serverName, $serverConfig),
-            'node' => $node,
+            'document' => $document,
             'types' => $types,
             'errors' => [],
-            'activeSection' => 'nodes',
+            'activeSection' => 'documents',
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/nodes/{xuid}/delete', name: 'admin_node_delete', methods: ['POST'])]
+    #[Route('/admin/server/{serverName}/documents/{xuid}/delete', name: 'admin_document_delete', methods: ['POST'])]
     public function delete(string $serverName, string $xuid): Response
     {
-        $node = $this->resolveNode($serverName, $xuid);
+        $document = $this->resolveDocument($serverName, $xuid);
 
-        $this->em->remove($node);
+        $this->em->remove($document);
         $this->em->flush();
 
-        return $this->redirectToRoute('admin_server_nodes', ['serverName' => $serverName]);
+        return $this->redirectToRoute('admin_server_documents', ['serverName' => $serverName]);
     }
 
     // ── Note CRUD ──────────────────────────────────────────────────
 
-    #[Route('/admin/server/{serverName}/nodes/{nodeXuid}/notes/new', name: 'admin_node_note_new', methods: ['GET', 'POST'])]
-    public function newNote(Request $request, string $serverName, string $nodeXuid): Response
+    #[Route('/admin/server/{serverName}/documents/{documentXuid}/notes/new', name: 'admin_document_note_new', methods: ['GET', 'POST'])]
+    public function newNote(Request $request, string $serverName, string $documentXuid): Response
     {
         $serverConfig = $this->resolveServer($serverName);
-        $node = $this->resolveNode($serverName, $nodeXuid);
+        $document = $this->resolveDocument($serverName, $documentXuid);
 
         if ($request->isMethod('POST')) {
-            return $this->handleNoteForm($request, $serverName, $node, null);
+            return $this->handleNoteForm($request, $serverName, $document, null);
         }
 
-        return $this->render('admin/node/note_edit.html.twig', [
+        return $this->render('admin/document/note_edit.html.twig', [
             ...$this->navContext($serverName, $serverConfig),
-            'node' => $node,
+            'document' => $document,
             'note' => null,
             'errors' => [],
-            'activeSection' => 'nodes',
+            'activeSection' => 'documents',
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/nodes/{nodeXuid}/notes/{noteXuid}/edit', name: 'admin_node_note_edit', methods: ['GET', 'POST'])]
-    public function editNote(Request $request, string $serverName, string $nodeXuid, string $noteXuid): Response
+    #[Route('/admin/server/{serverName}/documents/{documentXuid}/notes/{noteXuid}/edit', name: 'admin_document_note_edit', methods: ['GET', 'POST'])]
+    public function editNote(Request $request, string $serverName, string $documentXuid, string $noteXuid): Response
     {
         $serverConfig = $this->resolveServer($serverName);
-        $node = $this->resolveNode($serverName, $nodeXuid);
+        $document = $this->resolveDocument($serverName, $documentXuid);
         $note = $this->noteRepository->findOneByXuid($noteXuid);
 
-        if ($note === null || $note->getNode()->getXuid() !== $nodeXuid) {
+        if ($note === null || $note->getDocument()->getXuid() !== $documentXuid) {
             throw $this->createNotFoundException('Note not found');
         }
 
         if ($request->isMethod('POST')) {
-            return $this->handleNoteForm($request, $serverName, $node, $note);
+            return $this->handleNoteForm($request, $serverName, $document, $note);
         }
 
-        return $this->render('admin/node/note_edit.html.twig', [
+        return $this->render('admin/document/note_edit.html.twig', [
             ...$this->navContext($serverName, $serverConfig),
-            'node' => $node,
+            'document' => $document,
             'note' => $note,
             'errors' => [],
-            'activeSection' => 'nodes',
+            'activeSection' => 'documents',
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/nodes/{nodeXuid}/notes/{noteXuid}/delete', name: 'admin_node_note_delete', methods: ['POST'])]
-    public function deleteNote(string $serverName, string $nodeXuid, string $noteXuid): Response
+    #[Route('/admin/server/{serverName}/documents/{documentXuid}/notes/{noteXuid}/delete', name: 'admin_document_note_delete', methods: ['POST'])]
+    public function deleteNote(string $serverName, string $documentXuid, string $noteXuid): Response
     {
-        $node = $this->resolveNode($serverName, $nodeXuid);
+        $document = $this->resolveDocument($serverName, $documentXuid);
         $note = $this->noteRepository->findOneByXuid($noteXuid);
 
-        if ($note === null || $note->getNode()->getXuid() !== $nodeXuid) {
+        if ($note === null || $note->getDocument()->getXuid() !== $documentXuid) {
             throw $this->createNotFoundException('Note not found');
         }
 
-        $node->removeNote($note);
+        $document->removeNote($note);
         $this->em->remove($note);
         $this->em->flush();
 
-        return $this->redirectToRoute('admin_node_show', [
+        return $this->redirectToRoute('admin_document_show', [
             'serverName' => $serverName,
-            'xuid' => $nodeXuid,
+            'xuid' => $documentXuid,
         ]);
     }
 
     // ── Helpers ────────────────────────────────────────────────────
 
     /**
-     * @param list<\App\Entity\NodeType> $types
+     * @param list<\App\Entity\DocumentType> $types
      */
-    private function handleForm(Request $request, string $serverName, ?Node $node, array $types): Response
+    private function handleForm(Request $request, string $serverName, ?Document $document, array $types): Response
     {
         $serverConfig = $this->resolveServer($serverName);
         $name = trim($request->request->getString('name'));
         $summary = trim($request->request->getString('summary'));
         $config = trim($request->request->getString('config'));
-        $typeXuid = trim($request->request->getString('node_type'));
+        $typeXuid = trim($request->request->getString('document_type'));
 
         $errors = [];
 
@@ -202,7 +202,7 @@ class NodeController extends AbstractController
         }
 
         if ($typeXuid === '') {
-            $errors[] = 'Node type is required.';
+            $errors[] = 'Document type is required.';
         }
 
         $selectedType = null;
@@ -214,7 +214,7 @@ class NodeController extends AbstractController
         }
 
         if ($typeXuid !== '' && $selectedType === null) {
-            $errors[] = 'Invalid node type selected.';
+            $errors[] = 'Invalid document type selected.';
         }
 
         if ($config !== '') {
@@ -229,41 +229,41 @@ class NodeController extends AbstractController
         }
 
         if ($errors !== []) {
-            return $this->render('admin/node/edit.html.twig', [
+            return $this->render('admin/document/edit.html.twig', [
                 ...$this->navContext($serverName, $serverConfig),
-                'node' => $node,
+                'document' => $document,
                 'types' => $types,
                 'errors' => $errors,
                 'formData' => [
                     'name' => $name,
                     'summary' => $summary,
                     'config' => $config,
-                    'node_type' => $typeXuid,
+                    'document_type' => $typeXuid,
                 ],
-                'activeSection' => 'nodes',
+                'activeSection' => 'documents',
             ]);
         }
 
-        if ($node === null) {
-            $node = new Node($serverName, $selectedType, $name);
-            $this->em->persist($node);
+        if ($document === null) {
+            $document = new Document($serverName, $selectedType, $name);
+            $this->em->persist($document);
         } else {
-            $node->setName($name);
-            $node->setNodeType($selectedType);
+            $document->setName($name);
+            $document->setDocumentType($selectedType);
         }
 
-        $node->setSummary($summary ?: null);
-        $node->setConfig($config ?: null);
+        $document->setSummary($summary ?: null);
+        $document->setConfig($config ?: null);
 
         $this->em->flush();
 
-        return $this->redirectToRoute('admin_node_show', [
+        return $this->redirectToRoute('admin_document_show', [
             'serverName' => $serverName,
-            'xuid' => $node->getXuid(),
+            'xuid' => $document->getXuid(),
         ]);
     }
 
-    private function handleNoteForm(Request $request, string $serverName, Node $node, ?NodeNote $note): Response
+    private function handleNoteForm(Request $request, string $serverName, Document $document, ?DocumentNote $note): Response
     {
         $serverConfig = $this->resolveServer($serverName);
         $summary = trim($request->request->getString('summary'));
@@ -279,21 +279,21 @@ class NodeController extends AbstractController
         }
 
         if ($errors !== []) {
-            return $this->render('admin/node/note_edit.html.twig', [
+            return $this->render('admin/document/note_edit.html.twig', [
                 ...$this->navContext($serverName, $serverConfig),
-                'node' => $node,
+                'document' => $document,
                 'note' => $note,
                 'errors' => $errors,
                 'formData' => [
                     'summary' => $summary,
                     'content' => $content,
                 ],
-                'activeSection' => 'nodes',
+                'activeSection' => 'documents',
             ]);
         }
 
         if ($note === null) {
-            $note = new NodeNote($node, $summary, $content);
+            $note = new DocumentNote($document, $summary, $content);
             $this->em->persist($note);
         } else {
             $note->setSummary($summary);
@@ -302,9 +302,9 @@ class NodeController extends AbstractController
 
         $this->em->flush();
 
-        return $this->redirectToRoute('admin_node_show', [
+        return $this->redirectToRoute('admin_document_show', [
             'serverName' => $serverName,
-            'xuid' => $node->getXuid(),
+            'xuid' => $document->getXuid(),
         ]);
     }
 
@@ -317,15 +317,15 @@ class NodeController extends AbstractController
         }
     }
 
-    private function resolveNode(string $serverName, string $xuid): Node
+    private function resolveDocument(string $serverName, string $xuid): Document
     {
-        $node = $this->nodeRepository->findOneByServerAndXuid($serverName, $xuid);
+        $document = $this->documentRepository->findOneByServerAndXuid($serverName, $xuid);
 
-        if ($node === null) {
-            throw $this->createNotFoundException('Node not found');
+        if ($document === null) {
+            throw $this->createNotFoundException('Document not found');
         }
 
-        return $node;
+        return $document;
     }
 
     /**

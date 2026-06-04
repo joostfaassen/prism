@@ -3,24 +3,24 @@
 namespace App\Mcp\Tool;
 
 use App\Config\ServerContext;
-use App\Repository\NodeTypeRepository;
+use App\Repository\DocumentTypeRepository;
 
-class NodeTypeListTool implements ToolInterface
+class DocumentTypeListTool implements ToolInterface
 {
     public function __construct(
-        private readonly NodeTypeRepository $nodeTypeRepository,
+        private readonly DocumentTypeRepository $documentTypeRepository,
         private readonly ServerContext $serverContext,
     ) {
     }
 
     public function getName(): string
     {
-        return 'node_type_list';
+        return 'document_type_list';
     }
 
     public function getDescription(): string
     {
-        return 'List all node types on this server (e.g. Contact, Location, Project). Each type defines a category of nodes.';
+        return 'List all document types on this server (e.g. Contact, Location, Project). Each type defines a category of documents.';
     }
 
     public function getInputSchema(): array
@@ -40,7 +40,7 @@ class NodeTypeListTool implements ToolInterface
     {
         try {
             $serverName = $this->serverContext->getServerName();
-            $types = $this->nodeTypeRepository->findByServer($serverName);
+            $types = $this->documentTypeRepository->findByServer($serverName);
 
             $result = array_map(fn($t) => $t->toArray(), $types);
 
@@ -49,7 +49,7 @@ class NodeTypeListTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing node types: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error listing document types: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

@@ -16,7 +16,7 @@ interface ToolInterface
     public function getInputSchema(): array;
 
     /**
-     * The account type this tool operates on (e.g. 'bunq', 'imap', 'calendar', 'cyans').
+     * The account type this tool operates on (e.g. 'bunq', 'email', 'calendar', 'cyans').
      * Return null for utility tools that don't require account access.
      */
     public function getAccountType(): ?string;
