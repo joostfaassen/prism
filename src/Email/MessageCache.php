@@ -77,6 +77,77 @@ class MessageCache
         $this->emailCache->save($item);
     }
 
+    public function getMessagePointer(string $accountId, string $folder, int $uidValidity, int $uid): ?string
+    {
+        $item = $this->emailCache->getItem($this->messagePointerKey($accountId, $folder, $uidValidity, $uid));
+        if (!$item->isHit()) {
+            return null;
+        }
+
+        $value = $item->get();
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public function setMessagePointer(string $accountId, string $folder, int $uidValidity, int $uid, string $messageId): void
+    {
+        if ($messageId === '') {
+            return;
+        }
+
+        $item = $this->emailCache->getItem($this->messagePointerKey($accountId, $folder, $uidValidity, $uid));
+        $item->set($messageId);
+        $item->expiresAfter(60 * 60 * 24 * 30);
+        $this->emailCache->save($item);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getMessageContentByMessageId(
+        string $accountId,
+        string $messageId,
+        bool $includeHtml,
+        int $maxBodyChars,
+    ): ?array {
+        if ($messageId === '') {
+            return null;
+        }
+
+        $item = $this->emailCache->getItem(
+            $this->messageContentKey($accountId, $messageId, $includeHtml, $maxBodyChars),
+        );
+        if (!$item->isHit()) {
+            return null;
+        }
+
+        $value = $item->get();
+
+        return is_array($value) ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     */
+    public function setMessageContentByMessageId(
+        string $accountId,
+        string $messageId,
+        bool $includeHtml,
+        int $maxBodyChars,
+        array $message,
+    ): void {
+        if ($messageId === '') {
+            return;
+        }
+
+        $item = $this->emailCache->getItem(
+            $this->messageContentKey($accountId, $messageId, $includeHtml, $maxBodyChars),
+        );
+        $item->set($message);
+        $item->expiresAfter(60 * 60 * 24 * 30);
+        $this->emailCache->save($item);
+    }
+
     /**
      * @return array{seen: bool, flagged: bool, answered: bool}|null
      */
@@ -143,6 +214,22 @@ class MessageCache
             $this->folderHash($folder),
             $uidValidity,
             $uid,
+            $includeHtml ? 1 : 0,
+            $maxBodyChars,
+        );
+    }
+
+    private function messagePointerKey(string $accountId, string $folder, int $uidValidity, int $uid): string
+    {
+        return sprintf('email.ptr.%s.%s.%d.%d', $accountId, $this->folderHash($folder), $uidValidity, $uid);
+    }
+
+    private function messageContentKey(string $accountId, string $messageId, bool $includeHtml, int $maxBodyChars): string
+    {
+        return sprintf(
+            'email.content.%s.%s.%d.%d',
+            $accountId,
+            substr(sha1($messageId), 0, 32),
             $includeHtml ? 1 : 0,
             $maxBodyChars,
         );

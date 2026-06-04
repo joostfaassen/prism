@@ -154,6 +154,7 @@ class ImapClient
 
     /**
      * @param list<int> $uids
+     * @param array<int|string, string> $knownMessageIds
      * @return list<array<string, mixed>>
      */
     public function getMessages(
@@ -163,6 +164,7 @@ class ImapClient
         bool $includeHtml = false,
         int $maxBodyChars = 8000,
         ?callable $onProgress = null,
+        array $knownMessageIds = [],
     ): array {
         $uids = $this->normalizeUids($uids);
         if ($uids === []) {
@@ -175,29 +177,103 @@ class ImapClient
             $signature = $this->refreshFolderSignature($account, $folder, $conn);
             $resultByUid = [];
             $missUids = [];
+            $knownMessageIds = $this->normalizeKnownMessageIds($knownMessageIds);
 
             foreach ($uids as $uid) {
-                $cached = $this->messageCache->getMessageBody(
-                    $account->id,
-                    $folder,
-                    $signature->uidValidity,
-                    $uid,
-                    $includeHtml,
-                    $maxBodyChars,
-                );
+                $messageId = $knownMessageIds[$uid]
+                    ?? $this->messageCache->getMessagePointer($account->id, $folder, $signature->uidValidity, $uid);
+
+                if ($messageId !== null) {
+                    $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $messageId);
+                    $cached = $this->messageCache->getMessageContentByMessageId(
+                        $account->id,
+                        $messageId,
+                        $includeHtml,
+                        $maxBodyChars,
+                    );
+                } else {
+                    $cached = null;
+                }
+
+                if ($cached === null) {
+                    $cached = $this->messageCache->getMessageBody(
+                        $account->id,
+                        $folder,
+                        $signature->uidValidity,
+                        $uid,
+                        $includeHtml,
+                        $maxBodyChars,
+                    );
+                    $legacyMessageId = $this->messageIdFromMessage($cached);
+                    if ($legacyMessageId !== null) {
+                        $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $legacyMessageId);
+                        $this->messageCache->setMessageContentByMessageId(
+                            $account->id,
+                            $legacyMessageId,
+                            $includeHtml,
+                            $maxBodyChars,
+                            $cached,
+                        );
+                    }
+                }
+
                 if ($cached === null) {
                     $missUids[] = $uid;
                     continue;
                 }
 
-                $flags = $this->messageCache->getMessageFlags($account->id, $folder, $signature->uidValidity, $uid);
-                if ($flags !== null) {
-                    $cached['seen'] = $flags['seen'];
-                    $cached['flagged'] = $flags['flagged'];
-                    $cached['answered'] = $flags['answered'];
+                $resultByUid[$uid] = $this->withCurrentFolderState(
+                    $cached,
+                    $account->id,
+                    $folder,
+                    $signature->uidValidity,
+                    $uid,
+                );
+            }
+
+            if ($missUids !== []) {
+                foreach ($this->fetchMessageSummaries($conn, $missUids) as $summary) {
+                    $uid = (int) ($summary['uid'] ?? 0);
+                    $messageId = $this->messageIdFromMessage($summary);
+                    if ($uid <= 0 || $messageId === null) {
+                        continue;
+                    }
+
+                    $knownMessageIds[$uid] = $messageId;
+                    $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $messageId);
+
+                    $cached = $this->messageCache->getMessageContentByMessageId(
+                        $account->id,
+                        $messageId,
+                        $includeHtml,
+                        $maxBodyChars,
+                    );
+                    if ($cached === null) {
+                        continue;
+                    }
+
+                    $this->messageCache->setMessageFlags(
+                        $account->id,
+                        $folder,
+                        $signature->uidValidity,
+                        $uid,
+                        (bool) ($summary['seen'] ?? false),
+                        (bool) ($summary['flagged'] ?? false),
+                        (bool) ($summary['answered'] ?? false),
+                    );
+                    $resultByUid[$uid] = $this->withCurrentFolderState(
+                        $cached,
+                        $account->id,
+                        $folder,
+                        $signature->uidValidity,
+                        $uid,
+                    );
                 }
 
-                $resultByUid[$uid] = $cached;
+                $missUids = array_values(array_filter(
+                    $missUids,
+                    static fn (int $uid): bool => !isset($resultByUid[$uid]),
+                ));
             }
 
             if ($onProgress !== null) {
@@ -224,6 +300,18 @@ class ImapClient
 
                 $message = $this->readMessage($conn, $uid, $includeHtml, $maxBodyChars);
                 $resultByUid[$uid] = $message;
+                $messageId = (string) ($message['message_id'] ?? '');
+
+                if ($messageId !== '') {
+                    $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $messageId);
+                    $this->messageCache->setMessageContentByMessageId(
+                        $account->id,
+                        $messageId,
+                        $includeHtml,
+                        $maxBodyChars,
+                        $message,
+                    );
+                }
 
                 $this->messageCache->setMessageBody(
                     $account->id,
@@ -346,10 +434,15 @@ class ImapClient
         );
 
         $uids = [];
+        $knownMessageIds = [];
         foreach ($search['messages'] as $message) {
             $uid = (int) ($message['uid'] ?? 0);
             if ($uid > 0) {
                 $uids[] = $uid;
+                $messageId = $this->messageIdFromMessage($message);
+                if ($messageId !== null) {
+                    $knownMessageIds[$uid] = $messageId;
+                }
             }
         }
 
@@ -373,6 +466,7 @@ class ImapClient
                     $onProgress($event);
                 }
             },
+            $knownMessageIds,
         );
 
         return [
@@ -564,6 +658,56 @@ class ImapClient
     }
 
     /**
+     * @param array<int|string, string> $messageIds
+     * @return array<int, string>
+     */
+    private function normalizeKnownMessageIds(array $messageIds): array
+    {
+        $normalized = [];
+        foreach ($messageIds as $uid => $messageId) {
+            $uid = (int) $uid;
+            $messageId = $this->normalizeMessageId($messageId);
+            if ($uid > 0 && $messageId !== null) {
+                $normalized[$uid] = $messageId;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<string, mixed>|null $message
+     */
+    private function messageIdFromMessage(?array $message): ?string
+    {
+        if ($message === null) {
+            return null;
+        }
+
+        $messageId = $message['message_id'] ?? null;
+
+        return is_string($messageId) ? $this->normalizeMessageId($messageId) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     * @return array<string, mixed>
+     */
+    private function withCurrentFolderState(array $message, string $accountId, string $folder, int $uidValidity, int $uid): array
+    {
+        $message['uid'] = $uid;
+
+        $flags = $this->messageCache->getMessageFlags($accountId, $folder, $uidValidity, $uid);
+        if ($flags !== null) {
+            $message['seen'] = $flags['seen'];
+            $message['flagged'] = $flags['flagged'];
+            $message['answered'] = $flags['answered'];
+        }
+
+        return $message;
+    }
+
+    /**
      * @param list<int> $uids
      * @return list<array<string, mixed>>
      */
@@ -591,6 +735,7 @@ class ImapClient
                 'from' => $this->parseAddressString((string) ($item->from ?? '')),
                 'to' => $this->parseAddressListString((string) ($item->to ?? '')),
                 'subject' => isset($item->subject) ? $this->decodeMime((string) $item->subject) : '',
+                'message_id' => $this->normalizeMessageId($item->message_id ?? null),
                 'seen' => (bool) ($item->seen ?? false),
                 'flagged' => (bool) ($item->flagged ?? false),
                 'answered' => (bool) ($item->answered ?? false),
