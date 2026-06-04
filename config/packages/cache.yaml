@@ -17,3 +17,5 @@ framework:
         pools:
             cache.email:
                 adapter: cache.app
+            cache.slack:
+                adapter: cache.app

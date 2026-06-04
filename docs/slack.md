@@ -78,6 +78,9 @@ Every tool accepts an `account` parameter so the AI client can target the right 
 | `slack_list_messages` | Read message history in a channel with pagination |
 | `slack_get_thread_replies` | Get all replies in a message thread |
 | `slack_get_unresponded_messages` | Find messages from others you haven't replied to |
+| `slack_get_messages_with_threads` | Read messages and expand top threads in one call |
+| `slack_bulk_get_threads` | Fetch multiple threads in one request with partial success details |
+| `slack_resolve_ids` | Resolve user/channel IDs in bulk to readable metadata |
 | `slack_add_reaction` | Add an emoji reaction (e.g. `thumbsup`, `eyes`) |
 | `slack_post_message` | Post a message or thread reply |
 
@@ -85,9 +88,23 @@ Every tool accepts an `account` parameter so the AI client can target the right 
 
 1. `slack_list_accounts` → find the account key
 2. `slack_list_channels` → find the channel ID
-3. `slack_list_messages` → read recent messages
+3. `slack_get_messages_with_threads` → read recent messages with thread context in one request
 4. `slack_get_unresponded_messages` → see what needs attention
-5. `slack_add_reaction` / `slack_post_message` → respond
+5. `slack_resolve_ids` → resolve user/channel IDs for cleaner outputs when needed
+6. `slack_add_reaction` / `slack_post_message` → respond
+
+## Performance Notes
+
+- Prism caches frequently repeated Slack reads:
+  - account auth info and user id
+  - channel list snapshots
+  - workspace directory snapshots
+  - short-lived message/thread pages
+- Cache entries for channel/thread reads are invalidated after `slack_post_message` and `slack_add_reaction` by bumping an internal channel version key.
+- For agent usage, prefer:
+  - `slack_get_messages_with_threads` over separate `slack_list_messages` + repeated `slack_get_thread_replies`
+  - `slack_bulk_get_threads` when expanding many threads
+  - `slack_resolve_ids` when resolving many IDs in one request
 
 ## Troubleshooting
 

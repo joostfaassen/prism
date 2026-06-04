@@ -50,6 +50,10 @@ services:
         arguments:
             $emailCache: '@cache.email'
 
+    App\Slack\SlackCache:
+        arguments:
+            $slackCache: '@cache.slack'
+
     _instanceof:
         App\Mcp\Tool\ToolInterface:
             tags: ['app.mcp_tool']
