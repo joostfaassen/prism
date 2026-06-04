@@ -46,6 +46,10 @@ services:
         arguments:
             $clients: !tagged_iterator app.agent_notify_client
 
+    App\Email\MessageCache:
+        arguments:
+            $emailCache: '@cache.email'
+
     _instanceof:
         App\Mcp\Tool\ToolInterface:
             tags: ['app.mcp_tool']
