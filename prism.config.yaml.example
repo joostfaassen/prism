@@ -26,6 +26,12 @@ servers:
         # User OAuth Token (xoxp-...) — actions appear as you.
         # See setup instructions below.
         token: "xoxp-replace-with-your-user-token"
+      demo-libredesk:
+        type: libredesk
+        label: "Example Libredesk"
+        base_url: "https://desk.example.com"
+        api_key: "replace-with-your-libredesk-api-key"
+        api_secret: "replace-with-your-libredesk-api-secret"
 
 # ──────────────────────────────────────────────────────────────────────
 # Slack Setup Instructions
@@ -71,3 +77,63 @@ servers:
 #
 # Note: Use a User OAuth Token (xoxp-...), NOT a Bot Token (xoxb-...),
 # so that messages and reactions appear as you, not as a bot.
+
+# ──────────────────────────────────────────────────────────────────────
+# Libredesk Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. In your Libredesk instance, go to Admin → Teammates → Agent → Edit
+#    and generate a new API key. Save both the API Key and API Secret.
+#
+# 2. Copy the API key into `api_key` and the API secret into `api_secret`.
+#
+# 3. Set `base_url` to your Libredesk instance URL (no trailing slash,
+#    no /api suffix — e.g. "https://desk.example.com"). Requests are sent
+#    to {base_url}/api/v1/... and authenticate with the
+#    "Authorization: token api_key:api_secret" scheme.
+#
+# 4. Available tools:
+#    - libredesk_list_accounts        — list configured Libredesk accounts
+#    - libredesk_list_conversations   — list conversations by view
+#                                       (all, unassigned, team_unassigned,
+#                                        assigned)
+#    - libredesk_search_conversations — full-text search (min 3 chars)
+#    - libredesk_get_conversation     — get a conversation (identified by
+#                                       UUID) with messages, in multiple
+#                                       formats:
+#        • "simple" — clean JSON (default)
+#        • "text"   — plain text for easy reading
+#        • "convo"  — structured with participants & typed messages
+#        • "full"   — raw API response (conversation + messages)
+#    - libredesk_send_message         — reply to a contact or add an
+#                                       internal note (private=true)
+#    - libredesk_upsert_draft         — stage a DRAFT reply WITHOUT sending;
+#                                       it pre-fills the reply editor of the
+#                                       agent owning this account's API key,
+#                                       to review and send manually
+#    - libredesk_get_draft            — read the currently staged draft
+#    - libredesk_delete_draft         — discard the staged draft
+#    - libredesk_update_status        — change conversation status
+#                                       (Open, Resolved, Closed, Snoozed)
+#    - libredesk_list_agents          — list agents/teammates
+#    - libredesk_list_teams           — list teams
+#
+#    Note: the draft tools require a Libredesk build from late December 2025
+#    or newer (conversation drafts API). The draft is per-agent — use the API
+#    key of the agent who should see and send it.
+#
+# 5. Multiple Libredesk instances can be configured:
+#
+#    accounts:
+#      main-desk:
+#        type: libredesk
+#        label: "Main Desk"
+#        base_url: "https://desk.example.com"
+#        api_key: "key-for-main-instance"
+#        api_secret: "secret-for-main-instance"
+#      dev-desk:
+#        type: libredesk
+#        label: "Dev Desk"
+#        base_url: "https://dev-desk.example.com"
+#        api_key: "key-for-dev-instance"
+#        api_secret: "secret-for-dev-instance"
