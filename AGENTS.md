@@ -38,7 +38,7 @@ Servers are loaded by `PrismConfigLoader` and stored as `ServerConfig` objects.
 
 ### Accounts
 
-Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk` (extend by adding your own).
+Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo` (extend by adding your own).
 
 Each account type has:
 - An `*AccountConfig` DTO (e.g. `EmailAccountConfig`) — typed value object for credentials
@@ -127,7 +127,12 @@ src/
 │       ├── LibredeskDeleteDraftTool.php
 │       ├── LibredeskUpdateStatusTool.php
 │       ├── LibredeskListAgentsTool.php
-│       └── LibredeskListTeamsTool.php
+│       ├── LibredeskListTeamsTool.php
+│       ├── MatomoListAccountsTool.php
+│       ├── MatomoListSitesTool.php
+│       ├── MatomoGetVisitsSummaryTool.php
+│       ├── MatomoGetTopPagesTool.php
+│       └── MatomoGetReportTool.php
 ├── Bunq/                        # bunq banking integration
 │   ├── BunqAccountConfig.php
 │   ├── BunqConfigLoader.php
@@ -165,6 +170,10 @@ src/
 │   ├── LibredeskAccountConfig.php
 │   ├── LibredeskConfigLoader.php
 │   └── LibredeskService.php
+├── Matomo/                      # Matomo analytics integration (Reporting API)
+│   ├── MatomoAccountConfig.php
+│   ├── MatomoConfigLoader.php
+│   └── MatomoService.php
 └── Security/
     ├── BearerTokenAuthenticator.php  # MCP firewall: Bearer → ServerConfig
     └── EnvUserProvider.php           # Admin login from APP_AUTH_USER/PASSWORD

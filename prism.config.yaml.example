@@ -32,6 +32,13 @@ servers:
         base_url: "https://desk.example.com"
         api_key: "replace-with-your-libredesk-api-key"
         api_secret: "replace-with-your-libredesk-api-secret"
+      demo-matomo:
+        type: matomo
+        label: "Example Matomo analytics"
+        base_url: "https://analytics.example.com"
+        token_auth: "replace-with-your-matomo-api-token"
+        # Optional: default site id used when a tool call omits idSite.
+        default_id_site: 1
 
 # ──────────────────────────────────────────────────────────────────────
 # Slack Setup Instructions
@@ -137,3 +144,50 @@ servers:
 #        base_url: "https://dev-desk.example.com"
 #        api_key: "key-for-dev-instance"
 #        api_secret: "secret-for-dev-instance"
+
+# ──────────────────────────────────────────────────────────────────────
+# Matomo Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. In your self-hosted Matomo, go to Administration (gear icon) →
+#    Personal → Security → "Auth tokens" and create a new token.
+#    Prefer a token from a user that only has view access to the sites
+#    you want to expose.
+#
+# 2. Copy the token into `token_auth` above, and set `base_url` to your
+#    Matomo URL (no trailing slash, no /index.php — e.g.
+#    "https://analytics.example.com"). Requests are sent as POST to
+#    {base_url}/index.php so the token is never placed in the URL.
+#
+# 3. Optionally set `default_id_site` so tools can be called without an
+#    explicit idSite. Discover site ids with the matomo_list_sites tool.
+#
+# 4. Available tools:
+#    - matomo_list_accounts       — list configured Matomo accounts
+#    - matomo_list_sites          — list sites (idsite, name, URL) the
+#                                   token can view
+#    - matomo_get_visits_summary  — visits, unique visitors, pageviews,
+#                                   bounce rate, etc. for a site/period
+#    - matomo_get_top_pages       — most visited page URLs for a
+#                                   site/period
+#    - matomo_get_report          — run any read-only Reporting API
+#                                   "Module.get..." method for ad-hoc
+#                                   queries (e.g. Referrers.getReferrerType)
+#
+#    period is one of day/week/month/year/range; date accepts values like
+#    "today", "yesterday", "2026-06-01", "last7", or "2026-05-01,2026-05-31".
+#
+# 5. Multiple Matomo instances can be configured:
+#
+#    accounts:
+#      main-analytics:
+#        type: matomo
+#        label: "Main Analytics"
+#        base_url: "https://analytics.example.com"
+#        token_auth: "token-for-main-instance"
+#        default_id_site: 1
+#      staging-analytics:
+#        type: matomo
+#        label: "Staging Analytics"
+#        base_url: "https://analytics-staging.example.com"
+#        token_auth: "token-for-staging-instance"
