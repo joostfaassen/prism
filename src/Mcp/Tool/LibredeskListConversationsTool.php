@@ -26,6 +26,12 @@ List conversations in a Libredesk instance. Choose a view:
 - "team_unassigned": assigned to a team but no agent yet
 - "assigned": assigned to the current API key's agent
 
+Optional server-side filters narrow the list before pagination:
+- "inbox_id": only conversations in that inbox (each inbox is a separate support desk)
+- "team_id": only conversations assigned to that team
+- "status": only conversations with that status name (e.g. "Open", "Resolved", "Closed", "Snoozed")
+- "order_by" + "order": sort by a conversation field (e.g. "created_at", "last_message_at") ascending or descending; combine order_by=created_at + order=asc to get the oldest first.
+
 Returns conversation summaries with UUID, subject, status, contact, and last message.
 Use the UUID with libredesk_get_conversation, libredesk_send_message, etc.
 DESC;
@@ -53,6 +59,27 @@ DESC;
                     'type' => 'integer',
                     'description' => 'Results per page (default 30, max 100)',
                 ],
+                'inbox_id' => [
+                    'type' => 'integer',
+                    'description' => 'Filter to a single inbox (support desk) by its numeric ID',
+                ],
+                'team_id' => [
+                    'type' => 'integer',
+                    'description' => 'Filter to conversations assigned to this team ID',
+                ],
+                'status' => [
+                    'type' => 'string',
+                    'description' => 'Filter by status name (e.g. Open, Resolved, Closed, Snoozed)',
+                ],
+                'order_by' => [
+                    'type' => 'string',
+                    'description' => 'Sort field, e.g. created_at, last_message_at, last_interaction_at, waiting_since',
+                ],
+                'order' => [
+                    'type' => 'string',
+                    'description' => 'Sort direction: asc or desc (default desc)',
+                    'enum' => ['asc', 'desc'],
+                ],
             ],
             'required' => ['account'],
         ];
@@ -76,9 +103,24 @@ DESC;
         $view = $arguments['view'] ?? 'all';
         $page = (int) ($arguments['page'] ?? 1);
         $pageSize = min((int) ($arguments['page_size'] ?? 30), 100);
+        $inboxId = isset($arguments['inbox_id']) ? (int) $arguments['inbox_id'] : null;
+        $teamId = isset($arguments['team_id']) ? (int) $arguments['team_id'] : null;
+        $status = isset($arguments['status']) ? (string) $arguments['status'] : null;
+        $orderBy = isset($arguments['order_by']) ? (string) $arguments['order_by'] : null;
+        $order = isset($arguments['order']) ? (string) $arguments['order'] : null;
 
         try {
-            $result = $this->libredeskService->listConversations($accountKey, $view, $page, $pageSize);
+            $result = $this->libredeskService->listConversations(
+                $accountKey,
+                $view,
+                $page,
+                $pageSize,
+                $inboxId,
+                $teamId,
+                $status,
+                $orderBy,
+                $order,
+            );
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

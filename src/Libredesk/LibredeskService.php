@@ -40,6 +40,11 @@ class LibredeskService
         string $view = 'all',
         int $page = 1,
         int $pageSize = 30,
+        ?int $inboxId = null,
+        ?int $teamId = null,
+        ?string $status = null,
+        ?string $orderBy = null,
+        ?string $order = null,
     ): array {
         $endpoint = match ($view) {
             'unassigned' => 'conversations/unassigned',
@@ -48,10 +53,44 @@ class LibredeskService
             default => 'conversations/all',
         };
 
-        $data = $this->request($accountKey, 'GET', $endpoint, [
+        $query = [
             'page' => $page,
             'page_size' => min($pageSize, 100),
-        ]);
+        ];
+
+        // Build Libredesk server-side filters (JSON array of {model, field,
+        // operator, value}). Allowed conversation fields include inbox_id and
+        // assigned_team_id; status is matched by name via conversation_statuses.
+        $filters = [];
+        if ($inboxId !== null) {
+            $filters[] = ['model' => 'conversations', 'field' => 'inbox_id', 'operator' => 'equals', 'value' => (string) $inboxId];
+        }
+        if ($teamId !== null) {
+            $filters[] = ['model' => 'conversations', 'field' => 'assigned_team_id', 'operator' => 'equals', 'value' => (string) $teamId];
+        }
+        if ($status !== null && $status !== '') {
+            $filters[] = ['model' => 'conversation_statuses', 'field' => 'name', 'operator' => 'equals', 'value' => $status];
+        }
+        if ($filters !== []) {
+            $query['filters'] = json_encode($filters, JSON_THROW_ON_ERROR);
+        }
+
+        // Ordering. Accept a bare conversation column (e.g. "created_at") and
+        // qualify it with the conversations model as Libredesk expects.
+        if ($orderBy !== null && $orderBy !== '') {
+            $allowedOrderFields = [
+                'created_at', 'last_message_at', 'last_interaction_at',
+                'waiting_since', 'next_sla_deadline_at', 'priority_id', 'status_id',
+            ];
+            $orderField = str_contains($orderBy, '.') ? explode('.', $orderBy)[1] : $orderBy;
+            if (in_array($orderField, $allowedOrderFields, true)) {
+                $query['order_by'] = 'conversations.' . $orderField;
+                $orderDir = strtolower((string) $order);
+                $query['order'] = $orderDir === 'asc' ? 'asc' : 'desc';
+            }
+        }
+
+        $data = $this->request($accountKey, 'GET', $endpoint, $query);
 
         $payload = $data['data'] ?? [];
         $conversations = [];
@@ -415,11 +454,13 @@ class LibredeskService
         string $content,
         ?array $meta = null,
     ): array {
-        $body = ['content' => $content];
-
-        if ($meta !== null) {
-            $body['meta'] = $meta;
-        }
+        // Libredesk's conversation_drafts.meta column is JSONB NOT NULL, so we
+        // must always send a meta object. Omitting it makes Libredesk insert
+        // SQL NULL, which violates the NOT NULL constraint and returns HTTP 500.
+        $body = [
+            'content' => $content,
+            'meta' => $meta ?? (object) [],
+        ];
 
         $data = $this->request($accountKey, 'POST', "conversations/{$uuid}/draft", [], $body);
 
@@ -433,9 +474,23 @@ class LibredeskService
      */
     public function getDraft(string $accountKey, string $uuid): array
     {
-        $data = $this->request($accountKey, 'GET', "conversations/{$uuid}/draft");
+        // Libredesk has no per-conversation GET draft route; it only exposes
+        // GET /api/v1/drafts (all drafts for the API key's agent). We fetch
+        // those and filter by conversation UUID.
+        $data = $this->request($accountKey, 'GET', 'drafts');
+        $drafts = $data['data'] ?? $data;
 
-        return $data['data'] ?? $data;
+        if (!is_array($drafts)) {
+            return [];
+        }
+
+        foreach ($drafts as $draft) {
+            if (is_array($draft) && ($draft['conversation_uuid'] ?? null) === $uuid) {
+                return $draft;
+            }
+        }
+
+        return [];
     }
 
     /**
