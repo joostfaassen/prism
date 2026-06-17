@@ -112,8 +112,10 @@ servers:
 #        • "text"   — plain text for easy reading
 #        • "convo"  — structured with participants & typed messages
 #        • "full"   — raw API response (conversation + messages)
-#    - libredesk_send_message         — reply to a contact or add an
-#                                       internal note (private=true)
+#    - libredesk_reply                — send a reply that IS delivered to
+#                                       the contact
+#    - libredesk_add_note             — add an internal private note,
+#                                       visible to agents only
 #    - libredesk_upsert_draft         — stage a DRAFT reply WITHOUT sending;
 #                                       it pre-fills the reply editor of the
 #                                       agent owning this account's API key,

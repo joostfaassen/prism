@@ -27,7 +27,7 @@ pre-fills their reply editor so they can review, tweak, and send it manually. Sa
 again overwrites any existing draft for that agent on this conversation. Sending a
 message clears the draft.
 
-Use this instead of libredesk_send_message when a human should approve/send the reply.
+Use this instead of libredesk_reply when a human should approve/send the reply.
 
 Requires a Libredesk build from late December 2025 or newer (conversation drafts API).
 DESC;

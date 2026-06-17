@@ -33,7 +33,7 @@ Optional server-side filters narrow the list before pagination:
 - "order_by" + "order": sort by a conversation field (e.g. "created_at", "last_message_at") ascending or descending; combine order_by=created_at + order=asc to get the oldest first.
 
 Returns conversation summaries with UUID, subject, status, contact, and last message.
-Use the UUID with libredesk_get_conversation, libredesk_send_message, etc.
+Use the UUID with libredesk_get_conversation, libredesk_reply, libredesk_add_note, etc.
 DESC;
     }
 

@@ -121,7 +121,8 @@ src/
 │       ├── LibredeskListConversationsTool.php
 │       ├── LibredeskSearchConversationsTool.php
 │       ├── LibredeskGetConversationTool.php
-│       ├── LibredeskSendMessageTool.php
+│       ├── LibredeskReplyTool.php
+│       ├── LibredeskAddNoteTool.php
 │       ├── LibredeskUpsertDraftTool.php
 │       ├── LibredeskGetDraftTool.php
 │       ├── LibredeskDeleteDraftTool.php

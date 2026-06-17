@@ -4,7 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Libredesk\LibredeskService;
 
-class LibredeskSendMessageTool implements ToolInterface
+class LibredeskReplyTool implements ToolInterface
 {
     public function __construct(
         private readonly LibredeskService $libredeskService,
@@ -13,16 +13,16 @@ class LibredeskSendMessageTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'libredesk_send_message';
+        return 'libredesk_reply';
     }
 
     public function getDescription(): string
     {
         return <<<'DESC'
-Send a message on a Libredesk conversation (identified by UUID).
+Send a reply to the contact on a Libredesk conversation (identified by UUID).
 
-- Default: a reply sent to the contact (sender_type "agent").
-- Set private=true to add an internal note visible only to agents.
+This message IS delivered to the contact (sender_type "agent"). To add an
+internal note that is only visible to agents, use libredesk_add_note instead.
 
 Optionally override the to/cc/bcc recipients. If omitted, Libredesk uses the
 conversation's existing recipients.
@@ -40,15 +40,11 @@ DESC;
                 ],
                 'uuid' => [
                     'type' => 'string',
-                    'description' => 'Conversation UUID to post the message to',
+                    'description' => 'Conversation UUID to reply to',
                 ],
                 'message' => [
                     'type' => 'string',
-                    'description' => 'Message body (HTML or plain text)',
-                ],
-                'private' => [
-                    'type' => 'boolean',
-                    'description' => 'Set to true for an internal note (default: false = reply to contact)',
+                    'description' => 'Reply body (HTML or plain text)',
                 ],
                 'to' => [
                     'type' => 'array',
@@ -88,7 +84,6 @@ DESC;
             ];
         }
 
-        $private = (bool) ($arguments['private'] ?? false);
         $to = $this->stringList($arguments['to'] ?? []);
         $cc = $this->stringList($arguments['cc'] ?? []);
         $bcc = $this->stringList($arguments['bcc'] ?? []);
@@ -98,7 +93,7 @@ DESC;
                 accountKey: $accountKey,
                 uuid: $uuid,
                 message: $message,
-                private: $private,
+                private: false,
                 to: $to,
                 cc: $cc,
                 bcc: $bcc,
