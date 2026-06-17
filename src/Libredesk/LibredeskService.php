@@ -398,6 +398,36 @@ class LibredeskService
     }
 
     /**
+     * List all macros configured in the Libredesk instance.
+     *
+     * Requires only an authenticated API key (any enabled agent). Returns the
+     * macro id, name, reply template, configured actions, and visibility.
+     *
+     * @return array<string, mixed>
+     */
+    public function listMacros(string $accountKey): array
+    {
+        $data = $this->request($accountKey, 'GET', 'macros');
+
+        $macros = [];
+        foreach ($this->flattenData($data) as $macro) {
+            $macros[] = [
+                'id' => $macro['id'] ?? null,
+                'name' => $macro['name'] ?? null,
+                'message_content' => $macro['message_content'] ?? null,
+                'actions' => $macro['actions'] ?? [],
+                'visibility' => $macro['visibility'] ?? null,
+                'visible_when' => $macro['visible_when'] ?? [],
+                'user_id' => $macro['user_id'] ?? null,
+                'team_id' => $macro['team_id'] ?? null,
+                'usage_count' => $macro['usage_count'] ?? null,
+            ];
+        }
+
+        return ['count' => count($macros), 'macros' => $macros];
+    }
+
+    /**
      * Send a message (reply to contact or internal note) on a conversation.
      *
      * @param list<string> $to
