@@ -39,6 +39,12 @@ servers:
         token_auth: "replace-with-your-matomo-api-token"
         # Optional: default site id used when a tool call omits idSite.
         default_id_site: 1
+      demo-sendgrid:
+        type: sendgrid
+        label: "Example SendGrid"
+        api_key: "replace-with-your-sendgrid-api-key"
+        # Optional: use "https://api.eu.sendgrid.com" for EU regional accounts.
+        base_url: "https://api.sendgrid.com"
 
 # ──────────────────────────────────────────────────────────────────────
 # Slack Setup Instructions
@@ -193,3 +199,51 @@ servers:
 #        label: "Staging Analytics"
 #        base_url: "https://analytics-staging.example.com"
 #        token_auth: "token-for-staging-instance"
+
+# ──────────────────────────────────────────────────────────────────────
+# SendGrid Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. In your SendGrid account, go to Settings → API Keys → "Create API Key".
+#    A read-only key with "Stats" (and "Marketing" for Single Send stats)
+#    permission is enough for these tools. Copy the key into `api_key`.
+#
+# 2. Set `base_url` to "https://api.sendgrid.com" (global) or
+#    "https://api.eu.sendgrid.com" (EU regional accounts). Requests send the
+#    key as an "Authorization: Bearer <api_key>" header, never in the URL.
+#
+# 3. Available tools:
+#    - sendgrid_list_accounts           — list configured SendGrid accounts
+#    - sendgrid_get_global_stats        — totals over a period: requests,
+#                                         delivered, opens, unique_opens,
+#                                         clicks, unique_clicks, unsubscribes,
+#                                         bounces, spam_reports, blocks, …
+#                                         optionally bucketed day/week/month
+#    - sendgrid_get_category_stats      — stats per named category
+#                                         (categories often tag emails by
+#                                         template/campaign), time-bucketed
+#    - sendgrid_get_category_stats_sums — categories ranked by a metric
+#                                         (e.g. which categories/templates
+#                                         drove the most clicks)
+#    - sendgrid_list_single_sends       — list Marketing Single Sends
+#                                         (id + name) to find a campaign id
+#    - sendgrid_get_single_send_stats   — per-campaign stats (all or one id)
+#    - sendgrid_get                     — flexible read-only GET against any
+#                                         "/v3/..." endpoint (e.g. geo/stats,
+#                                         devices/stats, mailbox_providers/stats)
+#
+#    Dates use YYYY-MM-DD; aggregated_by is one of day/week/month (or
+#    total/day for single sends).
+#
+# 4. Multiple SendGrid accounts (e.g. several subusers or regions) can be
+#    configured:
+#
+#    accounts:
+#      marketing-sendgrid:
+#        type: sendgrid
+#        label: "Marketing"
+#        api_key: "key-for-marketing-account"
+#      transactional-sendgrid:
+#        type: sendgrid
+#        label: "Transactional"
+#        api_key: "key-for-transactional-account"
