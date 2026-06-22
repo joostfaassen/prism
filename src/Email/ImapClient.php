@@ -576,6 +576,37 @@ class ImapClient
         return $this->getMessage($account, $folder, $uid, includeHtml: true, maxBodyChars: 200000);
     }
 
+    /**
+     * Fetch the complete, unparsed RFC822/MIME source for a single message.
+     *
+     * Returns the raw bytes exactly as stored on the server (headers + body,
+     * including base64/quoted-printable encoded attachment parts). Uses FT_PEEK
+     * so the \Seen flag is not affected.
+     */
+    public function getRawMessage(EmailAccountConfig $account, string $folder, int $uid): string
+    {
+        $conn = $this->connect($account, $folder);
+
+        try {
+            $header = @imap_fetchheader($conn, $uid, FT_UID | FT_PREFETCHTEXT);
+            $body = @imap_body($conn, $uid, FT_UID | FT_PEEK);
+
+            if ($header === false || $body === false) {
+                $errors = imap_errors() ?: [];
+                throw new \RuntimeException(sprintf(
+                    'Failed to fetch raw message UID %d from "%s": %s',
+                    $uid,
+                    $folder,
+                    implode('; ', $errors) ?: 'message not found',
+                ));
+            }
+
+            return $header . $body;
+        } finally {
+            imap_close($conn);
+        }
+    }
+
     public function appendToFolder(
         EmailAccountConfig $account,
         string $folder,

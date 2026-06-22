@@ -113,6 +113,19 @@ class EmailService
     }
 
     /**
+     * Fetch the complete, unparsed RFC822/MIME source for a single message,
+     * e.g. so clients can extract attachments or inspect raw headers.
+     */
+    public function getRawMessage(string $accountId, string $folder, int $uid): string
+    {
+        return $this->imap->getRawMessage(
+            $this->configLoader->getAccount($accountId),
+            $folder,
+            $uid,
+        );
+    }
+
+    /**
      * @param list<int> $uids
      * @return list<array<string, mixed>>
      */
