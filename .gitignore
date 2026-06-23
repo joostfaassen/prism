@@ -23,3 +23,5 @@ yarn-error.log
 
 docker-compose.yml
 prism.config.yaml
+prism.*.yaml
+!prism.config.yaml.example
