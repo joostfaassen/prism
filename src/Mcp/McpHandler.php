@@ -85,8 +85,10 @@ class McpHandler
 
         return array_values(array_filter(
             $this->toolMap,
-            fn(ToolInterface $tool) => $tool->getAccountType() === null
-                || $server->hasAccountType($tool->getAccountType()),
+            fn(ToolInterface $tool) => (
+                $tool->getAccountType() === null
+                || $server->hasAccountType($tool->getAccountType())
+            ) && $server->isToolAllowed($tool->getName(), $tool->getAccountType()),
         ));
     }
 

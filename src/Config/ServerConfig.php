@@ -71,4 +71,68 @@ class ServerConfig
     {
         return in_array($type, $this->getAccountTypes(), true);
     }
+
+    /**
+     * Decide whether a tool is exposed on this server.
+     *
+     * Accounts may declare an optional `tools` allowlist (a list of tool-name
+     * patterns, with `*`/`?` wildcards) to restrict which of their type's tools
+     * are exposed. The allowlist is collected across every account of the tool's
+     * type:
+     *
+     *  - If no account of that type declares a `tools` list, all of that type's
+     *    tools are exposed (backwards compatible).
+     *  - Otherwise, the tool is exposed only if its name matches at least one
+     *    pattern from the union of those allowlists.
+     *
+     * Utility tools (those without an account type) are always allowed.
+     */
+    public function isToolAllowed(string $toolName, ?string $accountType): bool
+    {
+        if ($accountType === null) {
+            return true;
+        }
+
+        $patterns = [];
+        $hasAllowlist = false;
+
+        foreach ($this->getAccountsByType($accountType) as $account) {
+            if (!array_key_exists('tools', $account)) {
+                continue;
+            }
+
+            $hasAllowlist = true;
+            foreach ((array) $account['tools'] as $pattern) {
+                if (is_string($pattern) && $pattern !== '') {
+                    $patterns[] = $pattern;
+                }
+            }
+        }
+
+        if (!$hasAllowlist) {
+            return true;
+        }
+
+        foreach ($patterns as $pattern) {
+            if ($this->matchesPattern($toolName, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Match a tool name against a glob-style pattern supporting `*` and `?`.
+     */
+    private function matchesPattern(string $name, string $pattern): bool
+    {
+        if ($pattern === $name) {
+            return true;
+        }
+
+        $regex = '/^' . str_replace(['\*', '\?'], ['.*', '.'], preg_quote($pattern, '/')) . '$/';
+
+        return preg_match($regex, $name) === 1;
+    }
 }
