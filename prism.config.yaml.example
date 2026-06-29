@@ -50,6 +50,17 @@ servers:
         label: "Example n8n automation"
         base_url: "https://n8n.example.com"
         api_key: "replace-with-your-n8n-api-key"
+      demo-browserless:
+        type: browserless
+        label: "Example Browserless (self-hosted)"
+        # Base URL of your Browserless v2 container (no trailing slash, no path —
+        # e.g. "http://browserless:3000" inside Docker, or your public URL).
+        base_url: "https://browserless.example.com"
+        # The TOKEN configured on the Browserless container. Passed as ?token=.
+        token: "replace-with-your-browserless-token"
+        # Optional: per-request timeout in seconds (default 120). Raise it if
+        # Lighthouse audits or heavy pages take longer than two minutes.
+        # timeout: 180
       demo-apify:
         type: apify
         label: "Example Apify account"
@@ -430,6 +441,52 @@ servers:
 #        label: "Staging"
 #        base_url: "https://n8n-staging.example.com"
 #        api_key: "key-for-staging-instance"
+
+# ──────────────────────────────────────────────────────────────────────
+# Browserless Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# Browserless runs a real headless Chrome behind a small REST API. Self-host
+# it with Docker, for example:
+#
+#    docker run -d --name browserless -p 3000:3000 \
+#      -e "TOKEN=replace-with-a-long-random-secret" \
+#      -e "TIMEOUT=120000" \
+#      ghcr.io/browserless/chromium
+#
+# 1. Set `base_url` to your instance URL with no trailing slash and no path
+#    (e.g. "http://browserless:3000" inside a Docker network, or your public
+#    HTTPS URL). Set `token` to the TOKEN you configured on the container.
+#    The token is sent as a "?token=" query parameter on every request.
+#
+# 2. Optionally set `timeout` (seconds, default 120) — the per-request timeout
+#    Prism waits for. Bump it for slow pages or Lighthouse audits.
+#
+# 3. Available tools:
+#    - browserless_list_accounts — list configured Browserless instances
+#    - browserless_screenshot    — render a page and return a PNG/JPEG image
+#                                  (full_page, viewport width/height, type/quality)
+#    - browserless_content       — return the fully rendered HTML of a page
+#                                  (runs JavaScript, unlike a plain HTTP fetch)
+#    - browserless_pdf           — render a page to PDF (base64), with format,
+#                                  landscape and print_background options
+#    - browserless_performance   — run a Lighthouse audit; returns category
+#                                  scores + core web vitals (full=true for the
+#                                  complete report, categories to narrow it)
+#
+# 4. Multiple Browserless instances can be configured:
+#
+#    accounts:
+#      main-browserless:
+#        type: browserless
+#        label: "Main"
+#        base_url: "http://browserless:3000"
+#        token: "token-for-main-instance"
+#      eu-browserless:
+#        type: browserless
+#        label: "EU"
+#        base_url: "https://browserless-eu.example.com"
+#        token: "token-for-eu-instance"
 
 # ──────────────────────────────────────────────────────────────────────
 # Apify Setup Instructions
