@@ -162,6 +162,7 @@ Each tab and tool detail page has its own URL for bookmarking.
 | `calendar` | `ics_url`, `summary` | Any ICS/iCal feed (Google Calendar, etc.) |
 | `cyans` | `dsn`, `username` | [Cyans](https://cyans.linkorb.com/) topic tracking API |
 | `picnic` | `username`, `password`, `country_code` | [Picnic](https://picnic.app/) grocery delivery (unofficial API) |
+| `instagram` | `ig_user_id`, `access_token`, `app_id`, `app_secret` | [Instagram Graph API](https://developers.facebook.com/docs/instagram-platform) — profile, insights, comments, hashtag search, business discovery, publishing (see [docs/instagram.md](docs/instagram.md)) |
 
 ## Tech Stack
 

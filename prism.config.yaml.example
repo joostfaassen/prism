@@ -45,6 +45,148 @@ servers:
         api_key: "replace-with-your-sendgrid-api-key"
         # Optional: use "https://api.eu.sendgrid.com" for EU regional accounts.
         base_url: "https://api.sendgrid.com"
+      demo-n8n:
+        type: n8n
+        label: "Example n8n automation"
+        base_url: "https://n8n.example.com"
+        api_key: "replace-with-your-n8n-api-key"
+      demo-apify:
+        type: apify
+        label: "Example Apify account"
+        # API token from https://console.apify.com/settings/integrations
+        api_token: "replace-with-your-apify-api-token"
+        # Optional: defaults to "https://api.apify.com/v2".
+        base_url: "https://api.apify.com/v2"
+        # Optional: allowlist which apify tools this server exposes. Supports
+        # `*` / `?` wildcards. Omit the whole key to expose all apify tools.
+        # tools:
+        #   - apify_web_search
+        #   - apify_get_*
+      demo-instagram:
+        type: instagram
+        label: "Example Instagram (Business/Creator)"
+        # Instagram professional account id (NOT the @username). See setup below.
+        ig_user_id: "1784xxxxxxxxxxxxx"
+        # Long-lived access token (valid ~60 days). See setup below.
+        access_token: "replace-with-your-long-lived-access-token"
+        # Optional but recommended: enables instagram_refresh_token to extend the
+        # token automatically and adds appsecret_proof to every call.
+        app_id: "replace-with-your-meta-app-id"
+        app_secret: "replace-with-your-meta-app-secret"
+        # Optional: informational only.
+        username: "your_brand"
+        # Optional: pin the Graph API version (defaults to v22.0).
+        # api_version: "v22.0"
+        # Filled in automatically by instagram_refresh_token — leave at 0.
+        token_expires_at: 0
+      demo-transip:
+        type: transip
+        label: "Example TransIP"
+        # Your TransIP account username (the login you use for the control panel).
+        login: "replace-with-your-transip-username"
+        # RSA private key generated in the TransIP control panel. Provide it
+        # inline as a YAML block scalar (note the leading "|")...
+        private_key: |
+          -----BEGIN PRIVATE KEY-----
+          replace-with-your-transip-private-key
+          -----END PRIVATE KEY-----
+        # ...or point at a key file instead (absolute, or relative to the
+        # project dir). Use one of private_key / private_key_file, not both:
+        # private_key_file: "config/transip/demo.key"
+        # Optional: issue read-only tokens (blocks the DNS write tools).
+        read_only: false
+        # Optional: global_key true = token usable from any IP (default).
+        # Set false only if you whitelisted this key's IPs in the panel.
+        global_key: true
+      demo-canva:
+        type: canva
+        label: "Example Canva"
+        # From your Canva integration (Canva Developer Portal).
+        client_id: "replace-with-your-canva-client-id"
+        client_secret: "replace-with-your-canva-client-secret"
+        # The following are filled in automatically by the OAuth flow in the
+        # admin UI (Server → Canva → Connect) — leave blank initially.
+        access_token: ""
+        refresh_token: ""
+        token_expires_at: 0
+        # Optional overrides:
+        # scopes: ["design:meta:read", "design:content:read"]
+        # api_base_url: "https://api.canva.com/rest"
+
+# ──────────────────────────────────────────────────────────────────────
+# Canva Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# Canva uses OAuth 2.0 (Authorization Code flow with PKCE). Prism runs the
+# whole flow for you from the admin UI and stores the resulting tokens back
+# into this config file.
+#
+# 1. Create an integration at https://www.canva.com/developers/integrations/
+#    (Connect APIs). Under "Authentication", copy the Client ID and generate
+#    a Client secret, and put them in `client_id` / `client_secret` above.
+#
+# 2. Still under "Authentication", add a Redirect URL. Open Prism →
+#    Server → Canva to see the exact URL to register, which is:
+#      {your-prism-base-url}/admin/canva/callback
+#
+# 3. Add the scopes needed to list and view designs to your integration:
+#      - design:meta:read       (list designs + read design metadata)
+#      - design:content:read    (read design pages / content)
+#
+# 4. In Prism, go to Server → Canva and click "Connect". You'll be sent to
+#    Canva to authorize, then redirected back; Prism writes access_token,
+#    refresh_token, and token_expires_at into this file. Tokens are refreshed
+#    automatically when they expire.
+#
+# 5. Available tools:
+#    - canva_list_accounts      — list configured Canva accounts + connection
+#                                 status
+#    - canva_list_designs       — list designs (search, ownership, sort,
+#                                 continuation-token pagination)
+#    - canva_get_design         — get a single design's metadata by design ID
+#    - canva_get_design_pages   — list a design's pages with thumbnails
+#                                 (Canva preview API)
+#
+# 6. Multiple Canva accounts can be configured; connect each one separately
+#    from the admin UI.
+
+# ──────────────────────────────────────────────────────────────────────
+# TransIP Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# TransIP's REST API (v6) authenticates by signing each token request with an
+# RSA private key. Prism does the signing and token handling for you.
+#
+# 1. Log in to the TransIP control panel and enable the API
+#    (https://www.transip.nl/cp/account/api/). Note your account username —
+#    that is the value for `login`.
+#
+# 2. Under "Key pairs", generate a new key pair. TransIP shows the PRIVATE key
+#    exactly once — copy it. Paste it into `private_key` as a YAML block
+#    scalar (the "|" form shown above), or save it to a file and reference it
+#    with `private_key_file`. Keep this key secret; never commit it.
+#
+# 3. IP whitelisting: when generating the key you can restrict it to specific
+#    IP addresses. If you do, set `global_key: false` so tokens are bound to
+#    those IPs. Leave `global_key: true` (default) to allow any IP.
+#
+# 4. Optionally set `read_only: true` to make Prism request read-only tokens.
+#    The DNS write tools then fail at the API — use this if you only want the
+#    read tools exposed on this server.
+#
+# 5. Available tools:
+#    - transip_list_accounts     — list configured TransIP accounts
+#    - transip_list_domains      — list all domains in the account
+#    - transip_get_domain        — domain settings, nameservers and contacts
+#    - transip_get_dns_records   — list a domain's DNS zone
+#    - transip_upsert_dns_record — create/update a single DNS record (write)
+#    - transip_delete_dns_record — delete a single DNS record (write)
+#    - transip_list_invoices     — list account invoices (billing info)
+#    - transip_get_invoice       — single invoice incl. optional line items
+#
+# 6. The DNS write tools only change the one targeted record (they never
+#    replace the whole zone), and DNS changes take effect only when the domain
+#    uses TransIP's nameservers.
 
 # ──────────────────────────────────────────────────────────────────────
 # Slack Setup Instructions
@@ -247,3 +389,194 @@ servers:
 #        type: sendgrid
 #        label: "Transactional"
 #        api_key: "key-for-transactional-account"
+
+# ──────────────────────────────────────────────────────────────────────
+# n8n Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. In your n8n instance, go to Settings → n8n API → "Create an API key".
+#    Copy the generated key into `api_key`. (The public API may need to be
+#    enabled on self-hosted instances; it is available on n8n Cloud.)
+#
+# 2. Set `base_url` to your n8n URL (no trailing slash, no /api suffix —
+#    e.g. "https://n8n.example.com"). Requests are sent to {base_url}/api/v1
+#    and authenticate with the "X-N8N-API-KEY" header, so the key is never
+#    placed in the URL.
+#
+# 3. Available tools (read-only — no creating/uploading flows):
+#    - n8n_list_accounts    — list configured n8n accounts
+#    - n8n_list_workflows   — list workflows (flows): id, name, active,
+#                             tags, node count, timestamps. Filter by
+#                             active/name/tags, paginate with a cursor
+#    - n8n_get_workflow     — get/download a single workflow including its
+#                             full definition (nodes, connections, settings)
+#                             as re-importable JSON
+#    - n8n_list_executions  — list executions (runs): id, workflow id,
+#                             status, mode, timestamps. Filter by
+#                             workflow_id and status, paginate with a cursor
+#    - n8n_get_execution    — get a single execution; set include_data=true
+#                             for the full run data (node inputs/outputs)
+#
+# 4. Multiple n8n instances can be configured:
+#
+#    accounts:
+#      prod-n8n:
+#        type: n8n
+#        label: "Production"
+#        base_url: "https://n8n.example.com"
+#        api_key: "key-for-prod-instance"
+#      staging-n8n:
+#        type: n8n
+#        label: "Staging"
+#        base_url: "https://n8n-staging.example.com"
+#        api_key: "key-for-staging-instance"
+
+# ──────────────────────────────────────────────────────────────────────
+# Apify Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Create an Apify API token at
+#    https://console.apify.com/settings/integrations and put it in
+#    `api_token`. Requests authenticate with an "Authorization: Bearer"
+#    header, so the token is never placed in the URL.
+#
+# 2. `base_url` is optional and defaults to "https://api.apify.com/v2".
+#
+# 3. Built-in tools:
+#    - apify_list_accounts — list configured Apify accounts
+#    - apify_get_actor      — inspect an actor's metadata + input schema
+#                             (use this to discover an actor's inputs/outputs
+#                             before wrapping it in a dedicated tool)
+#    - apify_run_actor      — run any actor synchronously with free-form JSON
+#                             input and return its dataset items
+#    - apify_web_search     — example actor-backed tool (apify/rag-web-browser):
+#                             web search / URL fetch returning Markdown
+#
+#    Instagram actor-backed tools (apify/instagram-*):
+#    - apify_instagram_profile_scraper — profile info for one or more usernames
+#    - apify_instagram_scraper         — general scraper: posts/details/comments/
+#                                        reels/mentions from URLs or a search query
+#    - apify_instagram_post_scraper    — posts for one or more profiles
+#    - apify_instagram_hashtag_scraper — posts/reels by hashtag
+#    - apify_instagram_comment_scraper — comments from post/reel URLs
+#    - apify_instagram_reel_scraper    — reels for one or more profiles
+#    - apify_instagram_api_scraper     — fast, login-free general Instagram scraper
+#
+#    LinkedIn actor-backed tools (no LinkedIn cookies/account required):
+#    - apify_linkedin_profile_search_by_name — search profiles by first/last name
+#    - apify_linkedin_profile_search         — search profiles by fuzzy query + filters
+#    - apify_linkedin_company_employees      — employees of one or more companies
+#    - apify_linkedin_profile_scraper        — bulk profile details (URLs/IDs)
+#    - apify_linkedin_profile_posts          — posts from profiles/company pages
+#    - apify_linkedin_jobs_scraper           — jobs from LinkedIn job-search URLs
+#
+# 4. Restricting which tools are exposed (optional):
+#    Add a `tools` allowlist to the apify account. Only tools whose name
+#    matches a listed pattern are exposed on that server; omit the key to
+#    expose all. Patterns support `*` and `?` wildcards. If multiple apify
+#    accounts each define `tools`, the union of their patterns is used.
+#
+#    accounts:
+#      my-apify:
+#        type: apify
+#        api_token: "..."
+#        tools:
+#          - apify_web_search   # expose one specific tool
+#          - apify_get_*        # ...plus everything matching the wildcard
+#
+# 5. Adding your own actor-backed tools:
+#    Extend App\Mcp\Tool\Apify\AbstractApifyActorTool — declare the actor id,
+#    the tool name/description and the input properties, and optionally map
+#    the inputs onto the actor input and reshape the output. The tool is then
+#    auto-discovered and exposed on every server with an `apify` account.
+#    See src/Mcp/Tool/Apify/ApifyWebSearchTool.php for a worked example.
+#
+# 6. Multiple Apify accounts can be configured:
+#
+#    accounts:
+#      personal-apify:
+#        type: apify
+#        label: "Personal"
+#        api_token: "token-for-personal-account"
+#      team-apify:
+#        type: apify
+#        label: "Team"
+#        api_token: "token-for-team-account"
+
+# ──────────────────────────────────────────────────────────────────────
+# Instagram Setup Instructions  (see docs/instagram.md for the full guide)
+# ──────────────────────────────────────────────────────────────────────
+#
+# Prism uses the Meta Graph API for Instagram *professional* accounts
+# (Business or Creator). Personal accounts are not supported by the API.
+#
+# Prerequisites:
+#   - An Instagram Business/Creator account.
+#   - A Facebook Page linked to that Instagram account.
+#   - A Meta app (https://developers.facebook.com/apps) with the
+#     "Instagram" / "Facebook Login for Business" products added.
+#
+# 1. Get a long-lived access token + your Instagram user id. The quickest
+#    path is the Graph API Explorer (https://developers.facebook.com/tools/explorer):
+#      a. Pick your app, generate a User Token with these permissions:
+#           instagram_basic
+#           instagram_manage_insights
+#           instagram_manage_comments
+#           instagram_content_publish
+#           pages_show_list
+#           pages_read_engagement
+#           business_management
+#      b. Find your IG user id:  GET  me/accounts?fields=instagram_business_account{id,username}
+#         Copy the instagram_business_account.id into `ig_user_id`.
+#      c. Exchange the short-lived token for a long-lived one (valid ~60 days):
+#           GET  https://graph.facebook.com/v22.0/oauth/access_token
+#                ?grant_type=fb_exchange_token
+#                &client_id=APP_ID&client_secret=APP_SECRET
+#                &fb_exchange_token=SHORT_LIVED_TOKEN
+#         Put the returned token into `access_token`.
+#
+# 2. Set `app_id` / `app_secret` so Prism can:
+#      - send appsecret_proof on every request (more secure), and
+#      - run the instagram_refresh_token tool to extend the token before it
+#        expires (it writes the new token back into this file).
+#    Run instagram_refresh_token periodically (e.g. weekly) to stay logged in.
+#
+# 3. Available tools:
+#    - instagram_list_accounts        — list configured IG accounts + token status
+#    - instagram_get_account          — your profile: followers, media count, bio
+#    - instagram_get_insights         — account analytics (reach, profile views,
+#                                       follower growth, audience demographics, …)
+#    - instagram_list_media           — list your posts/reels/carousels (paginated)
+#    - instagram_get_media            — one media object incl. carousel children
+#    - instagram_get_media_insights   — per-post metrics (reach, saves, shares,
+#                                       reel plays/watch time, …)
+#    - instagram_list_comments        — comments + replies on a post (triage)
+#    - instagram_reply_comment        — reply to a comment OR post a new comment
+#    - instagram_manage_comment       — hide / unhide / delete a comment
+#    - instagram_hashtag_search       — find content & creators by hashtag
+#                                       (resolve id + top/recent media)
+#    - instagram_business_discovery   — profile ANOTHER public business/creator
+#                                       account by username (competitor research)
+#    - instagram_publish              — publish image/video/reel/story/carousel
+#                                       (image_url/video_url must be public HTTPS)
+#    - instagram_get_publishing_limit — remaining posts in the 24h window (max 100)
+#    - instagram_refresh_token        — extend the long-lived token (writes back)
+#    - instagram_get                  — arbitrary read-only Graph API GET
+#
+# 4. Multiple Instagram accounts (brands) can be configured:
+#
+#    accounts:
+#      brand-a-instagram:
+#        type: instagram
+#        label: "Brand A"
+#        ig_user_id: "1784..."
+#        access_token: "token-for-brand-a"
+#        app_id: "app-id"
+#        app_secret: "app-secret"
+#      brand-b-instagram:
+#        type: instagram
+#        label: "Brand B"
+#        ig_user_id: "1784..."
+#        access_token: "token-for-brand-b"
+#        app_id: "app-id"
+#        app_secret: "app-secret"

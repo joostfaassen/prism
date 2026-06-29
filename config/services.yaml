@@ -17,6 +17,14 @@ services:
         arguments:
             $configPath: '%kernel.project_dir%/prism.config.yaml'
 
+    App\Canva\CanvaTokenStore:
+        arguments:
+            $configPath: '%kernel.project_dir%/prism.config.yaml'
+
+    App\Instagram\InstagramTokenStore:
+        arguments:
+            $configPath: '%kernel.project_dir%/prism.config.yaml'
+
     App\Bunq\BunqConfigLoader:
         arguments:
             $projectDir: '%kernel.project_dir%'
@@ -29,6 +37,10 @@ services:
         arguments:
             $username: '%app.auth_user%'
             $password: '%app.auth_password%'
+
+    App\Transip\TransipConfigLoader:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
 
     App\Twilio\TranscriptionStore:
         arguments:
