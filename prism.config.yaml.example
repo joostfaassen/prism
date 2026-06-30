@@ -109,6 +109,18 @@ servers:
         # Optional: global_key true = token usable from any IP (default).
         # Set false only if you whitelisted this key's IPs in the panel.
         global_key: true
+      demo-openai:
+        type: openai
+        label: "Example OpenAI-compatible LLM"
+        # Any OpenAI-compatible Chat Completions endpoint works here: OpenAI,
+        # Groq, OpenRouter, Together, Ollama, LM Studio, vLLM, etc. Use the base
+        # URL up to and including /v1 (no trailing slash, no /chat/completions).
+        base_url: "https://api.openai.com/v1"
+        api_key: "replace-with-your-api-key"
+        # Default model used when a tool call omits "model".
+        default_model: "gpt-4o-mini"
+        # Optional: per-request timeout in seconds (default 60).
+        # timeout: 60
       demo-canva:
         type: canva
         label: "Example Canva"
@@ -160,6 +172,63 @@ servers:
 #
 # 6. Multiple Canva accounts can be configured; connect each one separately
 #    from the admin UI.
+
+# ──────────────────────────────────────────────────────────────────────
+# OpenAI-compatible Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# This account type wraps any OpenAI-compatible Chat Completions API and
+# exposes straight prompt-completion tools over MCP. The benefit: MCP clients
+# can run LLM completions WITHOUT holding their own API key — Prism holds the
+# key per server. No tool/function-calling happens inside the completion; it's
+# a plain prompt → text round-trip.
+#
+# 1. Set `base_url` to the endpoint's URL including the version path (commonly
+#    ".../v1"), with no trailing slash and no /chat/completions suffix.
+#    Examples:
+#      OpenAI       https://api.openai.com/v1
+#      Groq         https://api.groq.com/openai/v1
+#      OpenRouter   https://openrouter.ai/api/v1
+#      Ollama       http://ollama:11434/v1
+#      LM Studio    http://localhost:1234/v1
+#
+# 2. Put the provider API key in `api_key` (sent as "Authorization: Bearer",
+#    never in the URL). For local servers without auth, use any non-empty
+#    placeholder.
+#
+# 3. Set `default_model` to the model used when a call omits "model"
+#    (e.g. "gpt-4o-mini", "llama-3.3-70b-versatile"). Discover valid names
+#    with the openai_list_models tool.
+#
+# 4. Available tools:
+#    - openai_list_accounts — list configured OpenAI-compatible accounts
+#                             (key, label, base_url, default_model)
+#    - openai_list_models   — list models the endpoint exposes
+#    - openai_complete      — run one chat completion and return the text.
+#                             Provide "prompt" (+ optional "system") for a
+#                             one-shot completion, or "messages" for a full
+#                             chat history. Optional "model", "temperature",
+#                             "max_tokens".
+#
+#    Example use: terminology correction of a transcript — put the instruction
+#    in "system" ("Fix terminology in this transcript, keep meaning intact")
+#    and the transcript in "prompt".
+#
+# 5. Multiple endpoints can be configured side by side:
+#
+#    accounts:
+#      fast-llm:
+#        type: openai
+#        label: "Groq (fast)"
+#        base_url: "https://api.groq.com/openai/v1"
+#        api_key: "key-for-groq"
+#        default_model: "llama-3.3-70b-versatile"
+#      smart-llm:
+#        type: openai
+#        label: "OpenAI"
+#        base_url: "https://api.openai.com/v1"
+#        api_key: "key-for-openai"
+#        default_model: "gpt-4o"
 
 # ──────────────────────────────────────────────────────────────────────
 # TransIP Setup Instructions
