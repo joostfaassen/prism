@@ -23,6 +23,7 @@ class ImapClient
             'from' => $account->getFromAddress(),
             'from_name' => $account->getFromName(),
             'sent_folder' => $account->sentFolder,
+            'drafts_folder' => $account->draftsFolder,
         ];
     }
 
@@ -81,7 +82,53 @@ class ImapClient
             return $result;
         }
 
+        $scan = $this->withRawImap($account, $folder, function ($stream) use ($messageLimit): array {
+            $searchLines = $this->imapCommand($stream, 'UID SEARCH ALL');
+            $uids = $this->parseSearchUids($searchLines);
+            rsort($uids, SORT_NUMERIC);
+            $uids = array_slice($uids, 0, max(0, $messageLimit));
+
+            $keywords = [];
+            foreach (array_chunk($uids, 100) as $chunk) {
+                foreach ($this->fetchFlagsFromStream($stream, $chunk) as $flags) {
+                    foreach ($this->customKeywordsFromFlags($flags) as $keyword) {
+                        $keywords[$keyword] = true;
+                    }
+                }
+            }
+
+            $custom = array_keys($keywords);
+            sort($custom);
+
+            return [
+                'custom_keywords' => $custom,
+                'scanned_messages' => count($uids),
+            ];
+        });
+
+        $result['custom_keywords'] = $scan['result']['custom_keywords'];
+        $result['permanent_keywords'] = $scan['permanent_keywords'];
+        $result['scanned_messages'] = $scan['result']['scanned_messages'];
+
         return $result;
+    }
+
+    /**
+     * Read standard IMAP flags and custom keyword tags/labels for one message.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMessageLabels(
+        EmailAccountConfig $account,
+        string $folder,
+        int $uid,
+    ): array {
+        $flagSets = $this->fetchMessageFlagSets($account, $folder, [$uid]);
+        if (!isset($flagSets[$uid])) {
+            throw new \RuntimeException(sprintf('Message UID %d not found in folder "%s"', $uid, $folder));
+        }
+
+        return $this->normalizeMessageLabels($folder, $uid, $flagSets[$uid]);
     }
 
     /**
@@ -100,6 +147,7 @@ class ImapClient
         bool $flaggedOnly,
         int $limit,
         int $offset,
+        bool $includeDeleted = false,
     ): array {
         $conn = $this->connect($account, $folder);
 
@@ -113,6 +161,7 @@ class ImapClient
                 $before,
                 $unseenOnly,
                 $flaggedOnly,
+                $includeDeleted,
             );
 
             $uids = imap_search($conn, $criteria, SE_UID);
@@ -260,6 +309,7 @@ class ImapClient
                         (bool) ($summary['seen'] ?? false),
                         (bool) ($summary['flagged'] ?? false),
                         (bool) ($summary['answered'] ?? false),
+                        (bool) ($summary['deleted'] ?? false),
                     );
                     $resultByUid[$uid] = $this->withCurrentFolderState(
                         $cached,
@@ -330,6 +380,7 @@ class ImapClient
                     (bool) ($message['seen'] ?? false),
                     (bool) ($message['flagged'] ?? false),
                     (bool) ($message['answered'] ?? false),
+                    (bool) ($message['deleted'] ?? false),
                 );
             }
 
@@ -370,6 +421,7 @@ class ImapClient
         bool $flaggedOnly,
         int $limitPerFolder,
         int $offset,
+        bool $includeDeleted = false,
     ): array {
         $queries = [];
         $normalizedFolders = array_values(array_unique(array_filter(array_map('trim', $folders), static fn (string $folder): bool => $folder !== '')));
@@ -391,6 +443,7 @@ class ImapClient
                 $flaggedOnly,
                 $limitPerFolder,
                 $offset,
+                $includeDeleted,
             );
 
             $queries[] = [
@@ -532,22 +585,22 @@ class ImapClient
         array $addLabels,
         array $removeLabels,
     ): array {
+        $setFlags = [];
+        $unsetFlags = [];
+        foreach ($standardFlags as $flag => $enabled) {
+            if ($enabled === true) {
+                $setFlags[] = $flag;
+            } elseif ($enabled === false) {
+                $unsetFlags[] = $flag;
+            }
+        }
+
+        $setFlags = array_values(array_unique(array_merge($setFlags, $addLabels)));
+        $unsetFlags = array_values(array_unique(array_merge($unsetFlags, $removeLabels)));
+
         $conn = $this->connect($account, $folder);
 
         try {
-            $setFlags = [];
-            $unsetFlags = [];
-            foreach ($standardFlags as $flag => $enabled) {
-                if ($enabled === true) {
-                    $setFlags[] = $flag;
-                } elseif ($enabled === false) {
-                    $unsetFlags[] = $flag;
-                }
-            }
-
-            $setFlags = array_values(array_unique(array_merge($setFlags, $addLabels)));
-            $unsetFlags = array_values(array_unique(array_merge($unsetFlags, $removeLabels)));
-
             if ($setFlags !== []) {
                 $this->setFlags($conn, $uid, $setFlags);
             }
@@ -555,17 +608,41 @@ class ImapClient
                 $this->unsetFlags($conn, $uid, $unsetFlags);
             }
 
-            return [
-                'updated' => true,
-                'uid' => $uid,
-                'folder' => $folder,
-                'set_flags' => $setFlags,
-                'unset_flags' => $unsetFlags,
-                'message' => $this->fetchMessageSummaries($conn, [$uid])[0] ?? ['uid' => $uid],
-            ];
+            $signature = $this->refreshFolderSignature($account, $folder, $conn);
+            $this->messageCache->deleteMessageFlags($account->id, $folder, $signature->uidValidity, $uid);
+            $summary = $this->fetchMessageSummaries($conn, [$uid])[0] ?? ['uid' => $uid];
         } finally {
             imap_close($conn);
         }
+
+        $labels = $this->getMessageLabels($account, $folder, $uid);
+        $this->messageCache->setMessageFlags(
+            $account->id,
+            $folder,
+            $signature->uidValidity,
+            $uid,
+            (bool) ($labels['seen'] ?? false),
+            (bool) ($labels['flagged'] ?? false),
+            (bool) ($labels['answered'] ?? false),
+            (bool) ($labels['deleted'] ?? false),
+        );
+
+        return [
+            'updated' => true,
+            'uid' => $uid,
+            'folder' => $folder,
+            'set_flags' => $setFlags,
+            'unset_flags' => $unsetFlags,
+            'labels' => $labels['labels'],
+            'message' => array_merge($summary, [
+                'seen' => $labels['seen'],
+                'flagged' => $labels['flagged'],
+                'answered' => $labels['answered'],
+                'deleted' => $labels['deleted'],
+                'draft' => $labels['draft'],
+                'labels' => $labels['labels'],
+            ]),
+        ];
     }
 
     /**
@@ -607,12 +684,18 @@ class ImapClient
         }
     }
 
+    /**
+     * Append a raw RFC822 message to a folder. When $expectedMessageId is given,
+     * attempt to resolve and return the new message's UID (via UIDNEXT window +
+     * Message-ID match). Returns null when UID resolution is not requested or fails.
+     */
     public function appendToFolder(
         EmailAccountConfig $account,
         string $folder,
         string $rawMessage,
         string $flags = '\\Seen',
-    ): void {
+        ?string $expectedMessageId = null,
+    ): ?int {
         $conn = $this->connect($account);
         $serverStr = $account->imap->getServerString();
         $folderPath = $serverStr . $folder;
@@ -630,6 +713,14 @@ class ImapClient
                 }
             }
 
+            $uidFrom = null;
+            if ($expectedMessageId !== null && $expectedMessageId !== '') {
+                $status = @imap_status($conn, $folderPath, SA_UIDNEXT);
+                if ($status !== false && isset($status->uidnext) && (int) $status->uidnext > 0) {
+                    $uidFrom = (int) $status->uidnext;
+                }
+            }
+
             $normalized = preg_replace('/\r\n|\r|\n/', "\r\n", $rawMessage) ?? $rawMessage;
             if (!@imap_append($conn, $folderPath, $normalized, $flags)) {
                 $errors = imap_errors() ?: [];
@@ -639,9 +730,143 @@ class ImapClient
                     implode('; ', $errors),
                 ));
             }
+
+            if ($uidFrom === null) {
+                return null;
+            }
+
+            return $this->resolveAppendedUid($conn, $folderPath, $uidFrom, $expectedMessageId);
         } finally {
             imap_close($conn);
         }
+    }
+
+    /**
+     * Permanently delete a message (mark \Deleted + expunge).
+     *
+     * @return array<string, mixed> overview summary of the deleted message
+     */
+    public function deleteMessage(
+        EmailAccountConfig $account,
+        string $folder,
+        int $uid,
+        bool $requireDraftFlag = true,
+        ?string $expectedMessageId = null,
+    ): array {
+        if ($uid <= 0) {
+            throw new \InvalidArgumentException('uid must be a positive integer');
+        }
+
+        $conn = $this->connect($account, $folder);
+
+        try {
+            $overview = imap_fetch_overview($conn, (string) $uid, FT_UID);
+            if (!is_array($overview) || $overview === []) {
+                throw new \RuntimeException(sprintf(
+                    'Message UID %d not found in folder "%s"',
+                    $uid,
+                    $folder,
+                ));
+            }
+
+            $item = $overview[0];
+            $isDraft = (bool) ($item->draft ?? false);
+
+            if ($requireDraftFlag && !$isDraft) {
+                throw new \RuntimeException(sprintf(
+                    'Message UID %d in "%s" does not have the \\Draft flag — refusing to delete (not a draft).',
+                    $uid,
+                    $folder,
+                ));
+            }
+
+            $messageId = $this->normalizeMessageId($item->message_id ?? null);
+            if ($expectedMessageId !== null && $expectedMessageId !== '') {
+                $expected = $this->normalizeMessageId($expectedMessageId);
+                if ($expected === null || $messageId === null || $messageId !== $expected) {
+                    throw new \RuntimeException(sprintf(
+                        'Message UID %d in "%s" has Message-ID "%s", expected "%s" — refusing to delete.',
+                        $uid,
+                        $folder,
+                        $messageId ?? '(none)',
+                        $expected ?? $expectedMessageId,
+                    ));
+                }
+            }
+
+            $subject = isset($item->subject) ? $this->decodeMime((string) $item->subject) : '';
+
+            $signature = $this->refreshFolderSignature($account, $folder, $conn);
+
+            if (!@imap_delete($conn, (string) $uid, FT_UID)) {
+                $errors = imap_errors() ?: [];
+                throw new \RuntimeException(sprintf(
+                    'Failed to mark message UID %d for deletion in "%s": %s',
+                    $uid,
+                    $folder,
+                    implode('; ', $errors),
+                ));
+            }
+
+            if (!@imap_expunge($conn)) {
+                $errors = imap_errors() ?: [];
+                throw new \RuntimeException(sprintf(
+                    'Message UID %d was marked deleted in "%s", but expunge failed: %s',
+                    $uid,
+                    $folder,
+                    implode('; ', $errors),
+                ));
+            }
+
+            $this->messageCache->deleteMessageFlags($account->id, $folder, $signature->uidValidity, $uid);
+
+            return [
+                'uid' => $uid,
+                'folder' => $folder,
+                'message_id' => $messageId,
+                'subject' => $subject,
+                'draft' => $isDraft,
+            ];
+        } finally {
+            imap_close($conn);
+        }
+    }
+
+    /**
+     * After APPEND, find the new UID by scanning from the pre-append UIDNEXT
+     * for a message whose Message-ID matches. Returns null on any failure —
+     * the append already succeeded.
+     */
+    private function resolveAppendedUid(
+        \IMAP\Connection $conn,
+        string $folderPath,
+        int $uidFrom,
+        string $expectedMessageId,
+    ): ?int {
+        $expected = $this->normalizeMessageId($expectedMessageId);
+        if ($expected === null) {
+            return null;
+        }
+
+        if (!@imap_reopen($conn, $folderPath)) {
+            return null;
+        }
+
+        $overview = @imap_fetch_overview($conn, $uidFrom . ':*', FT_UID);
+        if (!is_array($overview) || $overview === []) {
+            return null;
+        }
+
+        foreach ($overview as $item) {
+            $messageId = $this->normalizeMessageId($item->message_id ?? null);
+            if ($messageId !== null && $messageId === $expected) {
+                $uid = (int) ($item->uid ?? 0);
+
+                return $uid > 0 ? $uid : null;
+            }
+        }
+
+        return null;
     }
 
     private function connect(EmailAccountConfig $account, string $folder = 'INBOX'): \IMAP\Connection
@@ -733,6 +958,7 @@ class ImapClient
             $message['seen'] = $flags['seen'];
             $message['flagged'] = $flags['flagged'];
             $message['answered'] = $flags['answered'];
+            $message['deleted'] = $flags['deleted'];
         }
 
         return $message;
@@ -770,6 +996,7 @@ class ImapClient
                 'seen' => (bool) ($item->seen ?? false),
                 'flagged' => (bool) ($item->flagged ?? false),
                 'answered' => (bool) ($item->answered ?? false),
+                'deleted' => (bool) ($item->deleted ?? false),
                 'has_attachments' => false,
                 'size' => (int) ($item->size ?? 0),
             ];
@@ -823,6 +1050,7 @@ class ImapClient
             'seen' => (bool) ($header->seen ?? false),
             'flagged' => (bool) ($header->flagged ?? false),
             'answered' => (bool) ($header->answered ?? false),
+            'deleted' => (bool) ($header->deleted ?? false),
             'attachments' => $attachments,
         ];
     }
@@ -1070,8 +1298,13 @@ class ImapClient
         ?string $before,
         bool $unseenOnly,
         bool $flaggedOnly,
+        bool $includeDeleted = false,
     ): string {
         $parts = [];
+        if (!$includeDeleted) {
+            // Match mail-client UI defaults: hide soft-deleted messages until EXPUNGE.
+            $parts[] = 'UNDELETED';
+        }
         if ($from !== null) {
             $parts[] = sprintf('FROM "%s"', $from);
         }
@@ -1098,5 +1331,364 @@ class ImapClient
         }
 
         return $parts === [] ? 'ALL' : implode(' ', $parts);
+    }
+
+    /**
+     * @param list<string> $flags
+     */
+    private function setFlags(\IMAP\Connection $conn, int $uid, array $flags): void
+    {
+        $flagString = implode(' ', $flags);
+        if (!@imap_setflag_full($conn, (string) $uid, $flagString, ST_UID)) {
+            $errors = imap_errors() ?: [];
+            throw new \RuntimeException(sprintf(
+                'Failed to set flags on UID %d: %s',
+                $uid,
+                $errors !== [] ? implode('; ', $errors) : 'unknown IMAP error',
+            ));
+        }
+    }
+
+    /**
+     * @param list<string> $flags
+     */
+    private function unsetFlags(\IMAP\Connection $conn, int $uid, array $flags): void
+    {
+        $flagString = implode(' ', $flags);
+        if (!@imap_clearflag_full($conn, (string) $uid, $flagString, ST_UID)) {
+            $errors = imap_errors() ?: [];
+            throw new \RuntimeException(sprintf(
+                'Failed to clear flags on UID %d: %s',
+                $uid,
+                $errors !== [] ? implode('; ', $errors) : 'unknown IMAP error',
+            ));
+        }
+    }
+
+    /**
+     * @param list<int> $uids
+     * @return array<int, list<string>>
+     */
+    private function fetchMessageFlagSets(EmailAccountConfig $account, string $folder, array $uids): array
+    {
+        $uids = $this->normalizeUids($uids);
+        if ($uids === []) {
+            return [];
+        }
+
+        return $this->withRawImap($account, $folder, function ($stream) use ($uids): array {
+            $result = [];
+            foreach (array_chunk($uids, 100) as $chunk) {
+                foreach ($this->fetchFlagsFromStream($stream, $chunk) as $uid => $flags) {
+                    $result[$uid] = $flags;
+                }
+            }
+
+            return $result;
+        })['result'];
+    }
+
+    /**
+     * @param list<string> $flags
+     * @return array<string, mixed>
+     */
+    private function normalizeMessageLabels(string $folder, int $uid, array $flags): array
+    {
+        $normalized = [];
+        foreach ($flags as $flag) {
+            $flag = trim($flag);
+            if ($flag === '' || $flag === '\\*' || $flag === '*') {
+                continue;
+            }
+            $normalized[] = $flag;
+        }
+        $normalized = array_values(array_unique($normalized));
+
+        $has = static function (string $name) use ($normalized): bool {
+            foreach ($normalized as $flag) {
+                if (strcasecmp($flag, $name) === 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        return [
+            'uid' => $uid,
+            'folder' => $folder,
+            'seen' => $has('\\Seen'),
+            'flagged' => $has('\\Flagged'),
+            'answered' => $has('\\Answered'),
+            'deleted' => $has('\\Deleted'),
+            'draft' => $has('\\Draft'),
+            'labels' => $this->customKeywordsFromFlags($normalized),
+            'flags' => $normalized,
+        ];
+    }
+
+    /**
+     * @param list<string> $flags
+     * @return list<string>
+     */
+    private function customKeywordsFromFlags(array $flags): array
+    {
+        $standard = [
+            '\\seen' => true,
+            '\\answered' => true,
+            '\\flagged' => true,
+            '\\deleted' => true,
+            '\\draft' => true,
+            '\\recent' => true,
+            '\\*' => true,
+            '*' => true,
+        ];
+
+        $keywords = [];
+        foreach ($flags as $flag) {
+            $flag = trim($flag);
+            if ($flag === '' || isset($standard[strtolower($flag)])) {
+                continue;
+            }
+            $keywords[] = $flag;
+        }
+
+        sort($keywords);
+
+        return array_values(array_unique($keywords));
+    }
+
+    /**
+     * @template T
+     * @param callable(resource): T $callback
+     * @return array{result: T, permanent_keywords: list<string>}
+     */
+    private function withRawImap(EmailAccountConfig $account, string $folder, callable $callback): array
+    {
+        $stream = $this->openRawImapStream($account);
+
+        try {
+            $this->imapCommand(
+                $stream,
+                'LOGIN ' . $this->quoteImapString($account->imap->username) . ' ' . $this->quoteImapString($account->imap->password),
+            );
+
+            $selectLines = $this->imapCommand($stream, 'SELECT ' . $this->quoteImapString($folder));
+            $permanentKeywords = $this->parsePermanentKeywords($selectLines);
+
+            $result = $callback($stream);
+
+            return [
+                'result' => $result,
+                'permanent_keywords' => $permanentKeywords,
+            ];
+        } finally {
+            try {
+                $this->imapCommand($stream, 'LOGOUT');
+            } catch (\Throwable) {
+                // Connection may already be closing.
+            }
+            fclose($stream);
+        }
+    }
+
+    /**
+     * @return resource
+     */
+    private function openRawImapStream(EmailAccountConfig $account)
+    {
+        $host = $account->imap->host;
+        $port = $account->imap->port;
+        $validateCert = $account->imap->validateCert;
+        $encryption = $account->imap->encryption;
+
+        $remote = ($encryption === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port;
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => $validateCert,
+                'verify_peer_name' => $validateCert,
+                'allow_self_signed' => !$validateCert,
+            ],
+        ]);
+
+        $stream = @stream_socket_client(
+            $remote,
+            $errno,
+            $errstr,
+            30,
+            STREAM_CLIENT_CONNECT,
+            $context,
+        );
+        if ($stream === false) {
+            throw new \RuntimeException(sprintf(
+                'Failed to open IMAP socket for account "%s": %s (%d)',
+                $account->id,
+                $errstr !== '' ? $errstr : 'unknown error',
+                $errno,
+            ));
+        }
+
+        stream_set_timeout($stream, 30);
+        $this->imapReadGreeting($stream);
+
+        if ($encryption === 'tls') {
+            $this->imapCommand($stream, 'STARTTLS');
+            $crypto = @stream_socket_enable_crypto($stream, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            if ($crypto !== true) {
+                fclose($stream);
+                throw new \RuntimeException(sprintf(
+                    'Failed to negotiate STARTTLS for email account "%s"',
+                    $account->id,
+                ));
+            }
+        }
+
+        return $stream;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    private function imapReadGreeting($stream): void
+    {
+        $line = $this->imapReadLine($stream);
+        if ($line === null || !str_starts_with($line, '* OK')) {
+            throw new \RuntimeException('Invalid IMAP server greeting: ' . ($line ?? '(empty)'));
+        }
+    }
+
+    /**
+     * @param resource $stream
+     * @return list<string>
+     */
+    private function imapCommand($stream, string $command): array
+    {
+        static $counter = 0;
+        $tag = 'A' . (++$counter);
+        if (@fwrite($stream, $tag . ' ' . $command . "\r\n") === false) {
+            throw new \RuntimeException('Failed to write IMAP command');
+        }
+
+        $untagged = [];
+        while (true) {
+            $line = $this->imapReadLine($stream);
+            if ($line === null) {
+                throw new \RuntimeException('IMAP connection closed unexpectedly');
+            }
+
+            if (str_starts_with($line, '* ')) {
+                $untagged[] = $line;
+                continue;
+            }
+
+            if (str_starts_with($line, $tag . ' ')) {
+                if (!preg_match('/^' . preg_quote($tag, '/') . ' OK\b/i', $line)) {
+                    throw new \RuntimeException('IMAP command failed: ' . $line);
+                }
+
+                return $untagged;
+            }
+        }
+    }
+
+    /**
+     * @param resource $stream
+     */
+    private function imapReadLine($stream): ?string
+    {
+        $line = @fgets($stream);
+        if ($line === false) {
+            return null;
+        }
+
+        return rtrim($line, "\r\n");
+    }
+
+    private function quoteImapString(string $value): string
+    {
+        return '"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $value) . '"';
+    }
+
+    /**
+     * @param resource $stream
+     * @param list<int> $uids
+     * @return array<int, list<string>>
+     */
+    private function fetchFlagsFromStream($stream, array $uids): array
+    {
+        if ($uids === []) {
+            return [];
+        }
+
+        $lines = $this->imapCommand($stream, 'UID FETCH ' . implode(',', $uids) . ' (FLAGS)');
+        $result = [];
+        foreach ($lines as $line) {
+            if (!preg_match('/\bUID\s+(\d+)\b/i', $line, $uidMatch)) {
+                continue;
+            }
+            if (!preg_match('/\bFLAGS\s*\(([^)]*)\)/i', $line, $flagsMatch)) {
+                continue;
+            }
+
+            $uid = (int) $uidMatch[1];
+            $result[$uid] = $this->parseFlagList($flagsMatch[1]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parseFlagList(string $raw): array
+    {
+        if (trim($raw) === '') {
+            return [];
+        }
+
+        preg_match_all('/\\\\[^\s]+|[^\s]+/', $raw, $matches);
+
+        return array_values(array_filter(
+            $matches[0] ?? [],
+            static fn (string $flag): bool => $flag !== '',
+        ));
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return list<int>
+     */
+    private function parseSearchUids(array $lines): array
+    {
+        $uids = [];
+        foreach ($lines as $line) {
+            if (!preg_match('/^\* SEARCH\b(.*)$/i', $line, $match)) {
+                continue;
+            }
+            foreach (preg_split('/\s+/', trim($match[1])) ?: [] as $token) {
+                if ($token !== '' && ctype_digit($token)) {
+                    $uids[] = (int) $token;
+                }
+            }
+        }
+
+        return array_values(array_unique($uids));
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return list<string>
+     */
+    private function parsePermanentKeywords(array $lines): array
+    {
+        foreach ($lines as $line) {
+            if (!preg_match('/\[PERMANENTFLAGS\s*\(([^)]*)\)\]/i', $line, $match)) {
+                continue;
+            }
+
+            return $this->customKeywordsFromFlags($this->parseFlagList($match[1]));
+        }
+
+        return [];
     }
 }

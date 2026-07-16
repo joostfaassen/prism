@@ -2,6 +2,9 @@
 
 namespace App\Email;
 
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Part\TextPart;
+
 /**
  * Top-level entry point for the `email` integration. Wraps the IMAP client,
  * SMTP mailer, message composer and reply context loader behind a small set
@@ -61,6 +64,23 @@ class EmailService
     }
 
     /**
+     * Read IMAP flags and custom keyword tags/labels for one message.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMessageLabels(
+        string $accountId,
+        string $folder,
+        int $uid,
+    ): array {
+        return $this->imap->getMessageLabels(
+            $this->configLoader->getAccount($accountId),
+            $folder,
+            $uid,
+        );
+    }
+
+    /**
      * @return array{total: int, offset: int, messages: list<array<string, mixed>>}
      */
     public function search(
@@ -76,6 +96,7 @@ class EmailService
         bool $flaggedOnly = false,
         int $limit = 20,
         int $offset = 0,
+        bool $includeDeleted = false,
     ): array {
         return $this->imap->search(
             $this->configLoader->getAccount($accountId),
@@ -90,6 +111,7 @@ class EmailService
             $flaggedOnly,
             $limit,
             $offset,
+            $includeDeleted,
         );
     }
 
@@ -162,6 +184,7 @@ class EmailService
         bool $flaggedOnly = false,
         int $limitPerFolder = 20,
         int $offset = 0,
+        bool $includeDeleted = false,
     ): array {
         return $this->imap->multiSearch(
             $this->configLoader->getAccount($accountId),
@@ -176,6 +199,7 @@ class EmailService
             $flaggedOnly,
             $limitPerFolder,
             $offset,
+            $includeDeleted,
         );
     }
 
@@ -269,30 +293,10 @@ class EmailService
             ));
         }
 
-        $context = null;
-
-        if ($replyTo !== null) {
-            $folder = (string) ($replyTo['folder'] ?? 'INBOX');
-            $uid = (int) ($replyTo['uid'] ?? 0);
-            $replyAll = (bool) ($replyTo['reply_all'] ?? false);
-
-            if ($uid <= 0) {
-                throw new \InvalidArgumentException('reply_to.uid must be a positive integer');
-            }
-
-            $original = $this->imap->getMessageForReply($account, $folder, $uid);
-            $context = ReplyContext::fromImapMessage($original);
-
-            if ($to === [] && $cc === []) {
-                $extraReplyTo = $original['reply_to'] ?? [];
-                $autoRecipients = $replyAll
-                    ? $this->composer->buildReplyAllRecipients($account, $context, $extraReplyTo)
-                    : ['to' => $this->pickPrimaryReplyAddress($context, $extraReplyTo, $account), 'cc' => []];
-
-                $to = $autoRecipients['to'];
-                $cc = $autoRecipients['cc'];
-            }
-        }
+        $resolved = $this->resolveReply($account, $replyTo, $to, $cc);
+        $to = $resolved['to'];
+        $cc = $resolved['cc'];
+        $context = $resolved['context'];
 
         if ($to === [] && $cc === [] && $bcc === []) {
             throw new \InvalidArgumentException('At least one recipient is required (to, cc, or bcc).');
@@ -350,6 +354,169 @@ class EmailService
         }
 
         return $result;
+    }
+
+    /**
+     * Stage a draft in the IMAP Drafts folder (never sends). Optionally a reply
+     * to an existing message — same threading/quoting as email_send.
+     *
+     * @param list<string>             $to
+     * @param list<string>             $cc
+     * @param list<string>             $bcc
+     * @param array{folder: string, uid: int, reply_all?: bool}|null $replyTo
+     *
+     * @return array<string, mixed>
+     */
+    public function createDraft(
+        string $accountId,
+        array $to,
+        array $cc,
+        array $bcc,
+        ?string $subject,
+        string $bodyMarkdown,
+        ?string $fromName,
+        ?string $replyToOverride,
+        ?array $replyTo,
+        ?string $draftsFolderOverride,
+    ): array {
+        $account = $this->configLoader->getAccount($accountId);
+
+        $resolved = $this->resolveReply($account, $replyTo, $to, $cc);
+        $to = $resolved['to'];
+        $cc = $resolved['cc'];
+        $context = $resolved['context'];
+
+        $composed = $this->composer->compose(
+            $account,
+            $to,
+            $cc,
+            $bcc,
+            $subject,
+            $bodyMarkdown,
+            $fromName,
+            $replyToOverride,
+            $context,
+        );
+
+        $messageId = $this->extractMessageId(
+            $composed->email->getHeaders()->get('Message-ID')?->getBodyAsString() ?? '',
+        );
+        $rawMessage = $this->materializeDraft($composed->email);
+
+        $draftsFolder = $draftsFolderOverride ?? $account->draftsFolder;
+        $uid = $this->imap->appendToFolder(
+            $account,
+            $draftsFolder,
+            $rawMessage,
+            '\\Seen \\Draft',
+            $messageId,
+        );
+
+        $result = [
+            'created' => true,
+            'folder' => $draftsFolder,
+            'uid' => $uid,
+            'message_id' => $messageId,
+            'subject' => $composed->subject,
+            'to' => $composed->to,
+            'cc' => $composed->cc,
+            'bcc' => $composed->bcc,
+            'in_reply_to' => $composed->inReplyTo,
+        ];
+
+        if ($uid === null) {
+            $result['warning'] = sprintf(
+                'Draft was saved to "%s" but its UID could not be resolved. Locate it with email_search on that folder (e.g. by subject or Message-ID).',
+                $draftsFolder,
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Permanently delete a draft from the IMAP Drafts folder.
+     *
+     * @return array<string, mixed>
+     */
+    public function deleteDraft(
+        string $accountId,
+        int $uid,
+        ?string $draftsFolderOverride,
+        ?string $expectedMessageId,
+    ): array {
+        $account = $this->configLoader->getAccount($accountId);
+        $draftsFolder = $draftsFolderOverride ?? $account->draftsFolder;
+
+        $deleted = $this->imap->deleteMessage(
+            $account,
+            $draftsFolder,
+            $uid,
+            requireDraftFlag: true,
+            expectedMessageId: $expectedMessageId,
+        );
+
+        return [
+            'deleted' => true,
+            'folder' => $draftsFolder,
+            'uid' => $uid,
+            'message_id' => $deleted['message_id'] ?? null,
+            'subject' => $deleted['subject'] ?? '',
+        ];
+    }
+
+    /**
+     * @param array{folder: string, uid: int, reply_all?: bool}|null $replyTo
+     * @param list<string> $to
+     * @param list<string> $cc
+     *
+     * @return array{context: ?ReplyContext, to: list<string>, cc: list<string>}
+     */
+    private function resolveReply(EmailAccountConfig $account, ?array $replyTo, array $to, array $cc): array
+    {
+        if ($replyTo === null) {
+            return ['context' => null, 'to' => $to, 'cc' => $cc];
+        }
+
+        $folder = (string) ($replyTo['folder'] ?? 'INBOX');
+        $uid = (int) ($replyTo['uid'] ?? 0);
+        $replyAll = (bool) ($replyTo['reply_all'] ?? false);
+
+        if ($uid <= 0) {
+            throw new \InvalidArgumentException('reply_to.uid must be a positive integer');
+        }
+
+        $original = $this->imap->getMessageForReply($account, $folder, $uid);
+        $context = ReplyContext::fromImapMessage($original);
+
+        if ($to === [] && $cc === []) {
+            $extraReplyTo = $original['reply_to'] ?? [];
+            $autoRecipients = $replyAll
+                ? $this->composer->buildReplyAllRecipients($account, $context, $extraReplyTo)
+                : ['to' => $this->pickPrimaryReplyAddress($context, $extraReplyTo, $account), 'cc' => []];
+
+            $to = $autoRecipients['to'];
+            $cc = $autoRecipients['cc'];
+        }
+
+        return ['context' => $context, 'to' => $to, 'cc' => $cc];
+    }
+
+    /**
+     * Materialize draft MIME bytes with Bcc preserved (unlike Email::toString(),
+     * which strips Bcc for the on-the-wire send path).
+     */
+    private function materializeDraft(Email $email): string
+    {
+        $headers = $email->getPreparedHeaders();
+
+        if ($email->getBcc() !== []) {
+            $headers->addMailboxListHeader('Bcc', $email->getBcc());
+        }
+
+        $body = $email->getBody() ?? new TextPart('');
+
+        return $headers->toString() . $body->toString();
     }
 
     /**

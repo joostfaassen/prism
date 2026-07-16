@@ -149,7 +149,7 @@ class MessageCache
     }
 
     /**
-     * @return array{seen: bool, flagged: bool, answered: bool}|null
+     * @return array{seen: bool, flagged: bool, answered: bool, deleted: bool}|null
      */
     public function getMessageFlags(string $accountId, string $folder, int $uidValidity, int $uid): ?array
     {
@@ -167,6 +167,7 @@ class MessageCache
             'seen' => (bool) ($value['seen'] ?? false),
             'flagged' => (bool) ($value['flagged'] ?? false),
             'answered' => (bool) ($value['answered'] ?? false),
+            'deleted' => (bool) ($value['deleted'] ?? false),
         ];
     }
 
@@ -178,12 +179,14 @@ class MessageCache
         bool $seen,
         bool $flagged,
         bool $answered,
+        bool $deleted = false,
     ): void {
         $item = $this->emailCache->getItem($this->messageFlagsKey($accountId, $folder, $uidValidity, $uid));
         $item->set([
             'seen' => $seen,
             'flagged' => $flagged,
             'answered' => $answered,
+            'deleted' => $deleted,
         ]);
         $item->expiresAfter(60 * 60 * 24 * 2);
         $this->emailCache->save($item);

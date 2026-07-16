@@ -38,9 +38,14 @@ Each server exposes the same tool *types* but scoped to its own accounts. A pers
 | | `bunq_get_transaction_notes` | Get notes and attachments on a transaction |
 | **Email** | `email_list_accounts` | List configured email accounts |
 | | `email_list_folders` | List mailbox folders with unread counts |
-| | `email_search` | Search emails by sender, subject, date, flags |
+| | `email_list_labels` | List folders and custom IMAP keyword tags |
+| | `email_search` | Search emails by sender, subject, date, flags (excludes soft-deleted by default) |
 | | `email_get_messages` | Fetch one or many messages (same-folder or folder+uid combos) |
+| | `email_get_message_labels` | Read flags and custom keyword tags on a message |
+| | `email_update_message_flags` | Set/clear flags and add/remove keyword tags |
 | | `email_send` | Send a new message or reply (markdown, threaded, saved to Sent) |
+| | `email_create_draft` | Stage a draft in IMAP Drafts (never sends; optional reply threading) |
+| | `email_delete_draft` | Permanently delete a staged draft from Drafts |
 | **Calendar** | `calendar_list_calendars` | List configured ICS calendars |
 | | `calendar_list_events` | List upcoming events with date range filter |
 | | `calendar_get_event` | Get event details by UID |

@@ -18,7 +18,7 @@ class EmailMultiSearchTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Search messages across multiple folders in one call.';
+        return 'Search messages across multiple folders in one call. Soft-deleted messages (IMAP \\Deleted) are excluded by default — set include_deleted=true to see them.';
     }
 
     public function getInputSchema(): array
@@ -43,6 +43,10 @@ class EmailMultiSearchTool implements ToolInterface
                 'before' => ['type' => 'string', 'description' => 'ISO 8601 date'],
                 'unseen_only' => ['type' => 'boolean', 'description' => 'Unread only'],
                 'flagged_only' => ['type' => 'boolean', 'description' => 'Flagged only'],
+                'include_deleted' => [
+                    'type' => 'boolean',
+                    'description' => 'Include messages marked \\Deleted (soft-deleted, not yet expunged). Default: false.',
+                ],
                 'limit_per_folder' => [
                     'type' => 'integer',
                     'description' => 'Max results per folder. Default: 20, max: 100',
@@ -98,6 +102,7 @@ class EmailMultiSearchTool implements ToolInterface
                 flaggedOnly: (bool) ($arguments['flagged_only'] ?? false),
                 limitPerFolder: $limit,
                 offset: (int) ($arguments['offset'] ?? 0),
+                includeDeleted: (bool) ($arguments['include_deleted'] ?? false),
             );
 
             return [

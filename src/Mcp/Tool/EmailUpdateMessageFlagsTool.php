@@ -18,7 +18,9 @@ class EmailUpdateMessageFlagsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Set or clear IMAP message flags and custom labels by UID. Supports starred/Flagged, Seen, Answered, and custom IMAP keywords.';
+        return 'Set or clear IMAP message flags and custom keyword tags/labels by UID. '
+            . 'Supports starred/Flagged, Seen, Answered, and add_labels/remove_labels for custom IMAP keywords. '
+            . 'Use email_get_message_labels to read the current tags first.';
     }
 
     public function getInputSchema(): array

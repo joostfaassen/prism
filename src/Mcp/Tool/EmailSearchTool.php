@@ -18,7 +18,7 @@ class EmailSearchTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Search messages in an email folder. All filter params are ANDed together. Returns message summaries (headers only).';
+        return 'Search messages in an email folder. All filter params are ANDed together. Returns message summaries (headers only). Soft-deleted messages (IMAP \\Deleted, often already hidden in Thunderbird) are excluded by default — set include_deleted=true to see them.';
     }
 
     public function getInputSchema(): array
@@ -65,6 +65,10 @@ class EmailSearchTool implements ToolInterface
                 'flagged_only' => [
                     'type' => 'boolean',
                     'description' => 'Flagged messages only',
+                ],
+                'include_deleted' => [
+                    'type' => 'boolean',
+                    'description' => 'Include messages marked \\Deleted (soft-deleted, not yet expunged). Default: false — matches Thunderbird UI, which hides them until EXPUNGE/compact/restart.',
                 ],
                 'limit' => [
                     'type' => 'integer',
@@ -125,6 +129,7 @@ class EmailSearchTool implements ToolInterface
                 flaggedOnly: (bool) ($arguments['flagged_only'] ?? false),
                 limit: $limit,
                 offset: (int) ($arguments['offset'] ?? 0),
+                includeDeleted: (bool) ($arguments['include_deleted'] ?? false),
             );
 
             return [

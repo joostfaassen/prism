@@ -7,8 +7,9 @@
 - [x] `email_search` — Search emails by subject, sender, date range, flags
 - [x] `email_get_messages` — Fetch full email content in bulk (including single-message fetches)
 - [x] `email_send` — Send a new message or threaded reply (markdown body, save-to-Sent)
-- [ ] `email_move_message` — Move message between folders
-- [ ] `email_flag_message` — Set/unset flags (read, starred, etc.)
+- [x] `email_move_message` — Move message between folders
+- [x] `email_update_message_flags` — Set/unset flags and custom keyword tags
+- [x] `email_get_message_labels` — Read flags and custom keyword tags on a message
 - [ ] Attachment support on `email_send`
 - [ ] Drafts: `email_save_draft`
 
