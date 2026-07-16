@@ -38,7 +38,7 @@ Servers are loaded by `PrismConfigLoader` and stored as `ServerConfig` objects.
 
 ### Accounts
 
-Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo` (extend by adding your own).
+Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo`, `telegram`, and others (extend by adding your own).
 
 Each account type has:
 - An `*AccountConfig` DTO (e.g. `EmailAccountConfig`) — typed value object for credentials
@@ -97,6 +97,8 @@ src/
 │       ├── EmailSearchTool.php
 │       ├── EmailGetMessagesTool.php
 │       ├── EmailSendTool.php
+│       ├── EmailCreateDraftTool.php
+│       ├── EmailDeleteDraftTool.php
 │       ├── CalendarListCalendarsTool.php
 │       ├── CalendarListEventsTool.php
 │       ├── CalendarGetEventTool.php
@@ -133,7 +135,14 @@ src/
 │       ├── MatomoListSitesTool.php
 │       ├── MatomoGetVisitsSummaryTool.php
 │       ├── MatomoGetTopPagesTool.php
-│       └── MatomoGetReportTool.php
+│       ├── MatomoGetReportTool.php
+│       ├── TelegramListAccountsTool.php
+│       ├── TelegramGetMeTool.php
+│       ├── TelegramSendMessageTool.php
+│       ├── TelegramGetUpdatesTool.php
+│       ├── TelegramGetChatTool.php
+│       ├── TelegramEditMessageTool.php
+│       └── TelegramDeleteMessageTool.php
 ├── Bunq/                        # bunq banking integration
 │   ├── BunqAccountConfig.php
 │   ├── BunqConfigLoader.php
@@ -175,6 +184,10 @@ src/
 │   ├── MatomoAccountConfig.php
 │   ├── MatomoConfigLoader.php
 │   └── MatomoService.php
+├── Telegram/                    # Telegram Bot API integration
+│   ├── TelegramAccountConfig.php
+│   ├── TelegramConfigLoader.php
+│   └── TelegramService.php
 └── Security/
     ├── BearerTokenAuthenticator.php  # MCP firewall: Bearer → ServerConfig
     └── EnvUserProvider.php           # Admin login from APP_AUTH_USER/PASSWORD

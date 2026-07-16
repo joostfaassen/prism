@@ -26,6 +26,18 @@ servers:
         # User OAuth Token (xoxp-...) — actions appear as you.
         # See setup instructions below.
         token: "xoxp-replace-with-your-user-token"
+      demo-github:
+        type: github
+        label: "Example GitHub account"
+        # Personal access token (classic or fine-grained) or an OAuth token,
+        # e.g. the one the `gh` CLI stores (`gh auth token`). Needs the `repo`
+        # scope to read private repos. Read-only usage.
+        token: "ghp_replace-with-your-github-token"
+        # Optional: default username reported by github_activity when no login
+        # is passed. Falls back to the token owner (GET /user) if omitted.
+        default_login: "your-github-username"
+        # Optional: override for GitHub Enterprise Server API base URL.
+        # base_url: "https://github.example.com/api/v3"
       demo-libredesk:
         type: libredesk
         label: "Example Libredesk"
@@ -39,6 +51,18 @@ servers:
         token_auth: "replace-with-your-matomo-api-token"
         # Optional: default site id used when a tool call omits idSite.
         default_id_site: 1
+      demo-ga4:
+        type: ga4
+        label: "Example GA4 property"
+        # Numeric GA4 property id (Admin → Property Settings). Also the default
+        # used when a tool call omits property_id.
+        property_id: "123456789"
+        # Path to a Google service-account JSON key (absolute, or relative to
+        # the project dir). Keep this file OUT of git.
+        credentials_file: "config/secrets/ga4-service-account.json"
+        # Alternatively, provide the credentials inline instead of a file:
+        # client_email: "prism@your-project.iam.gserviceaccount.com"
+        # private_key: "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
       demo-sendgrid:
         type: sendgrid
         label: "Example SendGrid"
@@ -135,6 +159,89 @@ servers:
         # Optional overrides:
         # scopes: ["design:meta:read", "design:content:read"]
         # api_base_url: "https://api.canva.com/rest"
+      demo-prometheus:
+        type: prometheus
+        label: "Example Prometheus"
+        # Base URL of the Prometheus HTTP API (no trailing slash, no /api path —
+        # e.g. "http://prometheus:9090" inside Docker, or your public URL).
+        base_url: "https://prometheus.example.com"
+        # Optional auth. Use bearer_token OR username/password (basic auth).
+        # Leave all blank for an unauthenticated instance.
+        # bearer_token: "replace-with-your-bearer-token"
+        # username: "monitoring"
+        # password: "replace-me"
+      demo-alertmanager:
+        type: alertmanager
+        label: "Example Alertmanager"
+        # Base URL of the Alertmanager API (no trailing slash, no /api path —
+        # e.g. "http://alertmanager:9093" inside Docker, or your public URL).
+        base_url: "https://alertmanager.example.com"
+        # Optional auth. Use bearer_token OR username/password (basic auth).
+        # bearer_token: "replace-with-your-bearer-token"
+        # username: "monitoring"
+        # password: "replace-me"
+      demo-loki:
+        type: loki
+        label: "Example Loki"
+        # Base URL of the Loki HTTP API (no trailing slash, no /loki path —
+        # e.g. "http://loki:3100" inside Docker, or your public URL).
+        base_url: "https://loki.example.com"
+        # Optional auth. Use bearer_token OR username/password (basic auth).
+        # bearer_token: "replace-with-your-bearer-token"
+        # username: "monitoring"
+        # password: "replace-me"
+        # Optional: tenant id for multi-tenant Loki (sent as X-Scope-OrgID).
+        # org_id: "tenant-1"
+      demo-telegram:
+        type: telegram
+        label: "Example Telegram bot"
+        # Bot token from @BotFather (looks like 123456789:AAH...).
+        bot_token: "replace-with-your-telegram-bot-token"
+        # Optional fallback chat when a tool call omits chat_id (not an ACL).
+        # default_chat_id: "123456789"
+        # Optional hard allowlist for send/edit/delete targets. Omit to allow any chat.
+        # allowed_chat_ids:
+        #   - "123456789"
+
+# ──────────────────────────────────────────────────────────────────────
+# Telegram Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Open Telegram, talk to @BotFather, and create a bot (/newbot). Copy the
+#    bot token into `bot_token`.
+#
+# 2. Find chat ids: message the bot (or add it to a group and send a message),
+#    then call telegram_get_updates and read discovered_chats[].chat_id.
+#
+# 3. Config keys:
+#    - default_chat_id: fallback when a tool call omits chat_id. Not access
+#      control — it only fills in a missing argument.
+#    - allowed_chat_ids: hard allowlist for send/edit/delete. If set, Prism
+#      refuses any other chat_id (including a mismatched default_chat_id).
+#      Omit the key to allow any chat the bot can reach. Put only your own
+#      user chat id here to lock the bot to messaging you.
+#
+# 4. Available tools:
+#    - telegram_list_accounts
+#    - telegram_get_me
+#    - telegram_send_message
+#    - telegram_get_updates
+#    - telegram_get_chat
+#    - telegram_edit_message
+#    - telegram_delete_message
+#
+# Note: telegram_get_updates uses getUpdates (long polling) and will fail if
+# the bot already has a webhook configured. Delete the webhook first if needed.
+#
+# Example — bot that may only message you:
+#
+#      personal-bot:
+#        type: telegram
+#        label: "Personal notify bot"
+#        bot_token: "123456789:AAH..."
+#        default_chat_id: "123456789"
+#        allowed_chat_ids:
+#          - "123456789"
 
 # ──────────────────────────────────────────────────────────────────────
 # Canva Setup Instructions
@@ -423,6 +530,55 @@ servers:
 #        token_auth: "token-for-staging-instance"
 
 # ──────────────────────────────────────────────────────────────────────
+# GA4 (Google Analytics 4) Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# This exposes the GA4 Data API so AI clients can run arbitrary reporting
+# queries against a GA4 property (the same data that powers a Looker Studio
+# report built on a GA4 source). Authentication uses a Google service account.
+#
+# 1. In the Google Cloud console, create (or pick) a project and enable the
+#    "Google Analytics Data API".
+#
+# 2. Create a service account in that project, then add a JSON key to it
+#    (Keys → Add key → Create new key → JSON). Download the key file and store
+#    it OUTSIDE git, e.g. at config/secrets/ga4-service-account.json. Point
+#    `credentials_file` at it, or paste `client_email` + `private_key` inline.
+#
+# 3. Grant the service account access to the GA4 property: in Google Analytics
+#    go to Admin → Property → Property access management, and add the service
+#    account's email address (…@…​.iam.gserviceaccount.com) with the "Viewer"
+#    role. Read access is all these tools need.
+#
+# 4. Set `property_id` to the numeric GA4 property id (Admin → Property
+#    Settings). It is used as the default when a tool call omits property_id.
+#
+# 5. Available tools:
+#    - ga4_list_accounts  — list configured GA4 accounts and default property
+#    - ga4_get_metadata   — list the dimensions and metrics available for the
+#                           property (use to discover valid field names)
+#    - ga4_run_report     — run an arbitrary runReport query: any combination
+#                           of dimensions and metrics over one or more date
+#                           ranges, with optional filters, ordering and limit
+#
+#    Dates accept "YYYY-MM-DD", "today", "yesterday", or relative values like
+#    "7daysAgo" / "28daysAgo".
+#
+# 6. Multiple GA4 properties can be configured:
+#
+#    accounts:
+#      web-analytics:
+#        type: ga4
+#        label: "Website"
+#        property_id: "123456789"
+#        credentials_file: "config/secrets/ga4-service-account.json"
+#      app-analytics:
+#        type: ga4
+#        label: "App"
+#        property_id: "987654321"
+#        credentials_file: "config/secrets/ga4-service-account.json"
+
+# ──────────────────────────────────────────────────────────────────────
 # SendGrid Setup Instructions
 # ──────────────────────────────────────────────────────────────────────
 #
@@ -706,3 +862,98 @@ servers:
 #        access_token: "token-for-brand-b"
 #        app_id: "app-id"
 #        app_secret: "app-secret"
+
+# ──────────────────────────────────────────────────────────────────────
+# Prometheus Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Set `base_url` to your Prometheus server (no trailing slash, no /api
+#    path — e.g. "http://prometheus:9090" inside Docker, or your public
+#    URL). All calls hit the read-only Prometheus HTTP API under /api/v1.
+#
+# 2. Authentication is optional and depends on how Prometheus is exposed:
+#      - Behind a reverse proxy with bearer auth: set `bearer_token`.
+#      - Behind basic auth: set `username` + `password`.
+#      - Unauthenticated (e.g. private network only): leave all blank.
+#    bearer_token takes precedence over username/password if both are set.
+#
+# 3. Available tools:
+#    - prometheus_list_accounts   — list configured Prometheus accounts
+#    - prometheus_query           — instant PromQL query (current value)
+#    - prometheus_query_range     — range PromQL query (time series for
+#                                   graphs/trends) with start/end/step
+#    - prometheus_list_alerts     — active alerts as evaluated by Prometheus
+#    - prometheus_alerts_summary  — alert counts by state/severity/alertname
+#    - prometheus_list_rules      — alerting/recording rules (filter by type)
+#    - prometheus_list_targets    — scrape targets + health (filter by state)
+#    - prometheus_list_metrics    — discover known metric names (with filter)
+#    - prometheus_label_values    — distinct values of a label (e.g. "job")
+#
+# 4. Multiple Prometheus instances can be configured:
+#
+#    accounts:
+#      prod-prometheus:
+#        type: prometheus
+#        label: "Production"
+#        base_url: "https://prometheus.example.com"
+#        bearer_token: "token-for-prod"
+#      staging-prometheus:
+#        type: prometheus
+#        label: "Staging"
+#        base_url: "https://prometheus-staging.example.com"
+
+# ──────────────────────────────────────────────────────────────────────
+# Alertmanager Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Set `base_url` to your Alertmanager server (no trailing slash, no /api
+#    path — e.g. "http://alertmanager:9093" inside Docker, or your public
+#    URL). Calls use the read-only Alertmanager v2 API under /api/v2.
+#
+# 2. Authentication is optional, same rules as Prometheus above: use
+#    `bearer_token`, or `username` + `password`, or leave blank.
+#
+# 3. Available tools:
+#    - alertmanager_list_accounts     — list configured Alertmanager accounts
+#    - alertmanager_list_alerts       — alerts held by Alertmanager; filter by
+#                                       active/silenced/inhibited and label
+#                                       matchers like ["severity=critical"]
+#    - alertmanager_list_alert_groups — alerts grouped/routed like the UI
+#    - alertmanager_list_silences     — configured silences (matchers, state,
+#                                       creator, comment, time window)
+#    - alertmanager_get_status        — version, uptime and cluster peer state
+#    - alertmanager_create_silence    — WRITE: mute alerts by matchers for a
+#                                       duration (returns silenceID)
+#    - alertmanager_expire_silence    — WRITE: delete a silence by silenceID
+#
+#    The two WRITE tools change Alertmanager state (suppressing/restoring
+#    notifications). Gate them behind human approval if you expose them.
+#
+# 4. Multiple Alertmanager instances can be configured the same way as the
+#    Prometheus example above (use `type: alertmanager`).
+
+# ──────────────────────────────────────────────────────────────────────
+# Loki Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Set `base_url` to your Loki server (no trailing slash, no /loki path —
+#    e.g. "http://loki:3100" inside Docker, or your public URL). Calls use
+#    the read-only Loki HTTP API under /loki/api/v1.
+#
+# 2. Authentication is optional: use `bearer_token`, or `username` +
+#    `password` (basic auth), or leave blank. For multi-tenant Loki, set
+#    `org_id` — it is sent as the X-Scope-OrgID header on every request.
+#
+# 3. Available tools:
+#    - loki_list_accounts    — list configured Loki accounts
+#    - loki_query_range      — main log search: LogQL over a time range,
+#                              e.g. '{app="api"} |= "error"' (newest first)
+#    - loki_query            — instant LogQL query (metric-style values)
+#    - loki_list_labels      — discover available label names
+#    - loki_label_values     — distinct values of a label (e.g. "app")
+#
+#    Times accept RFC3339, Unix seconds, or nanoseconds. query_range
+#    defaults to the last hour when start/end are omitted.
+#
+# 4. Multiple Loki instances can be configured the same way (use
+#    `type: loki`), each with its own base_url and optional org_id.
