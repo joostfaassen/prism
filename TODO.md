@@ -4,6 +4,7 @@
 - [x] Multi-account email configuration (`type: email` accounts in `prism.config.yaml`)
 - [x] `email_list_accounts` — List configured accounts
 - [x] `email_list_folders` — List all mailbox folders for an account
+- [x] `email_create_folder` — Create an IMAP folder (error if it already exists)
 - [x] `email_search` — Search emails by subject, sender, date range, flags
 - [x] `email_get_messages` — Fetch full email content in bulk (including single-message fetches)
 - [x] `email_send` — Send a new message or threaded reply (markdown body, save-to-Sent)

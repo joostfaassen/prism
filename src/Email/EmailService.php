@@ -45,6 +45,17 @@ class EmailService
     }
 
     /**
+     * @return array{folder: string, created: true}
+     */
+    public function createFolder(string $accountId, string $folder): array
+    {
+        return $this->imap->createFolder(
+            $this->configLoader->getAccount($accountId),
+            $folder,
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function listLabels(

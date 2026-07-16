@@ -60,6 +60,61 @@ class ImapClient
     }
 
     /**
+     * Create an IMAP folder. Errors if a folder with that name already exists.
+     *
+     * @return array{folder: string, created: true}
+     */
+    public function createFolder(EmailAccountConfig $account, string $folder): array
+    {
+        $folder = trim($folder);
+        if ($folder === '') {
+            throw new \InvalidArgumentException('Folder name must be a non-empty string');
+        }
+
+        $conn = $this->connect($account);
+        $serverStr = $account->imap->getServerString();
+        $folderPath = $serverStr . $folder;
+
+        try {
+            $existing = imap_list($conn, $serverStr, $folder);
+            if ($existing !== false && $existing !== []) {
+                throw new \RuntimeException(sprintf('Folder "%s" already exists', $folder));
+            }
+
+            if (!@imap_createmailbox($conn, $folderPath)) {
+                $errors = imap_errors() ?: [];
+                $message = implode('; ', $errors) ?: 'unknown IMAP error';
+                if ($this->looksLikeAlreadyExistsError($message)) {
+                    throw new \RuntimeException(sprintf('Folder "%s" already exists', $folder));
+                }
+
+                throw new \RuntimeException(sprintf(
+                    'Failed to create folder "%s": %s',
+                    $folder,
+                    $message,
+                ));
+            }
+
+            return [
+                'folder' => $folder,
+                'created' => true,
+            ];
+        } finally {
+            imap_close($conn);
+        }
+    }
+
+    private function looksLikeAlreadyExistsError(string $message): bool
+    {
+        $lower = strtolower($message);
+
+        return str_contains($lower, 'alreadyexists')
+            || str_contains($lower, 'already exists')
+            || str_contains($lower, 'already exist')
+            || str_contains($lower, 'mailbox already');
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function listLabels(

@@ -68,6 +68,7 @@ Once an account is configured, the server exposes these tools:
 |------|---------|
 | `email_list_accounts` | List configured accounts and whether each can send mail. |
 | `email_list_folders`  | List IMAP folders with total/unread counts. |
+| `email_create_folder` | Create a new IMAP folder (errors if it already exists). |
 | `email_list_labels`   | List folders, standard flags, and custom IMAP keyword tags found in a folder. |
 | `email_search`        | Search a folder by sender, recipient, subject, body, date range, flags. Soft-deleted (`\\Deleted`) messages are excluded by default. |
 | `email_get_messages`  | Fetch one or many messages (headers, text/HTML body, attachments metadata, threading info). Summaries/bodies include `deleted` when the IMAP `\\Deleted` flag is set. |

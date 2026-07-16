@@ -38,6 +38,7 @@ Each server exposes the same tool *types* but scoped to its own accounts. A pers
 | | `bunq_get_transaction_notes` | Get notes and attachments on a transaction |
 | **Email** | `email_list_accounts` | List configured email accounts |
 | | `email_list_folders` | List mailbox folders with unread counts |
+| | `email_create_folder` | Create a new IMAP folder (errors if it already exists) |
 | | `email_list_labels` | List folders and custom IMAP keyword tags |
 | | `email_search` | Search emails by sender, subject, date, flags (excludes soft-deleted by default) |
 | | `email_get_messages` | Fetch one or many messages (same-folder or folder+uid combos) |

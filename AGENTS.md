@@ -94,6 +94,7 @@ src/
 │       ├── BunqGetTransactionNotesTool.php
 │       ├── EmailListAccountsTool.php
 │       ├── EmailListFoldersTool.php
+│       ├── EmailCreateFolderTool.php
 │       ├── EmailSearchTool.php
 │       ├── EmailGetMessagesTool.php
 │       ├── EmailSendTool.php
