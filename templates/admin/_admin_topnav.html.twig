@@ -1,4 +1,4 @@
-{# Expects: activeNav = 'servers' | 'integrations' | null; optional crumb (string) #}
+{# Expects: activeNav = 'servers' | null; optional crumb (string); optional serverName for context crumb only #}
 <nav class="border-b border-slate-800 bg-slate-900/40">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
@@ -16,10 +16,6 @@
                    class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors {% if activeNav == 'servers' %}bg-slate-800 text-cyan-200{% else %}text-slate-400 hover:text-slate-200{% endif %}">
                     Servers
                 </a>
-                <a href="{{ path('admin_integrations') }}"
-                   class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors {% if activeNav == 'integrations' %}bg-slate-800 text-cyan-200{% else %}text-slate-400 hover:text-slate-200{% endif %}">
-                    Integrations
-                </a>
             </div>
 
             {% if crumb is defined and crumb %}
@@ -31,10 +27,7 @@
         </div>
 
         <div class="flex items-center gap-3 sm:gap-4 shrink-0">
-            <div class="flex sm:hidden items-center gap-1">
-                <a href="{{ path('admin_dashboard') }}" class="text-xs font-medium px-2 py-1 rounded {% if activeNav == 'servers' %}text-cyan-300{% else %}text-slate-500{% endif %}">Servers</a>
-                <a href="{{ path('admin_integrations') }}" class="text-xs font-medium px-2 py-1 rounded {% if activeNav == 'integrations' %}text-cyan-300{% else %}text-slate-500{% endif %}">Integrations</a>
-            </div>
+            <a href="{{ path('admin_dashboard') }}" class="sm:hidden text-xs font-medium px-2 py-1 rounded {% if activeNav == 'servers' %}text-cyan-300{% else %}text-slate-500{% endif %}">Servers</a>
             <span class="text-sm text-slate-400 hidden lg:inline font-mono">{{ app.user.userIdentifier }}</span>
             <a href="{{ path('app_logout') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">Sign Out</a>
         </div>

@@ -74,7 +74,7 @@
                     {% for type, accounts in server.accountsByType %}
                     <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
                         <div class="flex items-center gap-3 mb-5">
-                            <a href="{{ path('admin_integration_detail', {type: type}) }}"
+                            <a href="{{ path('admin_server_integration_detail', {serverName: server.name, type: type}) }}"
                                class="font-mono text-xs font-semibold text-violet-300 bg-violet-950 hover:bg-violet-900/80 px-3.5 py-1.5 rounded-lg uppercase tracking-wider transition-colors"
                                title="Open {{ type }} integration">{{ type }}</a>
                             <span class="text-xs text-slate-500 font-mono">&times; {{ accounts|length }}</span>

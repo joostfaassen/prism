@@ -1,62 +1,52 @@
-{% extends 'admin/integrations_base.html.twig' %}
+{% extends 'admin/server_base.html.twig' %}
 
-{% block title %}{{ integration.label }} · Integrations{% endblock %}
+{% block title %}{{ server.label }} — {{ integration.label }}{% endblock %}
 
-{% block integrations_main %}
-            <div class="mb-10">
+{% block server_page_header %}
+            <div class="mb-8">
+                <a href="{{ path('admin_server_integrations', {serverName: server.name}) }}" class="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-cyan-400 transition-colors font-mono mb-4">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                    All integrations
+                </a>
                 <div class="flex flex-wrap items-center gap-3 mb-3">
                     <h1 class="text-3xl font-bold text-white">{{ integration.label }}</h1>
                     <span class="font-mono text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg">{{ integration.type }}</span>
                     {% if active %}
                     <span class="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-900/60 px-2.5 py-1 rounded-lg">
                         <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-                        {{ totalAccounts }} account{{ totalAccounts != 1 ? 's' : '' }} on {{ accountsByServer|length }} server{{ accountsByServer|length != 1 ? 's' : '' }}
+                        {{ accounts|length }} account{{ accounts|length != 1 ? 's' : '' }} on this server
                     </span>
                     {% else %}
-                    <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-2.5 py-1 rounded-lg">no active accounts</span>
+                    <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-2.5 py-1 rounded-lg">no accounts on this server</span>
                     {% endif %}
                 </div>
                 <p class="text-slate-400 max-w-3xl">{{ integration.description }}</p>
             </div>
+{% endblock %}
 
+{% block server_main %}
             <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                     <div>
-                        <h2 class="text-lg font-bold text-white">Active accounts</h2>
-                        <p class="text-sm text-slate-400">Where this integration is wired into MCP servers</p>
+                        <h2 class="text-lg font-bold text-white">Accounts on {{ server.label }}</h2>
+                        <p class="text-sm text-slate-400">Configured for type <code class="font-mono text-cyan-300">{{ integration.type }}</code></p>
                     </div>
-                    <a href="{{ path('admin_dashboard') }}" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Manage via servers →</a>
+                    <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Manage accounts →</a>
                 </div>
 
-                {% if accountsByServer is not empty %}
-                <div class="grid gap-4 md:grid-cols-2">
-                    {% for server in accountsByServer %}
-                    <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-5">
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">{{ server.label }}</h3>
-                                <p class="text-xs font-mono text-slate-500">{{ server.name }}</p>
-                            </div>
-                            <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}"
-                               class="text-xs font-medium text-cyan-400 hover:text-cyan-300 shrink-0">
-                                Server accounts
-                            </a>
-                        </div>
-                        <ul class="space-y-2.5">
-                            {% for account in server.accounts %}
-                            <li class="flex items-baseline gap-3 text-sm">
-                                <code class="font-mono text-cyan-300 shrink-0">{{ account.key }}</code>
-                                <span class="text-slate-400 truncate">{{ account.label }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                {% if accounts is not empty %}
+                <ul class="space-y-2.5">
+                    {% for account in accounts %}
+                    <li class="flex items-baseline gap-3 text-sm rounded-lg bg-slate-950/40 border border-slate-800 px-4 py-3">
+                        <code class="font-mono text-cyan-300 shrink-0">{{ account.key }}</code>
+                        <span class="text-slate-400 truncate">{{ account.label }}</span>
+                    </li>
                     {% endfor %}
-                </div>
+                </ul>
                 {% else %}
                 <div class="rounded-xl border border-dashed border-slate-700 bg-slate-950/30 px-6 py-8 text-center">
-                    <p class="text-sm text-slate-400 mb-2">No accounts of type <code class="font-mono text-cyan-300">{{ integration.type }}</code> on any server.</p>
-                    <p class="text-xs text-slate-500">Add an account under a server’s Accounts tab in config YAML.</p>
+                    <p class="text-sm text-slate-400 mb-2">No accounts of this type on this server.</p>
+                    <p class="text-xs text-slate-500">Add one under Accounts in this server’s YAML config to enable these tools here.</p>
                 </div>
                 {% endif %}
             </section>
@@ -65,7 +55,7 @@
                 <div class="flex items-baseline justify-between gap-3 mb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white">MCP tools</h2>
-                        <p class="text-sm text-slate-400">Exposed when a server has this account type</p>
+                        <p class="text-sm text-slate-400">{% if active %}Exposed on this server’s MCP endpoint{% else %}Would be exposed once an account of this type is added{% endif %}</p>
                     </div>
                     <span class="text-xs font-mono text-slate-500">{{ tools|length }}</span>
                 </div>

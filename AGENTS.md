@@ -98,7 +98,7 @@ src/
 ├── Controller/
 │   ├── McpController.php        # POST /mcp/{serverName} — MCP JSON-RPC endpoint
 │   ├── AdminController.php      # /admin — dashboard, server tabs, tool detail, Try It
-│   ├── IntegrationsController.php  # /admin/integrations overview
+│   ├── IntegrationsController.php  # /admin/server/{server}/integrations
 │   ├── DocumentController.php
 │   ├── DocumentTypeController.php
 │   └── HealthController.php     # / and /health — service metadata
@@ -121,8 +121,8 @@ src/
 ```
 
 Each integration module is self-contained: account config, config loader, service, MCP tools,
-and (where needed) controllers, commands, entities, and repositories. See `/admin/integrations`
-for a live list of registered integrations, tool counts, and account usage.
+and (where needed) controllers, commands, entities, and repositories. See a server’s
+Integrations page (`/admin/server/{server}/integrations`) for packs and accounts on that server.
 
 ## How to Add a New Integration
 

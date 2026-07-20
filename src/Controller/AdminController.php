@@ -7,7 +7,6 @@ use App\AgentNotify\AgentNotifyService;
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
 use App\Config\ServerContext;
-use App\Integrations\IntegrationRegistry;
 use App\Mcp\McpHandler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +23,6 @@ class AdminController extends AbstractController
         private readonly PrismConfigLoader $configLoader,
         private readonly ServerContext $serverContext,
         private readonly AgentNotifyService $agentNotifyService,
-        private readonly IntegrationRegistry $integrationRegistry,
     ) {
     }
 
@@ -71,22 +69,9 @@ class AdminController extends AbstractController
             ];
         }
 
-        $integrationCount = count($this->integrationRegistry->all());
-        $activeIntegrationCount = 0;
-        foreach ($this->integrationRegistry->all() as $type => $integration) {
-            foreach ($servers as $server) {
-                if ($server->getAccountsByType($type) !== []) {
-                    ++$activeIntegrationCount;
-                    break;
-                }
-            }
-        }
-
         return $this->render('admin/dashboard.html.twig', [
             'servers' => $serverData,
             'totalTools' => count($tools),
-            'integrationCount' => $integrationCount,
-            'activeIntegrationCount' => $activeIntegrationCount,
         ]);
     }
 

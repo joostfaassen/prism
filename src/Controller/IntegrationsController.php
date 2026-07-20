@@ -21,59 +21,37 @@ class IntegrationsController extends AbstractController
     ) {
     }
 
+    /** @deprecated Use server-scoped integrations; kept as redirect for bookmarks */
     #[Route('/admin/integrations', name: 'admin_integrations', methods: ['GET'])]
-    public function list(Request $request): Response
+    public function legacyList(): Response
     {
-        $filter = $this->normalizeFilter($request->query->getString('filter', 'all'));
-        $data = $this->buildIntegrationsIndex($filter);
+        return $this->redirectToRoute('admin_dashboard');
+    }
 
-        return $this->render('admin/integrations/list.html.twig', $data + [
-            'activeType' => null,
-            'crumb' => null,
-        ]);
+    /** @deprecated Use server-scoped integration detail; kept as redirect for bookmarks */
+    #[Route('/admin/integrations/{type}', name: 'admin_integration_detail', methods: ['GET'])]
+    public function legacyDetail(string $type): Response
+    {
+        return $this->redirectToRoute('admin_dashboard');
     }
 
     #[Route('/admin/server/{serverName}/integrations', name: 'admin_server_integrations', methods: ['GET'])]
-    public function serverList(Request $request, string $serverName): Response
+    public function list(Request $request, string $serverName): Response
     {
         $serverConfig = $this->resolveServer($serverName);
         $filter = $this->normalizeFilter($request->query->getString('filter', 'all'));
-        $data = $this->buildIntegrationsIndex($filter);
+        $data = $this->buildServerIntegrationsIndex($serverConfig, $filter);
 
-        // Annotate which integrations are active on this server
-        $integrations = [];
-        foreach ($data['integrations'] as $item) {
-            $onServer = $serverConfig->getAccountsByType($item['type']);
-            $item['onThisServer'] = $onServer !== [];
-            $item['thisServerAccountCount'] = count($onServer);
-            $integrations[] = $item;
-        }
-        $data['integrations'] = $integrations;
-
-        $tools = $this->mcpHandler->getTools();
-        $serverTools = array_values(array_filter(
-            $tools,
-            fn(ToolInterface $tool) => $tool->getAccountType() === null
-                || $serverConfig->hasAccountType($tool->getAccountType()),
-        ));
-
-        return $this->render('admin/integrations/server_list.html.twig', $data + [
-            'server' => [
-                'name' => $serverName,
-                'label' => $serverConfig->label,
-                'mcpUrl' => $request->getSchemeAndHttpHost() . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
-                'toolCount' => count($serverTools),
-            ],
+        return $this->render('admin/integrations/list.html.twig', $data + $this->serverShell($request, $serverName, $serverConfig) + [
             'activeSection' => 'integrations',
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'activeType' => null,
         ]);
     }
 
-    #[Route('/admin/integrations/{type}', name: 'admin_integration_detail', methods: ['GET'])]
-    public function detail(string $type): Response
+    #[Route('/admin/server/{serverName}/integrations/{type}', name: 'admin_server_integration_detail', methods: ['GET'])]
+    public function detail(Request $request, string $serverName, string $type): Response
     {
+        $serverConfig = $this->resolveServer($serverName);
         $integration = $this->integrationRegistry->get($type);
         if ($integration === null) {
             throw $this->createNotFoundException(sprintf('Unknown integration type: "%s"', $type));
@@ -85,42 +63,23 @@ class IntegrationsController extends AbstractController
         ));
         usort($tools, fn(ToolInterface $a, ToolInterface $b) => $a->getName() <=> $b->getName());
 
-        $accountsByServer = [];
-        $totalAccounts = 0;
-        foreach ($this->configLoader->getServers() as $server) {
-            $accounts = $server->getAccountsByType($type);
-            if ($accounts === []) {
-                continue;
-            }
-
-            $accountRows = [];
-            foreach ($accounts as $key => $cfg) {
-                $accountRows[] = [
-                    'key' => $key,
-                    'label' => $cfg['label'] ?? $key,
-                ];
-            }
-            $totalAccounts += count($accountRows);
-
-            $accountsByServer[] = [
-                'name' => $server->name,
-                'label' => $server->label,
-                'accounts' => $accountRows,
+        $accounts = [];
+        foreach ($serverConfig->getAccountsByType($type) as $key => $cfg) {
+            $accounts[] = [
+                'key' => $key,
+                'label' => $cfg['label'] ?? $key,
             ];
         }
 
-        $index = $this->buildIntegrationsIndex('all');
+        $index = $this->buildServerIntegrationsIndex($serverConfig, 'all');
 
-        return $this->render('admin/integrations/detail.html.twig', [
+        return $this->render('admin/integrations/detail.html.twig', $index + $this->serverShell($request, $serverName, $serverConfig) + [
+            'activeSection' => 'integrations',
+            'activeType' => $type,
             'integration' => $integration,
             'tools' => $tools,
-            'accountsByServer' => $accountsByServer,
-            'totalAccounts' => $totalAccounts,
-            'active' => $totalAccounts > 0,
-            'navIntegrations' => $index['navIntegrations'],
-            'filter' => 'all',
-            'activeType' => $type,
-            'crumb' => $integration->getLabel(),
+            'accounts' => $accounts,
+            'active' => $accounts !== [],
         ]);
     }
 
@@ -137,15 +96,12 @@ class IntegrationsController extends AbstractController
      *     totalCount: int,
      *     activeCount: int,
      *     unusedCount: int,
-     *     unregisteredTypes: list<string>,
-     *     utilityTools: list<ToolInterface>,
-     *     serverCount: int
+     *     utilityTools: list<ToolInterface>
      * }
      */
-    private function buildIntegrationsIndex(string $filter): array
+    private function buildServerIntegrationsIndex(ServerConfig $server, string $filter): array
     {
         $tools = $this->mcpHandler->getTools();
-        $servers = $this->configLoader->getServers();
 
         $integrations = [];
         foreach ($this->integrationRegistry->all() as $type => $integration) {
@@ -156,22 +112,9 @@ class IntegrationsController extends AbstractController
                 }
             }
 
-            $accountCount = 0;
-            $serverCount = 0;
-            $serverSummaries = [];
-            foreach ($servers as $server) {
-                $accounts = $server->getAccountsByType($type);
-                if ($accounts === []) {
-                    continue;
-                }
-                ++$serverCount;
-                $accountCount += count($accounts);
-                $serverSummaries[] = [
-                    'name' => $server->name,
-                    'label' => $server->label,
-                    'accountCount' => count($accounts),
-                ];
-            }
+            $accounts = $server->getAccountsByType($type);
+            $accountCount = count($accounts);
+            $active = $accountCount > 0;
 
             $integrations[] = [
                 'type' => $type,
@@ -179,9 +122,7 @@ class IntegrationsController extends AbstractController
                 'description' => $integration->getDescription(),
                 'toolCount' => $toolCount,
                 'accountCount' => $accountCount,
-                'serverCount' => $serverCount,
-                'active' => $accountCount > 0,
-                'servers' => $serverSummaries,
+                'active' => $active,
             ];
         }
 
@@ -202,22 +143,6 @@ class IntegrationsController extends AbstractController
             default => $integrations,
         };
 
-        $registeredTypes = array_keys($this->integrationRegistry->all());
-        $seenTypes = [];
-        foreach ($tools as $tool) {
-            $accountType = $tool->getAccountType();
-            if ($accountType !== null) {
-                $seenTypes[$accountType] = true;
-            }
-        }
-        foreach ($servers as $server) {
-            foreach ($server->getAccountTypes() as $type) {
-                $seenTypes[$type] = true;
-            }
-        }
-        $unregisteredTypes = array_values(array_diff(array_keys($seenTypes), $registeredTypes));
-        sort($unregisteredTypes);
-
         $utilityTools = array_values(array_filter(
             $tools,
             fn(ToolInterface $tool) => $tool->getAccountType() === null,
@@ -231,9 +156,32 @@ class IntegrationsController extends AbstractController
             'totalCount' => count($integrations),
             'activeCount' => $activeCount,
             'unusedCount' => $unusedCount,
-            'unregisteredTypes' => $unregisteredTypes,
             'utilityTools' => $utilityTools,
-            'serverCount' => count($servers),
+        ];
+    }
+
+    /**
+     * @return array{server: array{name: string, label: string, mcpUrl: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     */
+    private function serverShell(Request $request, string $serverName, ServerConfig $serverConfig): array
+    {
+        $tools = $this->mcpHandler->getTools();
+        $serverTools = array_values(array_filter(
+            $tools,
+            fn(ToolInterface $tool) => $tool->getAccountType() === null
+                || $serverConfig->hasAccountType($tool->getAccountType()),
+        ));
+
+        return [
+            'server' => [
+                'name' => $serverName,
+                'label' => $serverConfig->label,
+                'mcpUrl' => $request->getSchemeAndHttpHost() . '/mcp/' . $serverName,
+                'accountCount' => count($serverConfig->accounts),
+                'toolCount' => count($serverTools),
+            ],
+            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
+            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
         ];
     }
 
