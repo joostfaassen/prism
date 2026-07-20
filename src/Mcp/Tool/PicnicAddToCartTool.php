@@ -18,7 +18,8 @@ class PicnicAddToCartTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Add a Picnic product to the shopping cart by product ID. Use picnic_search_products to find product IDs first.';
+        return 'Add a Picnic product to the shopping cart/list by product id. '
+            . 'Use picnic_search first to find product ids. Returns the updated cart summary.';
     }
 
     public function getInputSchema(): array
@@ -28,11 +29,16 @@ class PicnicAddToCartTool implements ToolInterface
             'properties' => [
                 'product_id' => [
                     'type' => 'string',
-                    'description' => 'The Picnic product ID (e.g. "s1000000") as returned by picnic_search_products',
+                    'description' => 'Picnic product id (e.g. "s1000000") from picnic_search',
+                ],
+                'quantity' => [
+                    'type' => 'integer',
+                    'description' => 'How many units to add. Defaults to 1. Alias: count.',
+                    'minimum' => 1,
                 ],
                 'count' => [
                     'type' => 'integer',
-                    'description' => 'How many units to add. Defaults to 1.',
+                    'description' => 'Alias for quantity (legacy)',
                     'minimum' => 1,
                 ],
                 'account' => [
@@ -52,7 +58,7 @@ class PicnicAddToCartTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $productId = trim((string) ($arguments['product_id'] ?? ''));
-        $count = (int) ($arguments['count'] ?? 1);
+        $count = (int) ($arguments['quantity'] ?? $arguments['count'] ?? 1);
         $account = $arguments['account'] ?? null;
 
         if ($productId === '') {
@@ -64,7 +70,7 @@ class PicnicAddToCartTool implements ToolInterface
 
         if ($count < 1) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "count" must be at least 1']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "quantity" must be at least 1']],
                 'isError' => true,
             ];
         }
@@ -74,7 +80,7 @@ class PicnicAddToCartTool implements ToolInterface
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
-                    'added' => ['product_id' => $productId, 'count' => $count],
+                    'added' => ['product_id' => $productId, 'quantity' => $count],
                     'cart' => $cart,
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],
             ];

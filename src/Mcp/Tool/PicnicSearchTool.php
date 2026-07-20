@@ -4,8 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Picnic\PicnicService;
 
-/** @deprecated Use picnic_search — kept as an alias for existing clients. */
-class PicnicSearchProductsTool implements ToolInterface
+class PicnicSearchTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -14,12 +13,13 @@ class PicnicSearchProductsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_search_products';
+        return 'picnic_search';
     }
 
     public function getDescription(): string
     {
-        return 'Alias for picnic_search. Search Picnic grocery products by name. Prefer picnic_search.';
+        return 'Search Picnic grocery products by name/keywords. Returns product ids (needed for picnic_add_to_cart), '
+            . 'names, prices (cents + EUR), unit sizes, and image_url. Same as picnic_search_products.';
     }
 
     public function getInputSchema(): array
@@ -29,7 +29,7 @@ class PicnicSearchProductsTool implements ToolInterface
             'properties' => [
                 'query' => [
                     'type' => 'string',
-                    'description' => 'The search term, e.g. "melk" or "bananen"',
+                    'description' => 'Search term, e.g. "melk" or "bananen"',
                 ],
                 'limit' => [
                     'type' => 'integer',

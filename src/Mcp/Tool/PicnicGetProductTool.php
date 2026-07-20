@@ -4,7 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Picnic\PicnicService;
 
-class PicnicGetCartTool implements ToolInterface
+class PicnicGetProductTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,13 +13,13 @@ class PicnicGetCartTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_get_cart';
+        return 'picnic_get_product';
     }
 
     public function getDescription(): string
     {
-        return 'Get the current Picnic shopping cart (this is the household shopping list): '
-            . 'line items, quantities, prices, totals, and image URLs.';
+        return 'Get details for a Picnic product by id (e.g. s11295810 from picnic_search). '
+            . 'Returns name, price, unit size, description highlights, and image URLs.';
     }
 
     public function getInputSchema(): array
@@ -27,11 +27,16 @@ class PicnicGetCartTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
+                'product_id' => [
+                    'type' => 'string',
+                    'description' => 'Picnic product / selling-unit id, e.g. "s11295810"',
+                ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
                 ],
             ],
+            'required' => ['product_id'],
         ];
     }
 
@@ -42,20 +47,28 @@ class PicnicGetCartTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
+        $productId = trim((string) ($arguments['product_id'] ?? ''));
         $account = $arguments['account'] ?? null;
 
+        if ($productId === '') {
+            return [
+                'content' => [['type' => 'text', 'text' => 'Parameter "product_id" is required']],
+                'isError' => true,
+            ];
+        }
+
         try {
-            $cart = $this->picnicService->getCart($account);
+            $product = $this->picnicService->getProduct($productId, $account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $cart,
+                    $product,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic cart: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic product: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

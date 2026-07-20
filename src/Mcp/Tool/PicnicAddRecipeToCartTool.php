@@ -4,7 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Picnic\PicnicService;
 
-class PicnicRemoveFromCartTool implements ToolInterface
+class PicnicAddRecipeToCartTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,12 +13,13 @@ class PicnicRemoveFromCartTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_remove_from_cart';
+        return 'picnic_add_recipe_to_cart';
     }
 
     public function getDescription(): string
     {
-        return 'Remove one or more units of a product from the Picnic shopping cart/list by product id.';
+        return 'Add a Picnic recipe (selling group) ingredients to the shopping cart/list. '
+            . 'Pass recipe_id from picnic_browse_recipes / picnic_get_recipe. Returns the updated cart summary.';
     }
 
     public function getInputSchema(): array
@@ -26,18 +27,13 @@ class PicnicRemoveFromCartTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'product_id' => [
+                'recipe_id' => [
                     'type' => 'string',
-                    'description' => 'The Picnic product id to remove',
+                    'description' => 'Recipe id (selling_group_id) or picnic.app recipe URL',
                 ],
-                'quantity' => [
+                'portions' => [
                     'type' => 'integer',
-                    'description' => 'How many units to remove. Defaults to 1. Alias: count.',
-                    'minimum' => 1,
-                ],
-                'count' => [
-                    'type' => 'integer',
-                    'description' => 'Alias for quantity (legacy)',
+                    'description' => 'Optional number of servings',
                     'minimum' => 1,
                 ],
                 'account' => [
@@ -45,7 +41,7 @@ class PicnicRemoveFromCartTool implements ToolInterface
                     'description' => 'Picnic account key. Defaults to the first configured account.',
                 ],
             ],
-            'required' => ['product_id'],
+            'required' => ['recipe_id'],
         ];
     }
 
@@ -56,36 +52,37 @@ class PicnicRemoveFromCartTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
-        $productId = trim((string) ($arguments['product_id'] ?? ''));
-        $count = (int) ($arguments['quantity'] ?? $arguments['count'] ?? 1);
+        $recipeId = trim((string) ($arguments['recipe_id'] ?? ''));
         $account = $arguments['account'] ?? null;
+        $portions = isset($arguments['portions']) ? (int) $arguments['portions'] : null;
 
-        if ($productId === '') {
+        if ($recipeId === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "product_id" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "recipe_id" is required']],
                 'isError' => true,
             ];
         }
 
-        if ($count < 1) {
+        if ($portions !== null && $portions < 1) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "quantity" must be at least 1']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "portions" must be at least 1']],
                 'isError' => true,
             ];
         }
 
         try {
-            $cart = $this->picnicService->removeFromCart($productId, $count, $account);
+            $cart = $this->picnicService->addRecipeToCart($recipeId, $portions, $account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
-                    'removed' => ['product_id' => $productId, 'quantity' => $count],
+                    'added_recipe_id' => $recipeId,
+                    'portions' => $portions,
                     'cart' => $cart,
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error removing from Picnic cart: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error adding Picnic recipe to cart: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

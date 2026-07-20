@@ -4,7 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Picnic\PicnicService;
 
-class PicnicGetCartTool implements ToolInterface
+class PicnicClearCartTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,13 +13,13 @@ class PicnicGetCartTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_get_cart';
+        return 'picnic_clear_cart';
     }
 
     public function getDescription(): string
     {
-        return 'Get the current Picnic shopping cart (this is the household shopping list): '
-            . 'line items, quantities, prices, totals, and image URLs.';
+        return 'Clear the entire Picnic shopping cart (the household shopping list). '
+            . 'Destructive — requires confirm=true.';
     }
 
     public function getInputSchema(): array
@@ -27,11 +27,16 @@ class PicnicGetCartTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
+                'confirm' => [
+                    'type' => 'boolean',
+                    'description' => 'Must be true to clear the cart',
+                ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
                 ],
             ],
+            'required' => ['confirm'],
         ];
     }
 
@@ -42,10 +47,17 @@ class PicnicGetCartTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
+        if (($arguments['confirm'] ?? false) !== true) {
+            return [
+                'content' => [['type' => 'text', 'text' => 'Refusing to clear cart without confirm=true']],
+                'isError' => true,
+            ];
+        }
+
         $account = $arguments['account'] ?? null;
 
         try {
-            $cart = $this->picnicService->getCart($account);
+            $cart = $this->picnicService->clearCart($account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
@@ -55,7 +67,7 @@ class PicnicGetCartTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic cart: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error clearing Picnic cart: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

@@ -23,6 +23,7 @@ class PicnicConfigLoader
         $accounts = [];
 
         foreach ($raw as $key => $cfg) {
+            $authKey = $cfg['auth_key'] ?? null;
             $accounts[$key] = new PicnicAccountConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
@@ -30,6 +31,7 @@ class PicnicConfigLoader
                 password: $cfg['password'] ?? '',
                 countryCode: strtolower($cfg['country_code'] ?? 'nl'),
                 apiVersion: (string) ($cfg['api_version'] ?? '15'),
+                authKey: is_string($authKey) && $authKey !== '' ? $authKey : null,
             );
         }
 
@@ -41,11 +43,10 @@ class PicnicConfigLoader
         $accounts = $this->getAccounts();
 
         if (!isset($accounts[$key])) {
-            $available = implode(', ', array_keys($accounts));
             throw new \InvalidArgumentException(sprintf(
                 'Unknown Picnic account: "%s". Available: %s',
                 $key,
-                $available,
+                implode(', ', array_keys($accounts)),
             ));
         }
 

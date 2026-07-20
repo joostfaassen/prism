@@ -18,14 +18,15 @@ class PicnicListAccountsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List the configured Picnic accounts available to this server.';
+        return 'List configured Picnic accounts for this server (keys, labels, country_code). No secrets.';
     }
 
     public function getInputSchema(): array
     {
         return [
             'type' => 'object',
-            'properties' => [],
+            'properties' => new \stdClass(),
+            'required' => [],
         ];
     }
 
@@ -43,7 +44,7 @@ class PicnicListAccountsTool implements ToolInterface
                 'content' => [['type' => 'text', 'text' => json_encode([
                     'count' => count($accounts),
                     'accounts' => $accounts,
-                ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
+                ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],
             ];
         } catch (\Throwable $e) {
             return [

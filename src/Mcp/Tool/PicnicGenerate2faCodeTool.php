@@ -4,7 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Picnic\PicnicService;
 
-class PicnicGetCartTool implements ToolInterface
+class PicnicGenerate2faCodeTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,13 +13,13 @@ class PicnicGetCartTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_get_cart';
+        return 'picnic_generate_2fa_code';
     }
 
     public function getDescription(): string
     {
-        return 'Get the current Picnic shopping cart (this is the household shopping list): '
-            . 'line items, quantities, prices, totals, and image URLs.';
+        return 'Ask Picnic to send a 2FA code (SMS by default) after login reports '
+            . 'second_factor_authentication_required. Then call picnic_verify_2fa_code.';
     }
 
     public function getInputSchema(): array
@@ -27,6 +27,10 @@ class PicnicGetCartTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
+                'channel' => [
+                    'type' => 'string',
+                    'description' => 'Delivery channel. Default SMS.',
+                ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
@@ -42,20 +46,24 @@ class PicnicGetCartTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
+        $channel = trim((string) ($arguments['channel'] ?? 'SMS'));
+        if ($channel === '') {
+            $channel = 'SMS';
+        }
         $account = $arguments['account'] ?? null;
 
         try {
-            $cart = $this->picnicService->getCart($account);
+            $result = $this->picnicService->generate2faCode($channel, $account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $cart,
+                    $result,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic cart: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error generating Picnic 2FA code: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

@@ -11,6 +11,7 @@ class PicnicAccountConfig
         public readonly string $password,
         public readonly string $countryCode = 'nl',
         public readonly string $apiVersion = '15',
+        public readonly ?string $authKey = null,
     ) {
     }
 }

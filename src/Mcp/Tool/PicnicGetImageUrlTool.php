@@ -2,10 +2,10 @@
 
 namespace App\Mcp\Tool;
 
+use App\Picnic\PicnicImage;
 use App\Picnic\PicnicService;
 
-/** @deprecated Use picnic_search — kept as an alias for existing clients. */
-class PicnicSearchProductsTool implements ToolInterface
+class PicnicGetImageUrlTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -14,12 +14,13 @@ class PicnicSearchProductsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_search_products';
+        return 'picnic_get_image_url';
     }
 
     public function getDescription(): string
     {
-        return 'Alias for picnic_search. Search Picnic grocery products by name. Prefer picnic_search.';
+        return 'Build a public HTTPS URL for a Picnic product/recipe image_id. '
+            . 'Sizes: tiny, small, medium (default), large, extra-large. No binary download — URL only.';
     }
 
     public function getInputSchema(): array
@@ -27,22 +28,21 @@ class PicnicSearchProductsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'query' => [
+                'image_id' => [
                     'type' => 'string',
-                    'description' => 'The search term, e.g. "melk" or "bananen"',
+                    'description' => 'Image id from picnic_search / picnic_get_product / picnic_get_recipe',
                 ],
-                'limit' => [
-                    'type' => 'integer',
-                    'description' => 'Max products to return (1–50, default 20)',
-                    'minimum' => 1,
-                    'maximum' => 50,
+                'size' => [
+                    'type' => 'string',
+                    'description' => 'Image size',
+                    'enum' => PicnicImage::SIZES,
                 ],
                 'account' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic account key (used for country_code in the URL). Defaults to the first account.',
                 ],
             ],
-            'required' => ['query'],
+            'required' => ['image_id'],
         ];
     }
 
@@ -53,19 +53,19 @@ class PicnicSearchProductsTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
-        $query = trim((string) ($arguments['query'] ?? ''));
-        $limit = (int) ($arguments['limit'] ?? 20);
+        $imageId = trim((string) ($arguments['image_id'] ?? ''));
+        $size = (string) ($arguments['size'] ?? 'medium');
         $account = $arguments['account'] ?? null;
 
-        if ($query === '') {
+        if ($imageId === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "query" is required and cannot be empty']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "image_id" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->picnicService->searchProducts($query, $account, $limit);
+            $result = $this->picnicService->getImageUrl($imageId, $size, $account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
@@ -75,7 +75,7 @@ class PicnicSearchProductsTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error searching Picnic products: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error building Picnic image URL: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

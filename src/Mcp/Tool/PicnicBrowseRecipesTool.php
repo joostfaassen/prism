@@ -4,7 +4,7 @@ namespace App\Mcp\Tool;
 
 use App\Picnic\PicnicService;
 
-class PicnicGetCartTool implements ToolInterface
+class PicnicBrowseRecipesTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,13 +13,13 @@ class PicnicGetCartTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_get_cart';
+        return 'picnic_browse_recipes';
     }
 
     public function getDescription(): string
     {
-        return 'Get the current Picnic shopping cart (this is the household shopping list): '
-            . 'line items, quantities, prices, totals, and image URLs.';
+        return 'Browse Picnic cookbook recipes (saved, new, this week, user-defined, …). '
+            . 'Returns recipe id, title, image_url, and segments. Use picnic_get_recipe for full details including ingredients.';
     }
 
     public function getInputSchema(): array
@@ -27,6 +27,10 @@ class PicnicGetCartTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
+                'segment' => [
+                    'type' => 'string',
+                    'description' => 'Optional filter, e.g. SAVED_RECIPES, NEW_RECIPES, USER_DEFINED_RECIPES, THIS_WEEK_RECIPES',
+                ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
@@ -42,20 +46,24 @@ class PicnicGetCartTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
+        $segment = isset($arguments['segment']) ? trim((string) $arguments['segment']) : null;
+        if ($segment === '') {
+            $segment = null;
+        }
         $account = $arguments['account'] ?? null;
 
         try {
-            $cart = $this->picnicService->getCart($account);
+            $result = $this->picnicService->browseRecipes($account, $segment);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $cart,
+                    $result,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic cart: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error browsing Picnic recipes: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
