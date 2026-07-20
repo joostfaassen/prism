@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Igdb;
+namespace App\Integrations\Igdb;
 
 class IgdbAccountConfig
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Igdb;
+namespace App\Integrations\Igdb;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

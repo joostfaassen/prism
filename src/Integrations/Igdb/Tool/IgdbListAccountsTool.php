@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Igdb\Tool;
 
-use App\Igdb\IgdbService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Igdb\IgdbService;
 
 class IgdbListAccountsTool implements ToolInterface
 {

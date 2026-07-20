@@ -50,7 +50,7 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
-    App\Igdb\IgdbService:
+    App\Integrations\Igdb\IgdbService:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
