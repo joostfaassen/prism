@@ -38,4 +38,4 @@ Use this layout for **server-scoped admin areas** that have several screens (lis
 
 - Dedicated `*AdminController` with class-level `#[Route('/admin/server/{serverName}/…')]` prefix; **`home` or empty route** renders the hub (do not redirect to the first list unless you intentionally skip the hub).
 
-**Reference implementations:** `src/Controller/HabitsAdminController.php` + `templates/admin/habits/`; `src/Controller/TrackingAdminController.php` + `templates/admin/tracking/` (hub: `hub.html.twig`, subnav: `_subnav.html.twig`).
+**Reference implementations:** `src/Integrations/Habits/Controller/HabitsAdminController.php` + `templates/admin/habits/`; `src/Integrations/Tracking/Controller/TrackingAdminController.php` + `templates/admin/tracking/` (hub: `hub.html.twig`, subnav: `_subnav.html.twig`).

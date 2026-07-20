@@ -47,7 +47,7 @@ Each account type has:
 
 ### Tools
 
-Every tool implements `ToolInterface` (in `src/Mcp/Tool/`):
+Every tool implements `ToolInterface` (contract in `src/Mcp/Tool/`; integration tools live under `src/Integrations/{Name}/Tool/`):
 
 ```php
 interface ToolInterface
@@ -74,6 +74,23 @@ A request-scoped service that holds the active `ServerConfig` for the current re
 
 ```
 src/
+├── Integrations/
+│   ├── IntegrationInterface.php   # Metadata contract (type, label, description)
+│   ├── IntegrationRegistry.php    # Tagged iterator of all *Integration classes
+│   ├── Bunq/
+│   │   ├── BunqIntegration.php    # Registry metadata
+│   │   ├── BunqAccountConfig.php
+│   │   ├── BunqConfigLoader.php
+│   │   ├── BunqService.php
+│   │   └── Tool/                  # MCP tools for this account type
+│   ├── Email/
+│   │   ├── EmailIntegration.php
+│   │   ├── …config/service…
+│   │   ├── Command/               # optional
+│   │   └── Tool/
+│   ├── Habits/                    # may also have Controller/, Entity/
+│   ├── Tracking/                  # may also have Controller/, Entity/, Repository/
+│   └── …one directory per account type…
 ├── Config/
 │   ├── PrismConfigLoader.php    # Loads prism.config.yaml → ServerConfig objects
 │   ├── ServerConfig.php         # Server value object (name, token, accounts)
@@ -81,178 +98,43 @@ src/
 ├── Controller/
 │   ├── McpController.php        # POST /mcp/{serverName} — MCP JSON-RPC endpoint
 │   ├── AdminController.php      # /admin — dashboard, server tabs, tool detail, Try It
+│   ├── IntegrationsController.php  # /admin/integrations overview
+│   ├── DocumentController.php
+│   ├── DocumentTypeController.php
 │   └── HealthController.php     # / and /health — service metadata
 ├── Mcp/
 │   ├── McpHandler.php           # JSON-RPC dispatcher (initialize, tools/list, tools/call)
-│   └── Tool/
-│       ├── ToolInterface.php    # Contract all tools implement
-│       ├── SumTool.php          # Utility: sum numbers
-│       ├── DayNameTool.php      # Utility: day of week
-│       ├── BunqListAccountsTool.php
-│       ├── BunqListTransactionsTool.php
-│       ├── BunqGetTransactionTool.php
-│       ├── BunqGetTransactionNotesTool.php
-│       ├── EmailListAccountsTool.php
-│       ├── EmailListFoldersTool.php
-│       ├── EmailCreateFolderTool.php
-│       ├── EmailSearchTool.php
-│       ├── EmailGetMessagesTool.php
-│       ├── EmailSendTool.php
-│       ├── EmailCreateDraftTool.php
-│       ├── EmailDeleteDraftTool.php
-│       ├── CalendarListCalendarsTool.php
-│       ├── CalendarListEventsTool.php
-│       ├── CalendarGetEventTool.php
-│       ├── CyansGetTopicsTool.php
-│       ├── CyansGetTopicDetailsTool.php
-│       ├── CyansSearchTopicsTool.php
-│       ├── CyansAddPostTool.php
-│       ├── SlackListAccountsTool.php
-│       ├── SlackListChannelsTool.php
-│       ├── SlackListMessagesTool.php
-│       ├── SlackGetThreadRepliesTool.php
-│       ├── SlackGetUnrespondedMessagesTool.php
-│       ├── SlackAddReactionTool.php
-│       ├── SlackPostMessageTool.php
-│       ├── FreescoutListAccountsTool.php
-│       ├── FreescoutListMailboxesTool.php
-│       ├── FreescoutListConversationsTool.php
-│       ├── FreescoutGetConversationTool.php
-│       ├── FreescoutListUsersTool.php
-│       ├── FreescoutCreateThreadTool.php
-│       ├── LibredeskListAccountsTool.php
-│       ├── LibredeskListConversationsTool.php
-│       ├── LibredeskSearchConversationsTool.php
-│       ├── LibredeskGetConversationTool.php
-│       ├── LibredeskReplyTool.php
-│       ├── LibredeskAddNoteTool.php
-│       ├── LibredeskUpsertDraftTool.php
-│       ├── LibredeskGetDraftTool.php
-│       ├── LibredeskDeleteDraftTool.php
-│       ├── LibredeskUpdateStatusTool.php
-│       ├── LibredeskListAgentsTool.php
-│       ├── LibredeskListTeamsTool.php
-│       ├── MatomoListAccountsTool.php
-│       ├── MatomoListSitesTool.php
-│       ├── MatomoGetVisitsSummaryTool.php
-│       ├── MatomoGetTopPagesTool.php
-│       ├── MatomoGetReportTool.php
-│       ├── TmdbListAccountsTool.php
-│       ├── TmdbFindByImdbTool.php
-│       ├── TmdbSearchTool.php
-│       ├── TmdbGetMovieTool.php
-│       ├── TmdbGetTvTool.php
-│       ├── TmdbCreateSessionTool.php
-│       ├── TmdbRateTool.php
-│       ├── TmdbDeleteRatingTool.php
-│       ├── TmdbListRatedTool.php
-│       ├── TmdbSetWatchlistTool.php
-│       ├── TmdbListWatchlistTool.php
-│       ├── IgdbListAccountsTool.php
-│       ├── IgdbFindTool.php
-│       ├── IgdbSearchTool.php
-│       ├── TelegramListAccountsTool.php
-│       ├── TelegramGetMeTool.php
-│       ├── TelegramSendMessageTool.php
-│       ├── TelegramGetUpdatesTool.php
-│       ├── TelegramGetChatTool.php
-│       ├── TelegramEditMessageTool.php
-│       ├── TelegramDeleteMessageTool.php
-│       ├── PicnicListAccountsTool.php
-│       ├── PicnicGenerate2faCodeTool.php
-│       ├── PicnicVerify2faCodeTool.php
-│       ├── PicnicSearchTool.php
-│       ├── PicnicSearchProductsTool.php
-│       ├── PicnicGetProductTool.php
-│       ├── PicnicGetImageUrlTool.php
-│       ├── PicnicGetCartTool.php
-│       ├── PicnicAddToCartTool.php
-│       ├── PicnicRemoveFromCartTool.php
-│       ├── PicnicClearCartTool.php
-│       ├── PicnicBrowseRecipesTool.php
-│       ├── PicnicGetRecipeTool.php
-│       ├── PicnicAddRecipeToCartTool.php
-│       ├── PicnicRemoveRecipeFromCartTool.php
-│       ├── PicnicSaveRecipeTool.php
-│       ├── PicnicUnsaveRecipeTool.php
-│       ├── PicnicListDeliveriesTool.php
-│       └── PicnicGetDeliveryTool.php
-├── Bunq/                        # bunq banking integration
-│   ├── BunqAccountConfig.php
-│   ├── BunqConfigLoader.php
-│   └── BunqService.php
-├── Email/                       # Email integration (IMAP read + SMTP send)
-│   ├── EmailAccountConfig.php
-│   ├── ImapConfig.php
-│   ├── SmtpConfig.php
-│   ├── EmailIdentity.php
-│   ├── EmailConfigLoader.php
-│   ├── ImapClient.php
-│   ├── SmtpMailer.php
-│   ├── MarkdownRenderer.php
-│   ├── MessageComposer.php
-│   ├── ReplyContext.php
-│   ├── ComposedMessage.php
-│   └── EmailService.php
-├── Calendar/                    # ICS calendar integration
-│   ├── CalendarConfig.php
-│   ├── CalendarConfigLoader.php
-│   └── CalendarService.php
-├── Cyans/                       # Cyans topic tracking integration
-│   ├── CyansAccountConfig.php
-│   ├── CyansConfigLoader.php
-│   └── CyansService.php
-├── Slack/                       # Slack messaging integration (jolicode/slack-php-api)
-│   ├── SlackAccountConfig.php
-│   ├── SlackConfigLoader.php
-│   └── SlackService.php
-├── Freescout/                   # Freescout helpdesk integration (REST API)
-│   ├── FreescoutAccountConfig.php
-│   ├── FreescoutConfigLoader.php
-│   └── FreescoutService.php
-├── Libredesk/                   # Libredesk helpdesk integration (REST API)
-│   ├── LibredeskAccountConfig.php
-│   ├── LibredeskConfigLoader.php
-│   └── LibredeskService.php
-├── Matomo/                      # Matomo analytics integration (Reporting API)
-│   ├── MatomoAccountConfig.php
-│   ├── MatomoConfigLoader.php
-│   └── MatomoService.php
-├── Tmdb/                        # TMDb film/TV metadata + ratings/watchlist
-│   ├── TmdbAccountConfig.php
-│   ├── TmdbConfigLoader.php
-│   └── TmdbService.php
-├── Igdb/                        # IGDB game metadata (read-only, Twitch OAuth)
-│   ├── IgdbAccountConfig.php
-│   ├── IgdbConfigLoader.php
-│   └── IgdbService.php
-├── Telegram/                    # Telegram Bot API integration
-│   ├── TelegramAccountConfig.php
-│   ├── TelegramConfigLoader.php
-│   └── TelegramService.php
-├── Picnic/                      # Picnic supermarket (unofficial storefront API)
-│   ├── PicnicAccountConfig.php
-│   ├── PicnicConfigLoader.php
-│   ├── PicnicService.php
-│   ├── PicnicImage.php
-│   ├── PicnicFusion.php
-│   ├── PicnicRecipeParser.php
-│   └── PicnicTwoFactorRequiredException.php
+│   └── Tool/                    # core/utility tools only (not account-typed)
+│       ├── ToolInterface.php
+│       ├── SumTool.php
+│       ├── DayNameTool.php
+│       └── Document*Tool.php
+├── Command/
+│   └── McpToolsListCommand.php  # mcp:tools inventory harness
+├── Entity/                      # Document* only (integration entities live under Integrations/)
+├── Repository/                  # Document* only
+├── AgentNotify/                 # core per-server notify subsystem
+├── Whisper/                     # shared transcription subsystem
 └── Security/
-    ├── BearerTokenAuthenticator.php  # MCP firewall: Bearer → ServerConfig
-    └── EnvUserProvider.php           # Admin login from APP_AUTH_USER/PASSWORD
+    ├── BearerTokenAuthenticator.php
+    └── EnvUserProvider.php
 ```
+
+Each integration module is self-contained: account config, config loader, service, MCP tools,
+and (where needed) controllers, commands, entities, and repositories. See `/admin/integrations`
+for a live list of registered integrations, tool counts, and account usage.
 
 ## How to Add a New Integration
 
-Adding a new integration follows a repeatable 4-step pattern. Each existing integration (bunq, email, calendar, cyans, slack) demonstrates this pattern.
+Adding a new integration follows a repeatable pattern under `src/Integrations/{Name}/`.
+Existing modules (e.g. `src/Integrations/Cyans/`, `src/Integrations/Slack/`) demonstrate it.
 
 ### Step 1: Create the Account Config DTO
 
-Create `src/Slack/SlackAccountConfig.php`:
+Create `src/Integrations/Slack/SlackAccountConfig.php`:
 
 ```php
-namespace App\Slack;
+namespace App\Integrations\Slack;
 
 class SlackAccountConfig
 {
@@ -268,10 +150,10 @@ class SlackAccountConfig
 
 ### Step 2: Create the Config Loader
 
-Create `src/Slack/SlackConfigLoader.php`:
+Create `src/Integrations/Slack/SlackConfigLoader.php`:
 
 ```php
-namespace App\Slack;
+namespace App\Integrations\Slack;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
@@ -321,16 +203,21 @@ class SlackConfigLoader
 
 ### Step 3: Create the Service
 
-Create `src/Slack/SlackService.php` — the actual API integration. Inject `HttpClientInterface` (for REST APIs), the config loader, and any other dependencies.
+Create `src/Integrations/Slack/SlackService.php` — the actual API integration. Inject `HttpClientInterface` (for REST APIs), the config loader, and any other dependencies.
 
-### Step 4: Create Tool Classes
+### Step 4: Create the Integration metadata class
 
-Create one or more classes in `src/Mcp/Tool/` that implement `ToolInterface`:
+Create `src/Integrations/Slack/SlackIntegration.php` implementing `App\Integrations\IntegrationInterface` (`getType()`, `getLabel()`, `getDescription()`). Symfony tags it as `app.integration` automatically — no manual registration. `getType()` must match the YAML `type:` string and tool `getAccountType()`.
+
+### Step 5: Create Tool Classes
+
+Create one or more classes in `src/Integrations/Slack/Tool/` that implement `ToolInterface`:
 
 ```php
-namespace App\Mcp\Tool;
+namespace App\Integrations\Slack\Tool;
 
-use App\Slack\SlackService;
+use App\Integrations\Slack\SlackService;
+use App\Mcp\Tool\ToolInterface;
 
 class SlackSendMessageTool implements ToolInterface
 {
@@ -398,9 +285,9 @@ class SlackSendMessageTool implements ToolInterface
 }
 ```
 
-**That's it.** No registration code needed — Symfony auto-discovers the tool via the `ToolInterface` tag.
+**That's it.** No registration code needed — Symfony auto-discovers the tool via the `ToolInterface` tag and the integration via `IntegrationInterface`.
 
-### Step 5: Add Account Config in YAML
+### Step 6: Add Account Config in YAML
 
 Add accounts to the appropriate server(s) in `prism.config.yaml`:
 
@@ -567,7 +454,7 @@ There is currently no test suite. When adding tests, use PHPUnit with `tests/` d
 |---|---|---|
 | Add a new server | YAML entry | `prism.config.yaml` |
 | Add an account to a server | YAML entry under server's `accounts:` | `prism.config.yaml` |
-| Add a new account type | AccountConfig + ConfigLoader + Service | `src/{TypeName}/` |
-| Add a tool for an existing type | Tool class implementing `ToolInterface` | `src/Mcp/Tool/` |
+| Add a new account type | AccountConfig + ConfigLoader + Service + `*Integration` + `Tool/` | `src/Integrations/{Name}/` |
+| Add a tool for an existing type | Tool class implementing `ToolInterface` | `src/Integrations/{Name}/Tool/` |
 | Add a utility tool | Tool class with `getAccountType() → null` | `src/Mcp/Tool/` |
 | Add a new integration end-to-end | All of the above | See "How to Add a New Integration" |
