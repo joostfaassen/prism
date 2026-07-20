@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Picnic\Tool;
 
-use App\Picnic\PicnicService;
+use App\Mcp\Tool\ToolInterface;
 
-class PicnicVerify2faCodeTool implements ToolInterface
+use App\Integrations\Picnic\PicnicService;
+
+class PicnicSearchTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,13 +15,13 @@ class PicnicVerify2faCodeTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_verify_2fa_code';
+        return 'picnic_search';
     }
 
     public function getDescription(): string
     {
-        return 'Verify a Picnic SMS 2FA code and cache the new auth session. '
-            . 'Call picnic_generate_2fa_code first when login requires 2FA.';
+        return 'Search Picnic grocery products by name/keywords. Returns product ids (needed for picnic_add_to_cart), '
+            . 'names, prices (cents + EUR), unit sizes, and image_url. Same as picnic_search_products.';
     }
 
     public function getInputSchema(): array
@@ -27,16 +29,22 @@ class PicnicVerify2faCodeTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'code' => [
+                'query' => [
                     'type' => 'string',
-                    'description' => 'The OTP / SMS code',
+                    'description' => 'Search term, e.g. "melk" or "bananen"',
+                ],
+                'limit' => [
+                    'type' => 'integer',
+                    'description' => 'Max products to return (1–50, default 20)',
+                    'minimum' => 1,
+                    'maximum' => 50,
                 ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
                 ],
             ],
-            'required' => ['code'],
+            'required' => ['query'],
         ];
     }
 
@@ -47,18 +55,19 @@ class PicnicVerify2faCodeTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
-        $code = trim((string) ($arguments['code'] ?? ''));
+        $query = trim((string) ($arguments['query'] ?? ''));
+        $limit = (int) ($arguments['limit'] ?? 20);
         $account = $arguments['account'] ?? null;
 
-        if ($code === '') {
+        if ($query === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "code" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "query" is required and cannot be empty']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->picnicService->verify2faCode($code, $account);
+            $result = $this->picnicService->searchProducts($query, $account, $limit);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
@@ -68,7 +77,7 @@ class PicnicVerify2faCodeTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error verifying Picnic 2FA code: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error searching Picnic products: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

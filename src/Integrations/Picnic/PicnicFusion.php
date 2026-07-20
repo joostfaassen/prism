@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Picnic;
+namespace App\Integrations\Picnic;
 
 /**
  * Lightweight walkers for Picnic Fusion/PML JSON trees (no JSONPath dependency).

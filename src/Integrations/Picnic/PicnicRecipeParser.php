@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Picnic;
+namespace App\Integrations\Picnic;
 
 /**
  * Best-effort parser for Picnic cookbook / selling-group recipe Fusion pages.

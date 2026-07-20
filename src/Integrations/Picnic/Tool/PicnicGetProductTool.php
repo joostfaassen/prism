@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Picnic\Tool;
 
-use App\Picnic\PicnicService;
+use App\Mcp\Tool\ToolInterface;
 
-class PicnicSaveRecipeTool implements ToolInterface
+use App\Integrations\Picnic\PicnicService;
+
+class PicnicGetProductTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,12 +15,13 @@ class PicnicSaveRecipeTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_save_recipe';
+        return 'picnic_get_product';
     }
 
     public function getDescription(): string
     {
-        return 'Save (favourite) a Picnic recipe in the user cookbook.';
+        return 'Get details for a Picnic product by id (e.g. s11295810 from picnic_search). '
+            . 'Returns name, price, unit size, description highlights, and image URLs.';
     }
 
     public function getInputSchema(): array
@@ -26,16 +29,16 @@ class PicnicSaveRecipeTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'recipe_id' => [
+                'product_id' => [
                     'type' => 'string',
-                    'description' => 'Recipe id (selling_group_id) or picnic.app recipe URL',
+                    'description' => 'Picnic product / selling-unit id, e.g. "s11295810"',
                 ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
                 ],
             ],
-            'required' => ['recipe_id'],
+            'required' => ['product_id'],
         ];
     }
 
@@ -46,28 +49,28 @@ class PicnicSaveRecipeTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
-        $recipeId = trim((string) ($arguments['recipe_id'] ?? ''));
+        $productId = trim((string) ($arguments['product_id'] ?? ''));
         $account = $arguments['account'] ?? null;
 
-        if ($recipeId === '') {
+        if ($productId === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "recipe_id" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "product_id" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->picnicService->saveRecipe($recipeId, true, $account);
+            $product = $this->picnicService->getProduct($productId, $account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $result,
+                    $product,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error saving Picnic recipe: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic product: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

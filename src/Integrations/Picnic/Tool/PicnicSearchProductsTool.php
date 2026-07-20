@@ -1,10 +1,13 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Picnic\Tool;
 
-use App\Picnic\PicnicService;
+use App\Mcp\Tool\ToolInterface;
 
-class PicnicGetRecipeTool implements ToolInterface
+use App\Integrations\Picnic\PicnicService;
+
+/** @deprecated Use picnic_search — kept as an alias for existing clients. */
+class PicnicSearchProductsTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,14 +16,12 @@ class PicnicGetRecipeTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_get_recipe';
+        return 'picnic_search_products';
     }
 
     public function getDescription(): string
     {
-        return 'Get a Picnic recipe by id (24–32 hex selling_group_id) or picnic.app recipe URL. '
-            . 'Returns title, image_url, portions, ingredients, instructions, tips, and source_url. '
-            . 'Images are HTTPS URLs — download outside Prism if needed.';
+        return 'Alias for picnic_search. Search Picnic grocery products by name. Prefer picnic_search.';
     }
 
     public function getInputSchema(): array
@@ -28,16 +29,22 @@ class PicnicGetRecipeTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'recipe_id' => [
+                'query' => [
                     'type' => 'string',
-                    'description' => 'Recipe id (selling_group_id) or full picnic.app recipe URL',
+                    'description' => 'The search term, e.g. "melk" or "bananen"',
+                ],
+                'limit' => [
+                    'type' => 'integer',
+                    'description' => 'Max products to return (1–50, default 20)',
+                    'minimum' => 1,
+                    'maximum' => 50,
                 ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'Picnic account key. Defaults to the first configured account.',
                 ],
             ],
-            'required' => ['recipe_id'],
+            'required' => ['query'],
         ];
     }
 
@@ -48,28 +55,29 @@ class PicnicGetRecipeTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
-        $recipeId = trim((string) ($arguments['recipe_id'] ?? ''));
+        $query = trim((string) ($arguments['query'] ?? ''));
+        $limit = (int) ($arguments['limit'] ?? 20);
         $account = $arguments['account'] ?? null;
 
-        if ($recipeId === '') {
+        if ($query === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "recipe_id" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "query" is required and cannot be empty']],
                 'isError' => true,
             ];
         }
 
         try {
-            $recipe = $this->picnicService->getRecipe($recipeId, $account);
+            $result = $this->picnicService->searchProducts($query, $account, $limit);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $recipe,
+                    $result,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching Picnic recipe: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error searching Picnic products: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

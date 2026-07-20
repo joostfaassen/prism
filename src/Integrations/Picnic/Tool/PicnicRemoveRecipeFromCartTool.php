@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Picnic\Tool;
 
-use App\Picnic\PicnicService;
+use App\Mcp\Tool\ToolInterface;
 
-class PicnicUnsaveRecipeTool implements ToolInterface
+use App\Integrations\Picnic\PicnicService;
+
+class PicnicRemoveRecipeFromCartTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,12 +15,12 @@ class PicnicUnsaveRecipeTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_unsave_recipe';
+        return 'picnic_remove_recipe_from_cart';
     }
 
     public function getDescription(): string
     {
-        return 'Remove a Picnic recipe from the user saved/favourites cookbook.';
+        return 'Remove a previously added Picnic recipe (selling group) from the shopping cart/list.';
     }
 
     public function getInputSchema(): array
@@ -57,17 +59,17 @@ class PicnicUnsaveRecipeTool implements ToolInterface
         }
 
         try {
-            $result = $this->picnicService->saveRecipe($recipeId, false, $account);
+            $cart = $this->picnicService->removeRecipeFromCart($recipeId, $account);
 
             return [
-                'content' => [['type' => 'text', 'text' => json_encode(
-                    $result,
-                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-                )]],
+                'content' => [['type' => 'text', 'text' => json_encode([
+                    'removed_recipe_id' => $recipeId,
+                    'cart' => $cart,
+                ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error unsaving Picnic recipe: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error removing Picnic recipe from cart: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

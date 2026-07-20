@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Picnic\Tool;
 
-use App\Picnic\PicnicService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Picnic\PicnicService;
 
 class PicnicListDeliveriesTool implements ToolInterface
 {

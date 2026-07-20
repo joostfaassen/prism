@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Picnic\Tool;
 
-use App\Picnic\PicnicService;
+use App\Mcp\Tool\ToolInterface;
 
-class PicnicRemoveFromCartTool implements ToolInterface
+use App\Integrations\Picnic\PicnicService;
+
+class PicnicAddToCartTool implements ToolInterface
 {
     public function __construct(
         private readonly PicnicService $picnicService,
@@ -13,12 +15,13 @@ class PicnicRemoveFromCartTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'picnic_remove_from_cart';
+        return 'picnic_add_to_cart';
     }
 
     public function getDescription(): string
     {
-        return 'Remove one or more units of a product from the Picnic shopping cart/list by product id.';
+        return 'Add a Picnic product to the shopping cart/list by product id. '
+            . 'Use picnic_search first to find product ids. Returns the updated cart summary.';
     }
 
     public function getInputSchema(): array
@@ -28,11 +31,11 @@ class PicnicRemoveFromCartTool implements ToolInterface
             'properties' => [
                 'product_id' => [
                     'type' => 'string',
-                    'description' => 'The Picnic product id to remove',
+                    'description' => 'Picnic product id (e.g. "s1000000") from picnic_search',
                 ],
                 'quantity' => [
                     'type' => 'integer',
-                    'description' => 'How many units to remove. Defaults to 1. Alias: count.',
+                    'description' => 'How many units to add. Defaults to 1. Alias: count.',
                     'minimum' => 1,
                 ],
                 'count' => [
@@ -75,17 +78,17 @@ class PicnicRemoveFromCartTool implements ToolInterface
         }
 
         try {
-            $cart = $this->picnicService->removeFromCart($productId, $count, $account);
+            $cart = $this->picnicService->addToCart($productId, $count, $account);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
-                    'removed' => ['product_id' => $productId, 'quantity' => $count],
+                    'added' => ['product_id' => $productId, 'quantity' => $count],
                     'cart' => $cart,
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error removing from Picnic cart: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error adding to Picnic cart: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

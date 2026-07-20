@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Picnic;
+namespace App\Integrations\Picnic;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
