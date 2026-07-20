@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Cyans;
+namespace App\Integrations\Cyans;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

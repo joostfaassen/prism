@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Cyans;
+namespace App\Integrations\Cyans;
 
 class CyansAccountConfig
 {

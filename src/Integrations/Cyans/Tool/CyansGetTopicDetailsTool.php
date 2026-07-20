@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Cyans\Tool;
 
-use App\Cyans\CyansService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Cyans\CyansService;
 
 class CyansGetTopicDetailsTool implements ToolInterface
 {

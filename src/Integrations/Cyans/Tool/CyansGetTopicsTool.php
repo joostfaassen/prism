@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Cyans\Tool;
 
-use App\Cyans\CyansService;
+use App\Mcp\Tool\ToolInterface;
 
-class CyansSearchTopicsTool implements ToolInterface
+use App\Integrations\Cyans\CyansService;
+
+class CyansGetTopicsTool implements ToolInterface
 {
     public function __construct(
         private readonly CyansService $cyansService,
@@ -13,12 +15,12 @@ class CyansSearchTopicsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'cyans_search_topics';
+        return 'cyans_get_open_topics';
     }
 
     public function getDescription(): string
     {
-        return 'Search Cyans topics by subject text. Performs client-side filtering on the user\'s topic list (the API has no server-side search). Omit username to use the default configured user.';
+        return 'Get open/active Cyans topics for a user. Returns topic summaries sorted by last update. Omit username to use the default configured user.';
     }
 
     public function getInputSchema(): array
@@ -26,16 +28,12 @@ class CyansSearchTopicsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'query' => [
-                    'type' => 'string',
-                    'description' => 'Search query to match against topic subjects (case-insensitive)',
-                ],
                 'username' => [
                     'type' => 'string',
                     'description' => 'Cyans username. Defaults to the configured CYANS_USERNAME.',
                 ],
             ],
-            'required' => ['query'],
+            'required' => [],
         ];
     }
 
@@ -46,15 +44,7 @@ class CyansSearchTopicsTool implements ToolInterface
 
     public function execute(array $arguments): array
     {
-        $query = $arguments['query'] ?? '';
         $username = $arguments['username'] ?? $this->cyansService->getDefaultUsername();
-
-        if ($query === '') {
-            return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "query" is required']],
-                'isError' => true,
-            ];
-        }
 
         if ($username === '') {
             return [
@@ -64,19 +54,18 @@ class CyansSearchTopicsTool implements ToolInterface
         }
 
         try {
-            $results = $this->cyansService->searchTopics($username, $query);
+            $topics = $this->cyansService->getOpenTopics($username);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
                     'username' => $username,
-                    'query' => $query,
-                    'count' => count($results),
-                    'topics' => $results,
+                    'count' => count($topics),
+                    'topics' => $topics,
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error searching topics: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching topics: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
