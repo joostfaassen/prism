@@ -1,6 +1,6 @@
 <?php
 
-namespace App\OpenAi;
+namespace App\Integrations\OpenAi;
 
 class OpenAiAccountConfig
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\OpenAi;
+namespace App\Integrations\OpenAi;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

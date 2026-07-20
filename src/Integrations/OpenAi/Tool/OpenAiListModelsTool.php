@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\OpenAi\Tool;
 
-use App\OpenAi\OpenAiService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\OpenAi\OpenAiService;
 
 class OpenAiListModelsTool implements ToolInterface
 {
