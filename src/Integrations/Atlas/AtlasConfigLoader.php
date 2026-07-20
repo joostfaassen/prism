@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Atlas;
+namespace App\Integrations\Atlas;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

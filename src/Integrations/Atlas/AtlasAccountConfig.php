@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Atlas;
+namespace App\Integrations\Atlas;
 
 class AtlasAccountConfig
 {

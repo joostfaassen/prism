@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Atlas;
+namespace App\Integrations\Atlas;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;

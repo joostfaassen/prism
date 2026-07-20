@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Atlas\Tool;
 
-use App\Atlas\AtlasService;
+use App\Mcp\Tool\ToolInterface;
 
-class AtlasTreeTool implements ToolInterface
+use App\Integrations\Atlas\AtlasService;
+
+class AtlasListTool implements ToolInterface
 {
     public function __construct(
         private readonly AtlasService $atlasService,
@@ -13,12 +15,12 @@ class AtlasTreeTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'atlas_tree';
+        return 'atlas_list';
     }
 
     public function getDescription(): string
     {
-        return 'Get a recursive Atlas content directory tree. Depth defaults to 3 and is capped at 12.';
+        return 'List the direct children of a directory in an Atlas content tree.';
     }
 
     public function getInputSchema(): array
@@ -33,10 +35,6 @@ class AtlasTreeTool implements ToolInterface
                 'path' => [
                     'type' => 'string',
                     'description' => 'Directory path under content/. Omit or pass an empty string for the root.',
-                ],
-                'depth' => [
-                    'type' => 'integer',
-                    'description' => 'Tree depth. Defaults to 3, maximum 12.',
                 ],
             ],
             'required' => ['atlas'],
@@ -61,7 +59,7 @@ class AtlasTreeTool implements ToolInterface
         try {
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $this->atlasService->tree($atlas, $arguments['path'] ?? '', (int) ($arguments['depth'] ?? 3)),
+                    $this->atlasService->list($atlas, $arguments['path'] ?? ''),
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];

@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Atlas\Tool;
 
-use App\Atlas\AtlasService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Atlas\AtlasService;
 
 class AtlasGrepTool implements ToolInterface
 {

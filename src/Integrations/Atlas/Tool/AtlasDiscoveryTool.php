@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Atlas\Tool;
 
-use App\Atlas\AtlasService;
+use App\Mcp\Tool\ToolInterface;
 
-class AtlasSearchTool implements ToolInterface
+use App\Integrations\Atlas\AtlasService;
+
+class AtlasDiscoveryTool implements ToolInterface
 {
     public function __construct(
         private readonly AtlasService $atlasService,
@@ -13,12 +15,12 @@ class AtlasSearchTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'atlas_search';
+        return 'atlas_discovery';
     }
 
     public function getDescription(): string
     {
-        return 'Full-text search across an Atlas content tree.';
+        return 'Get the Atlas Content API discovery document for a configured Atlas account.';
     }
 
     public function getInputSchema(): array
@@ -30,12 +32,8 @@ class AtlasSearchTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Atlas account name, for example "engineering" or "hr".',
                 ],
-                'q' => [
-                    'type' => 'string',
-                    'description' => 'Search query.',
-                ],
             ],
-            'required' => ['atlas', 'q'],
+            'required' => ['atlas'],
         ];
     }
 
@@ -47,26 +45,33 @@ class AtlasSearchTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $atlas = $arguments['atlas'] ?? '';
-        $query = $arguments['q'] ?? '';
-        if ($atlas === '' || $query === '') {
+        if ($atlas === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "atlas" and "q" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "atlas" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            return [
-                'content' => [['type' => 'text', 'text' => json_encode(
-                    $this->atlasService->search($atlas, $query),
-                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-                )]],
-            ];
+            return $this->jsonResult($this->atlasService->discovery($atlas));
         } catch (\Throwable $e) {
             return [
                 'content' => [['type' => 'text', 'text' => 'Error: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function jsonResult(array $result): array
+    {
+        return [
+            'content' => [['type' => 'text', 'text' => json_encode(
+                $result,
+                JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+            )]],
+        ];
     }
 }
