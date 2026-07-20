@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Libredesk;
+namespace App\Integrations\Libredesk;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

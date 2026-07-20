@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Libredesk\Tool;
 
-use App\Libredesk\LibredeskService;
+use App\Mcp\Tool\ToolInterface;
 
-class LibredeskListTeamsTool implements ToolInterface
+use App\Integrations\Libredesk\LibredeskService;
+
+class LibredeskListAgentsTool implements ToolInterface
 {
     public function __construct(
         private readonly LibredeskService $libredeskService,
@@ -13,12 +15,12 @@ class LibredeskListTeamsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'libredesk_list_teams';
+        return 'libredesk_list_agents';
     }
 
     public function getDescription(): string
     {
-        return 'List teams in a Libredesk instance. Returns team IDs, names, emoji, and timezone. Useful for understanding team-based conversation assignment.';
+        return 'List agents (teammates) in a Libredesk instance. Returns agent IDs, emails, names, and enabled status. Useful for resolving assignees.';
     }
 
     public function getInputSchema(): array
@@ -51,7 +53,7 @@ class LibredeskListTeamsTool implements ToolInterface
         }
 
         try {
-            $result = $this->libredeskService->listTeams($accountKey);
+            $result = $this->libredeskService->listAgents($accountKey);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

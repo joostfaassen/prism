@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Libredesk;
+namespace App\Integrations\Libredesk;
 
 class LibredeskAccountConfig
 {

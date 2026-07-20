@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Libredesk\Tool;
 
-use App\Libredesk\LibredeskService;
+use App\Mcp\Tool\ToolInterface;
 
-class LibredeskDeleteDraftTool implements ToolInterface
+use App\Integrations\Libredesk\LibredeskService;
+
+class LibredeskListMacrosTool implements ToolInterface
 {
     public function __construct(
         private readonly LibredeskService $libredeskService,
@@ -13,18 +15,12 @@ class LibredeskDeleteDraftTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'libredesk_delete_draft';
+        return 'libredesk_list_macros';
     }
 
     public function getDescription(): string
     {
-        return <<<'DESC'
-Delete the DRAFT reply staged on a Libredesk conversation (identified by UUID) for the
-agent that owns the configured API key. This only discards the staged draft; it does not
-affect any sent messages.
-
-Requires a Libredesk build from late December 2025 or newer (conversation drafts API).
-DESC;
+        return 'List all macros configured in a Libredesk instance. Returns macro IDs, names, reply templates, actions, and visibility. Useful for discovering macro IDs to apply to a conversation.';
     }
 
     public function getInputSchema(): array
@@ -36,12 +32,8 @@ DESC;
                     'type' => 'string',
                     'description' => 'Libredesk account key',
                 ],
-                'uuid' => [
-                    'type' => 'string',
-                    'description' => 'Conversation UUID',
-                ],
             ],
-            'required' => ['account', 'uuid'],
+            'required' => ['account'],
         ];
     }
 
@@ -53,22 +45,20 @@ DESC;
     public function execute(array $arguments): array
     {
         $accountKey = $arguments['account'] ?? '';
-        $uuid = $arguments['uuid'] ?? '';
-
-        if ($accountKey === '' || $uuid === '') {
+        if ($accountKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "uuid" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $this->libredeskService->deleteDraft($accountKey, $uuid);
+            $result = $this->libredeskService->listMacros($accountKey);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    ['success' => true],
-                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT,
+                    $result,
+                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
                 )]],
             ];
         } catch (\Throwable $e) {

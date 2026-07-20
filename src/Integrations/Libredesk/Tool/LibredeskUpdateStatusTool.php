@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Libredesk\Tool;
 
-use App\Libredesk\LibredeskService;
+use App\Mcp\Tool\ToolInterface;
 
-class LibredeskGetDraftTool implements ToolInterface
+use App\Integrations\Libredesk\LibredeskService;
+
+class LibredeskUpdateStatusTool implements ToolInterface
 {
     public function __construct(
         private readonly LibredeskService $libredeskService,
@@ -13,18 +15,16 @@ class LibredeskGetDraftTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'libredesk_get_draft';
+        return 'libredesk_update_status';
     }
 
     public function getDescription(): string
     {
         return <<<'DESC'
-Get the existing DRAFT reply staged on a Libredesk conversation (identified by UUID)
-for the agent that owns the configured API key. Useful to check what is already staged
-before overwriting it with libredesk_upsert_draft. Returns an empty/blank result if no
-draft exists.
+Update the status of a Libredesk conversation (identified by UUID).
 
-Requires a Libredesk build from late December 2025 or newer (conversation drafts API).
+Common statuses: "Open", "Resolved", "Closed", "Snoozed".
+When setting status to "Snoozed", provide snoozed_until (e.g. "1h", "3h", "100h").
 DESC;
     }
 
@@ -41,8 +41,16 @@ DESC;
                     'type' => 'string',
                     'description' => 'Conversation UUID',
                 ],
+                'status' => [
+                    'type' => 'string',
+                    'description' => 'New status, e.g. Open, Resolved, Closed, Snoozed',
+                ],
+                'snoozed_until' => [
+                    'type' => 'string',
+                    'description' => 'Snooze duration (e.g. "1h", "3h", "100h"). Required when status is "Snoozed".',
+                ],
             ],
-            'required' => ['account', 'uuid'],
+            'required' => ['account', 'uuid', 'status'],
         ];
     }
 
@@ -55,20 +63,23 @@ DESC;
     {
         $accountKey = $arguments['account'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
+        $status = $arguments['status'] ?? '';
 
-        if ($accountKey === '' || $uuid === '') {
+        if ($accountKey === '' || $uuid === '' || $status === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "uuid" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "account", "uuid", and "status" are required']],
                 'isError' => true,
             ];
         }
 
+        $snoozedUntil = $arguments['snoozed_until'] ?? null;
+
         try {
-            $result = $this->libredeskService->getDraft($accountKey, $uuid);
+            $result = $this->libredeskService->updateStatus($accountKey, $uuid, $status, $snoozedUntil);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    ['draft' => $result],
+                    ['success' => true, 'result' => $result],
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
                 )]],
             ];

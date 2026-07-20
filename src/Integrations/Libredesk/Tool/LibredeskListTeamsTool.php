@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Libredesk\Tool;
 
-use App\Libredesk\LibredeskService;
+use App\Mcp\Tool\ToolInterface;
 
-class LibredeskListMacrosTool implements ToolInterface
+use App\Integrations\Libredesk\LibredeskService;
+
+class LibredeskListTeamsTool implements ToolInterface
 {
     public function __construct(
         private readonly LibredeskService $libredeskService,
@@ -13,12 +15,12 @@ class LibredeskListMacrosTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'libredesk_list_macros';
+        return 'libredesk_list_teams';
     }
 
     public function getDescription(): string
     {
-        return 'List all macros configured in a Libredesk instance. Returns macro IDs, names, reply templates, actions, and visibility. Useful for discovering macro IDs to apply to a conversation.';
+        return 'List teams in a Libredesk instance. Returns team IDs, names, emoji, and timezone. Useful for understanding team-based conversation assignment.';
     }
 
     public function getInputSchema(): array
@@ -51,7 +53,7 @@ class LibredeskListMacrosTool implements ToolInterface
         }
 
         try {
-            $result = $this->libredeskService->listMacros($accountKey);
+            $result = $this->libredeskService->listTeams($accountKey);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

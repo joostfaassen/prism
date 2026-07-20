@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Libredesk\Tool;
 
-use App\Libredesk\LibredeskService;
+use App\Mcp\Tool\ToolInterface;
 
-class LibredeskUpdateStatusTool implements ToolInterface
+use App\Integrations\Libredesk\LibredeskService;
+
+class LibredeskDeleteDraftTool implements ToolInterface
 {
     public function __construct(
         private readonly LibredeskService $libredeskService,
@@ -13,16 +15,17 @@ class LibredeskUpdateStatusTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'libredesk_update_status';
+        return 'libredesk_delete_draft';
     }
 
     public function getDescription(): string
     {
         return <<<'DESC'
-Update the status of a Libredesk conversation (identified by UUID).
+Delete the DRAFT reply staged on a Libredesk conversation (identified by UUID) for the
+agent that owns the configured API key. This only discards the staged draft; it does not
+affect any sent messages.
 
-Common statuses: "Open", "Resolved", "Closed", "Snoozed".
-When setting status to "Snoozed", provide snoozed_until (e.g. "1h", "3h", "100h").
+Requires a Libredesk build from late December 2025 or newer (conversation drafts API).
 DESC;
     }
 
@@ -39,16 +42,8 @@ DESC;
                     'type' => 'string',
                     'description' => 'Conversation UUID',
                 ],
-                'status' => [
-                    'type' => 'string',
-                    'description' => 'New status, e.g. Open, Resolved, Closed, Snoozed',
-                ],
-                'snoozed_until' => [
-                    'type' => 'string',
-                    'description' => 'Snooze duration (e.g. "1h", "3h", "100h"). Required when status is "Snoozed".',
-                ],
             ],
-            'required' => ['account', 'uuid', 'status'],
+            'required' => ['account', 'uuid'],
         ];
     }
 
@@ -61,24 +56,21 @@ DESC;
     {
         $accountKey = $arguments['account'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
-        $status = $arguments['status'] ?? '';
 
-        if ($accountKey === '' || $uuid === '' || $status === '') {
+        if ($accountKey === '' || $uuid === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "uuid", and "status" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "uuid" are required']],
                 'isError' => true,
             ];
         }
 
-        $snoozedUntil = $arguments['snoozed_until'] ?? null;
-
         try {
-            $result = $this->libredeskService->updateStatus($accountKey, $uuid, $status, $snoozedUntil);
+            $this->libredeskService->deleteDraft($accountKey, $uuid);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    ['success' => true, 'result' => $result],
-                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+                    ['success' => true],
+                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT,
                 )]],
             ];
         } catch (\Throwable $e) {
