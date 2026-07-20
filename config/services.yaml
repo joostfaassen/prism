@@ -70,7 +70,7 @@ services:
         arguments:
             $clients: !tagged_iterator app.agent_notify_client
 
-    App\Email\MessageCache:
+    App\Integrations\Email\MessageCache:
         arguments:
             $emailCache: '@cache.email'
 
