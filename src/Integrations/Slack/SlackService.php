@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Slack;
+namespace App\Integrations\Slack;
 
 use JoliCode\Slack\Api\Client;
 use JoliCode\Slack\ClientFactory;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Slack;
+namespace App\Integrations\Slack;
 
 use Psr\Cache\CacheItemPoolInterface;
 

@@ -74,7 +74,7 @@ services:
         arguments:
             $emailCache: '@cache.email'
 
-    App\Slack\SlackCache:
+    App\Integrations\Slack\SlackCache:
         arguments:
             $slackCache: '@cache.slack'
 

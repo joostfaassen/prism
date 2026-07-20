@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Slack\Tool;
 
-use App\Slack\SlackService;
+use App\Mcp\Tool\ToolInterface;
 
-class SlackListChannelsTool implements ToolInterface
+use App\Integrations\Slack\SlackService;
+
+class SlackGetDirectoryTool implements ToolInterface
 {
     public function __construct(
         private readonly SlackService $slackService,
@@ -13,12 +15,12 @@ class SlackListChannelsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'slack_list_channels';
+        return 'slack_get_directory';
     }
 
     public function getDescription(): string
     {
-        return 'List Slack channels, DMs, and group conversations. Supports filtering by type: public_channel, private_channel, mpim (group DMs), im (1:1 DMs). Returns channel IDs, names, and metadata.';
+        return 'Get a complete directory of a Slack workspace: all users (ID → name mapping), public channels, private channels, DMs, and group conversations. Useful for resolving user/channel IDs to human-readable names.';
     }
 
     public function getInputSchema(): array
@@ -29,10 +31,6 @@ class SlackListChannelsTool implements ToolInterface
                 'account' => [
                     'type' => 'string',
                     'description' => 'Slack account key. Use slack_list_accounts to see available accounts.',
-                ],
-                'types' => [
-                    'type' => 'string',
-                    'description' => 'Comma-separated channel types to include. Options: public_channel, private_channel, mpim, im. Defaults to all types.',
                 ],
             ],
             'required' => ['account'],
@@ -54,20 +52,18 @@ class SlackListChannelsTool implements ToolInterface
             ];
         }
 
-        $types = $arguments['types'] ?? 'public_channel,private_channel,mpim,im';
-
         try {
-            $channels = $this->slackService->listChannels($accountKey, $types);
+            $directory = $this->slackService->getDirectory($accountKey);
 
             return [
-                'content' => [['type' => 'text', 'text' => json_encode([
-                    'count' => count($channels),
-                    'channels' => $channels,
-                ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
+                'content' => [['type' => 'text', 'text' => json_encode(
+                    $directory,
+                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+                )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing channels: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching directory: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

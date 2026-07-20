@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Slack\Tool;
 
-use App\Slack\SlackService;
+use App\Mcp\Tool\ToolInterface;
 
-class SlackListMessagesTool implements ToolInterface
+use App\Integrations\Slack\SlackService;
+
+class SlackGetUnrespondedMessagesTool implements ToolInterface
 {
     public function __construct(
         private readonly SlackService $slackService,
@@ -13,12 +15,12 @@ class SlackListMessagesTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'slack_list_messages';
+        return 'slack_get_unresponded_messages';
     }
 
     public function getDescription(): string
     {
-        return 'List recent messages in a Slack channel, DM, or group conversation. Returns message text, author, timestamps, thread info, and reactions. Use the channel ID from slack_list_channels.';
+        return 'Find messages in a channel or DM that the authenticated user has not responded to. Filters out the user\'s own messages and messages with bot subtypes. Shows whether each message mentions the user directly.';
     }
 
     public function getInputSchema(): array
@@ -32,19 +34,15 @@ class SlackListMessagesTool implements ToolInterface
                 ],
                 'channel' => [
                     'type' => 'string',
-                    'description' => 'Channel ID (e.g. C01ABC123, D01XYZ789)',
+                    'description' => 'Channel ID to check for unresponded messages',
                 ],
                 'limit' => [
                     'type' => 'integer',
-                    'description' => 'Max messages to return (default 20, max 200)',
+                    'description' => 'Max messages to scan (default 50, max 200)',
                 ],
                 'oldest' => [
                     'type' => 'string',
-                    'description' => 'Only messages after this Unix timestamp (e.g. "1234567890.123456")',
-                ],
-                'cursor' => [
-                    'type' => 'string',
-                    'description' => 'Pagination cursor from a previous response',
+                    'description' => 'Only check messages after this Unix timestamp',
                 ],
             ],
             'required' => ['account', 'channel'],
@@ -68,12 +66,11 @@ class SlackListMessagesTool implements ToolInterface
             ];
         }
 
-        $limit = min((int) ($arguments['limit'] ?? 20), 200);
+        $limit = min((int) ($arguments['limit'] ?? 50), 200);
         $oldest = $arguments['oldest'] ?? null;
-        $cursor = $arguments['cursor'] ?? null;
 
         try {
-            $result = $this->slackService->listMessages($accountKey, $channelId, $limit, $oldest, $cursor);
+            $result = $this->slackService->getUnrespondedMessages($accountKey, $channelId, $limit, $oldest);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
@@ -83,7 +80,7 @@ class SlackListMessagesTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing messages: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error checking messages: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

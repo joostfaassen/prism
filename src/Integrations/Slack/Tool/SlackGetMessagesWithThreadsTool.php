@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Slack\Tool;
 
-use App\Slack\SlackService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Slack\SlackService;
 
 class SlackGetMessagesWithThreadsTool implements ToolInterface
 {

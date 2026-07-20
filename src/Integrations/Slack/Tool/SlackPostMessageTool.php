@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Slack\Tool;
 
-use App\Slack\SlackService;
+use App\Mcp\Tool\ToolInterface;
 
-class SlackAddReactionTool implements ToolInterface
+use App\Integrations\Slack\SlackService;
+
+class SlackPostMessageTool implements ToolInterface
 {
     public function __construct(
         private readonly SlackService $slackService,
@@ -13,12 +15,12 @@ class SlackAddReactionTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'slack_add_reaction';
+        return 'slack_post_message';
     }
 
     public function getDescription(): string
     {
-        return 'Add an emoji reaction to a Slack message. The reaction appears as if sent by the authenticated user. Common reactions: thumbsup, eyes, white_check_mark, raised_hands, heart, tada, thinking_face.';
+        return 'Post a message to a Slack channel, DM, or group conversation. The message appears as the authenticated user. Supports replying to threads by providing thread_ts.';
     }
 
     public function getInputSchema(): array
@@ -32,18 +34,18 @@ class SlackAddReactionTool implements ToolInterface
                 ],
                 'channel' => [
                     'type' => 'string',
-                    'description' => 'Channel ID where the message is',
+                    'description' => 'Channel ID, DM ID, or group conversation ID to post to',
                 ],
-                'timestamp' => [
+                'text' => [
                     'type' => 'string',
-                    'description' => 'Message timestamp (ts field) to react to',
+                    'description' => 'Message text (supports Slack markdown: *bold*, _italic_, `code`, ```code block```, <URL|link text>)',
                 ],
-                'reaction' => [
+                'thread_ts' => [
                     'type' => 'string',
-                    'description' => 'Emoji name without colons (e.g. "thumbsup", "eyes", "white_check_mark")',
+                    'description' => 'Optional thread parent timestamp to reply in a thread instead of posting a new message',
                 ],
             ],
-            'required' => ['account', 'channel', 'timestamp', 'reaction'],
+            'required' => ['account', 'channel', 'text'],
         ];
     }
 
@@ -56,18 +58,18 @@ class SlackAddReactionTool implements ToolInterface
     {
         $accountKey = $arguments['account'] ?? '';
         $channelId = $arguments['channel'] ?? '';
-        $timestamp = $arguments['timestamp'] ?? '';
-        $reaction = trim($arguments['reaction'] ?? '', ': ');
+        $text = trim($arguments['text'] ?? '');
+        $threadTs = $arguments['thread_ts'] ?? null;
 
-        if ($accountKey === '' || $channelId === '' || $timestamp === '' || $reaction === '') {
+        if ($accountKey === '' || $channelId === '' || $text === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "channel", "timestamp", and "reaction" are all required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "account", "channel", and "text" are required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->slackService->addReaction($accountKey, $channelId, $timestamp, $reaction);
+            $result = $this->slackService->postMessage($accountKey, $channelId, $text, $threadTs);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
@@ -77,7 +79,7 @@ class SlackAddReactionTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error adding reaction: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error posting message: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

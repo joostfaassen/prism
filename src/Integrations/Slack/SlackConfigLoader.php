@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Slack;
+namespace App\Integrations\Slack;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
