@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Prometheus\Tool;
 
-use App\Prometheus\PrometheusService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Prometheus\PrometheusService;
 
 class PrometheusQueryTool implements ToolInterface
 {

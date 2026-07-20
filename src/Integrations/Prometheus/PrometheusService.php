@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Prometheus;
+namespace App\Integrations\Prometheus;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

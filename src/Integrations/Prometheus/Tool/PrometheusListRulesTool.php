@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Prometheus\Tool;
 
-use App\Prometheus\PrometheusService;
+use App\Mcp\Tool\ToolInterface;
 
-class PrometheusListTargetsTool implements ToolInterface
+use App\Integrations\Prometheus\PrometheusService;
+
+class PrometheusListRulesTool implements ToolInterface
 {
     public function __construct(
         private readonly PrometheusService $prometheusService,
@@ -13,14 +15,13 @@ class PrometheusListTargetsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'prometheus_list_targets';
+        return 'prometheus_list_rules';
     }
 
     public function getDescription(): string
     {
-        return 'List Prometheus scrape targets and their health (up/down), including the last scrape time, '
-            . 'last error and discovered labels. Useful to diagnose why metrics are missing. '
-            . 'Optionally filter by state (active/dropped).';
+        return 'List the alerting and recording rules configured in Prometheus, grouped by rule group, '
+            . 'including each rule\'s name, expression, state and health. Optionally filter by rule type.';
     }
 
     public function getInputSchema(): array
@@ -32,10 +33,10 @@ class PrometheusListTargetsTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Prometheus account key. Optional if only one account is configured.',
                 ],
-                'state' => [
+                'type' => [
                     'type' => 'string',
-                    'description' => 'Optional filter: "active" or "dropped". Defaults to all.',
-                    'enum' => ['active', 'dropped'],
+                    'description' => 'Optional filter: "alert" for alerting rules, "record" for recording rules. Defaults to all.',
+                    'enum' => ['alert', 'record'],
                 ],
             ],
             'required' => [],
@@ -50,19 +51,19 @@ class PrometheusListTargetsTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->prometheusService->listTargets(
+            $result = $this->prometheusService->listRules(
                 accountKey: $arguments['account'] ?? null,
-                state: $arguments['state'] ?? null,
+                type: $arguments['type'] ?? null,
             );
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
-                    'targets' => $result['data'] ?? [],
+                    'groups' => $result['data']['groups'] ?? [],
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing Prometheus targets: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error listing Prometheus rules: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
