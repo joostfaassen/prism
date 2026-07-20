@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Tmdb\TmdbService;
 
 class TmdbListAccountsTool implements ToolInterface
 {

@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
 
-class TmdbGetMovieTool implements ToolInterface
+use App\Integrations\Tmdb\TmdbService;
+
+class TmdbGetTvTool implements ToolInterface
 {
     public function __construct(
         private readonly TmdbService $tmdbService,
@@ -13,12 +15,12 @@ class TmdbGetMovieTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tmdb_get_movie';
+        return 'tmdb_get_tv';
     }
 
     public function getDescription(): string
     {
-        return 'Fetch a TMDb movie by numeric TMDb id. Returns a normalized record with title, synopsis, cast, genres, IMDb id when available, and absolute coverUrl/backdropUrl.';
+        return 'Fetch a TMDb TV series by numeric TMDb id. Returns a normalized record with title, synopsis, creators, cast, genres, IMDb id when available, and absolute coverUrl/backdropUrl.';
     }
 
     public function getInputSchema(): array
@@ -28,7 +30,7 @@ class TmdbGetMovieTool implements ToolInterface
             'properties' => [
                 'tmdb_id' => [
                     'type' => 'integer',
-                    'description' => 'Numeric TMDb movie id',
+                    'description' => 'Numeric TMDb TV id',
                 ],
                 'account' => [
                     'type' => 'string',
@@ -58,7 +60,7 @@ class TmdbGetMovieTool implements ToolInterface
                 ];
             }
 
-            $record = $this->tmdbService->getMovie(
+            $record = $this->tmdbService->getTv(
                 tmdbId: (int) $arguments['tmdb_id'],
                 accountKey: $arguments['account'] ?? null,
                 language: $arguments['language'] ?? null,
@@ -72,7 +74,7 @@ class TmdbGetMovieTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching TMDb movie: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching TMDb TV series: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
 
-class TmdbRateTool implements ToolInterface
+use App\Integrations\Tmdb\TmdbService;
+
+class TmdbSetWatchlistTool implements ToolInterface
 {
     public function __construct(
         private readonly TmdbService $tmdbService,
@@ -13,12 +15,12 @@ class TmdbRateTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tmdb_rate';
+        return 'tmdb_set_watchlist';
     }
 
     public function getDescription(): string
     {
-        return 'Rate a TMDb movie or TV series (0.5–10 in half-star steps) on your TMDb account. Requires session_id on the account (see tmdb_create_session).';
+        return 'Add or remove a movie or TV series on your TMDb watchlist (wishlist / want-to-watch). Requires session_id on the account (see tmdb_create_session).';
     }
 
     public function getInputSchema(): array
@@ -35,16 +37,16 @@ class TmdbRateTool implements ToolInterface
                     'enum' => ['movie', 'tv'],
                     'description' => 'movie or tv',
                 ],
-                'rating' => [
-                    'type' => 'number',
-                    'description' => 'Personal rating from 0.5 to 10 in 0.5 steps (e.g. 7.5)',
+                'watchlist' => [
+                    'type' => 'boolean',
+                    'description' => 'true to add, false to remove',
                 ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'TMDb account key. Optional if only one account is configured.',
                 ],
             ],
-            'required' => ['tmdb_id', 'media_type', 'rating'],
+            'required' => ['tmdb_id', 'media_type', 'watchlist'],
         ];
     }
 
@@ -56,17 +58,17 @@ class TmdbRateTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            if (!isset($arguments['tmdb_id'], $arguments['media_type'], $arguments['rating'])) {
+            if (!isset($arguments['tmdb_id'], $arguments['media_type'], $arguments['watchlist'])) {
                 return [
-                    'content' => [['type' => 'text', 'text' => 'Error: tmdb_id, media_type and rating are required']],
+                    'content' => [['type' => 'text', 'text' => 'Error: tmdb_id, media_type and watchlist are required']],
                     'isError' => true,
                 ];
             }
 
-            $result = $this->tmdbService->rate(
+            $result = $this->tmdbService->setWatchlist(
                 mediaType: (string) $arguments['media_type'],
                 tmdbId: (int) $arguments['tmdb_id'],
-                value: (float) $arguments['rating'],
+                watchlist: (bool) $arguments['watchlist'],
                 accountKey: $arguments['account'] ?? null,
             );
 
@@ -78,7 +80,7 @@ class TmdbRateTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error rating on TMDb: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error updating TMDb watchlist: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

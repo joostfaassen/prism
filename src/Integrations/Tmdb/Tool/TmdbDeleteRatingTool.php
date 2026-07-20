@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
 
-class TmdbSetWatchlistTool implements ToolInterface
+use App\Integrations\Tmdb\TmdbService;
+
+class TmdbDeleteRatingTool implements ToolInterface
 {
     public function __construct(
         private readonly TmdbService $tmdbService,
@@ -13,12 +15,12 @@ class TmdbSetWatchlistTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tmdb_set_watchlist';
+        return 'tmdb_delete_rating';
     }
 
     public function getDescription(): string
     {
-        return 'Add or remove a movie or TV series on your TMDb watchlist (wishlist / want-to-watch). Requires session_id on the account (see tmdb_create_session).';
+        return 'Remove your personal TMDb rating from a movie or TV series. Requires session_id on the account.';
     }
 
     public function getInputSchema(): array
@@ -35,16 +37,12 @@ class TmdbSetWatchlistTool implements ToolInterface
                     'enum' => ['movie', 'tv'],
                     'description' => 'movie or tv',
                 ],
-                'watchlist' => [
-                    'type' => 'boolean',
-                    'description' => 'true to add, false to remove',
-                ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'TMDb account key. Optional if only one account is configured.',
                 ],
             ],
-            'required' => ['tmdb_id', 'media_type', 'watchlist'],
+            'required' => ['tmdb_id', 'media_type'],
         ];
     }
 
@@ -56,17 +54,16 @@ class TmdbSetWatchlistTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            if (!isset($arguments['tmdb_id'], $arguments['media_type'], $arguments['watchlist'])) {
+            if (!isset($arguments['tmdb_id'], $arguments['media_type'])) {
                 return [
-                    'content' => [['type' => 'text', 'text' => 'Error: tmdb_id, media_type and watchlist are required']],
+                    'content' => [['type' => 'text', 'text' => 'Error: tmdb_id and media_type are required']],
                     'isError' => true,
                 ];
             }
 
-            $result = $this->tmdbService->setWatchlist(
+            $result = $this->tmdbService->deleteRating(
                 mediaType: (string) $arguments['media_type'],
                 tmdbId: (int) $arguments['tmdb_id'],
-                watchlist: (bool) $arguments['watchlist'],
                 accountKey: $arguments['account'] ?? null,
             );
 
@@ -78,7 +75,7 @@ class TmdbSetWatchlistTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error updating TMDb watchlist: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error deleting TMDb rating: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

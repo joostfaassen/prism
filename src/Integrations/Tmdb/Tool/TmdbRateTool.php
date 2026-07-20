@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
 
-class TmdbDeleteRatingTool implements ToolInterface
+use App\Integrations\Tmdb\TmdbService;
+
+class TmdbRateTool implements ToolInterface
 {
     public function __construct(
         private readonly TmdbService $tmdbService,
@@ -13,12 +15,12 @@ class TmdbDeleteRatingTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tmdb_delete_rating';
+        return 'tmdb_rate';
     }
 
     public function getDescription(): string
     {
-        return 'Remove your personal TMDb rating from a movie or TV series. Requires session_id on the account.';
+        return 'Rate a TMDb movie or TV series (0.5–10 in half-star steps) on your TMDb account. Requires session_id on the account (see tmdb_create_session).';
     }
 
     public function getInputSchema(): array
@@ -35,12 +37,16 @@ class TmdbDeleteRatingTool implements ToolInterface
                     'enum' => ['movie', 'tv'],
                     'description' => 'movie or tv',
                 ],
+                'rating' => [
+                    'type' => 'number',
+                    'description' => 'Personal rating from 0.5 to 10 in 0.5 steps (e.g. 7.5)',
+                ],
                 'account' => [
                     'type' => 'string',
                     'description' => 'TMDb account key. Optional if only one account is configured.',
                 ],
             ],
-            'required' => ['tmdb_id', 'media_type'],
+            'required' => ['tmdb_id', 'media_type', 'rating'],
         ];
     }
 
@@ -52,16 +58,17 @@ class TmdbDeleteRatingTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            if (!isset($arguments['tmdb_id'], $arguments['media_type'])) {
+            if (!isset($arguments['tmdb_id'], $arguments['media_type'], $arguments['rating'])) {
                 return [
-                    'content' => [['type' => 'text', 'text' => 'Error: tmdb_id and media_type are required']],
+                    'content' => [['type' => 'text', 'text' => 'Error: tmdb_id, media_type and rating are required']],
                     'isError' => true,
                 ];
             }
 
-            $result = $this->tmdbService->deleteRating(
+            $result = $this->tmdbService->rate(
                 mediaType: (string) $arguments['media_type'],
                 tmdbId: (int) $arguments['tmdb_id'],
+                value: (float) $arguments['rating'],
                 accountKey: $arguments['account'] ?? null,
             );
 
@@ -73,7 +80,7 @@ class TmdbDeleteRatingTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error deleting TMDb rating: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error rating on TMDb: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

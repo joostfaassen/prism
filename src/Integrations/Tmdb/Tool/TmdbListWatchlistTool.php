@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
 
-class TmdbListRatedTool implements ToolInterface
+use App\Integrations\Tmdb\TmdbService;
+
+class TmdbListWatchlistTool implements ToolInterface
 {
     public function __construct(
         private readonly TmdbService $tmdbService,
@@ -13,12 +15,12 @@ class TmdbListRatedTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tmdb_list_rated';
+        return 'tmdb_list_watchlist';
     }
 
     public function getDescription(): string
     {
-        return 'List movies or TV series you have rated on TMDb (paginated). Each result includes your rating. Requires session_id on the account.';
+        return 'List movies or TV series on your TMDb watchlist (wishlist). Paginated. Requires session_id on the account.';
     }
 
     public function getInputSchema(): array
@@ -29,7 +31,7 @@ class TmdbListRatedTool implements ToolInterface
                 'media_type' => [
                     'type' => 'string',
                     'enum' => ['movie', 'tv'],
-                    'description' => 'List rated movies or TV. Default: movie',
+                    'description' => 'List watchlist movies or TV. Default: movie',
                 ],
                 'page' => [
                     'type' => 'integer',
@@ -52,7 +54,7 @@ class TmdbListRatedTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->tmdbService->listRated(
+            $result = $this->tmdbService->listWatchlist(
                 mediaType: (string) ($arguments['media_type'] ?? 'movie'),
                 page: isset($arguments['page']) ? (int) $arguments['page'] : 1,
                 accountKey: $arguments['account'] ?? null,
@@ -66,7 +68,7 @@ class TmdbListRatedTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing TMDb rated titles: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error listing TMDb watchlist: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tmdb;
+namespace App\Integrations\Tmdb;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

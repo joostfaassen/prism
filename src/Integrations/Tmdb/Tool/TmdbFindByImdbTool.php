@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tmdb\Tool;
 
-use App\Tmdb\TmdbService;
+use App\Mcp\Tool\ToolInterface;
 
-class TmdbSearchTool implements ToolInterface
+use App\Integrations\Tmdb\TmdbService;
+
+class TmdbFindByImdbTool implements ToolInterface
 {
     public function __construct(
         private readonly TmdbService $tmdbService,
@@ -13,12 +15,12 @@ class TmdbSearchTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tmdb_search';
+        return 'tmdb_find_by_imdb';
     }
 
     public function getDescription(): string
     {
-        return 'Search TMDb for a movie or TV series by title. Returns the top hit as a normalized record (with coverUrl) plus a short list of light results. Prefer tmdb_find_by_imdb when you already have an IMDb id.';
+        return 'Resolve a film or TV series from an IMDb id (tt…) via TMDb. Detects movie vs TV automatically. Returns a normalized record with title, synopsis, cast, genres, external ids, and absolute coverUrl/backdropUrl ready to download.';
     }
 
     public function getInputSchema(): array
@@ -26,18 +28,9 @@ class TmdbSearchTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'query' => [
+                'imdb_id' => [
                     'type' => 'string',
-                    'description' => 'Title to search for',
-                ],
-                'year' => [
-                    'type' => 'integer',
-                    'description' => 'Optional release year filter (movie) or first-air-date year (tv)',
-                ],
-                'kind' => [
-                    'type' => 'string',
-                    'enum' => ['movie', 'tv'],
-                    'description' => 'Search movies or TV. Default: movie',
+                    'description' => 'IMDb title id, e.g. tt2798920',
                 ],
                 'account' => [
                     'type' => 'string',
@@ -48,7 +41,7 @@ class TmdbSearchTool implements ToolInterface
                     'description' => 'Optional TMDb language override (e.g. en-US, nl-NL). Defaults to the account language.',
                 ],
             ],
-            'required' => ['query'],
+            'required' => ['imdb_id'],
         ];
     }
 
@@ -60,31 +53,28 @@ class TmdbSearchTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            if (empty($arguments['query'])) {
+            if (empty($arguments['imdb_id'])) {
                 return [
-                    'content' => [['type' => 'text', 'text' => 'Error: query is required']],
+                    'content' => [['type' => 'text', 'text' => 'Error: imdb_id is required']],
                     'isError' => true,
                 ];
             }
 
-            $year = isset($arguments['year']) ? (int) $arguments['year'] : null;
-            $payload = $this->tmdbService->search(
-                query: (string) $arguments['query'],
-                year: $year,
-                kind: (string) ($arguments['kind'] ?? 'movie'),
+            $record = $this->tmdbService->findByImdb(
+                imdbId: (string) $arguments['imdb_id'],
                 accountKey: $arguments['account'] ?? null,
                 language: $arguments['language'] ?? null,
             );
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $payload,
+                    $record,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error searching TMDb: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error finding TMDb title by IMDb id: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
