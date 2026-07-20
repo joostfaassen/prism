@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Habits\Tool;
 
-use App\Habits\HabitsService;
+use App\Mcp\Tool\ToolInterface;
 
-class HabitsFulfillCheckinTool implements ToolInterface
+use App\Integrations\Habits\HabitsService;
+
+class HabitsListHabitsTool implements ToolInterface
 {
     public function __construct(
         private readonly HabitsService $habitsService,
@@ -13,12 +15,12 @@ class HabitsFulfillCheckinTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'habits_fulfill_check_in';
+        return 'habits_list_habits';
     }
 
     public function getDescription(): string
     {
-        return 'Mark an open check-in as fulfilled when the participant replied; records checkin_ack and optional points_checkin_ack.';
+        return 'List habits with goal modes (daily_total, weekly_total, weekly_sessions, abstain), scoring fields, members, and xuids. Goal types support hydration totals, N×/week exercise, and break/de-learning habits with relapse scoring.';
     }
 
     public function getInputSchema(): array
@@ -26,10 +28,8 @@ class HabitsFulfillCheckinTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'check_in_xuid' => ['type' => 'string'],
-                'note' => ['type' => 'string'],
+                'include_inactive' => ['type' => 'boolean'],
             ],
-            'required' => ['check_in_xuid'],
         ];
     }
 
@@ -41,13 +41,10 @@ class HabitsFulfillCheckinTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $out = $this->habitsService->fulfillCheckIn(
-                (string) $arguments['check_in_xuid'],
-                isset($arguments['note']) ? (string) $arguments['note'] : null,
-            );
+            $rows = $this->habitsService->listHabits((bool) ($arguments['include_inactive'] ?? false));
 
             return [
-                'content' => [['type' => 'text', 'text' => json_encode($out, JSON_THROW_ON_ERROR)]],
+                'content' => [['type' => 'text', 'text' => json_encode(['habits' => $rows], JSON_THROW_ON_ERROR)]],
             ];
         } catch (\Throwable $e) {
             return [

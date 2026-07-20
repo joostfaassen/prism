@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Command;
+namespace App\Integrations\Habits\Command;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
-use App\Habits\HabitsService;
+use App\Integrations\Habits\HabitsService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

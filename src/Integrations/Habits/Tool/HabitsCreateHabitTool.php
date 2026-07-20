@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Habits\Tool;
 
-use App\Habits\Entity\Habit;
-use App\Habits\HabitsService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Habits\Entity\Habit;
+use App\Integrations\Habits\HabitsService;
 
 class HabitsCreateHabitTool implements ToolInterface
 {

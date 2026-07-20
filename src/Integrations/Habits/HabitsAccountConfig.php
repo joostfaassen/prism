@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Habits;
+namespace App\Integrations\Habits;
 
 class HabitsAccountConfig
 {

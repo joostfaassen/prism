@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Habits;
+namespace App\Integrations\Habits;
 
 use App\AgentNotify\AgentNotifyPayload;
 use App\AgentNotify\AgentNotifyService;
 use App\Config\ServerConfig;
 use App\Config\ServerContext;
-use App\Habits\Entity\Habit;
-use App\Habits\Entity\HabitCheckInRequest;
-use App\Habits\Entity\HabitEvent;
-use App\Habits\Entity\HabitMember;
-use App\Habits\Entity\HabitPointLedger;
-use App\Habits\Entity\HabitUser;
+use App\Integrations\Habits\Entity\Habit;
+use App\Integrations\Habits\Entity\HabitCheckInRequest;
+use App\Integrations\Habits\Entity\HabitEvent;
+use App\Integrations\Habits\Entity\HabitMember;
+use App\Integrations\Habits\Entity\HabitPointLedger;
+use App\Integrations\Habits\Entity\HabitUser;
 use Doctrine\ORM\EntityManagerInterface;
 
 class HabitsService

@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Habits\Tool;
 
-use App\Habits\HabitsService;
+use App\Mcp\Tool\ToolInterface;
 
-class HabitsListOpenCheckinsTool implements ToolInterface
+use App\Integrations\Habits\HabitsService;
+
+class HabitsProcessOverdueCheckinsTool implements ToolInterface
 {
     public function __construct(
         private readonly HabitsService $habitsService,
@@ -13,21 +15,19 @@ class HabitsListOpenCheckinsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'habits_list_open_check_ins';
+        return 'habits_process_overdue_check_ins';
     }
 
     public function getDescription(): string
     {
-        return 'List open (pending) check-in requests, optionally filtered by habit_xuid.';
+        return 'Apply missed penalties for this server: any open check-in past due becomes missed, logs checkin_missed, and applies points_missed_checkin. Same logic as console habits:process-check-ins for the active server only.';
     }
 
     public function getInputSchema(): array
     {
         return [
             'type' => 'object',
-            'properties' => [
-                'habit_xuid' => ['type' => 'string'],
-            ],
+            'properties' => [],
         ];
     }
 
@@ -39,11 +39,10 @@ class HabitsListOpenCheckinsTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $hx = isset($arguments['habit_xuid']) ? (string) $arguments['habit_xuid'] : null;
-            $rows = $this->habitsService->listOpenCheckIns($hx);
+            $n = $this->habitsService->processExpiredCheckIns();
 
             return [
-                'content' => [['type' => 'text', 'text' => json_encode(['check_ins' => $rows], JSON_THROW_ON_ERROR)]],
+                'content' => [['type' => 'text', 'text' => json_encode(['closed_missed' => $n], JSON_THROW_ON_ERROR)]],
             ];
         } catch (\Throwable $e) {
             return [

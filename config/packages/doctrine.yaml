@@ -8,8 +8,8 @@ doctrine:
             Habits:
                 type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Habits/Entity'
-                prefix: 'App\Habits\Entity'
+                dir: '%kernel.project_dir%/src/Integrations/Habits/Entity'
+                prefix: 'App\Integrations\Habits\Entity'
                 alias: Habits
             Entity:
                 type: attribute

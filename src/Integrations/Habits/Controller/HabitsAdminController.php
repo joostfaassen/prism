@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Controller;
+namespace App\Integrations\Habits\Controller;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
 use App\Config\ServerContext;
-use App\Habits\Entity\Habit;
-use App\Habits\HabitsService;
+use App\Integrations\Habits\Entity\Habit;
+use App\Integrations\Habits\HabitsService;
 use App\Mcp\McpHandler;
 use App\Mcp\Tool\ToolInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

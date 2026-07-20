@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Controller;
+namespace App\Integrations\Habits\Controller;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
-use App\Habits\Entity\Habit;
-use App\Habits\Entity\HabitEvent;
-use App\Habits\HabitsService;
+use App\Integrations\Habits\Entity\Habit;
+use App\Integrations\Habits\Entity\HabitEvent;
+use App\Integrations\Habits\HabitsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

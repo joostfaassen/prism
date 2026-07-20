@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Habits\Tool;
 
-use App\Habits\HabitsService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Habits\HabitsService;
 
 class HabitsSetHabitMembersTool implements ToolInterface
 {

@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Habits\Tool;
 
-use App\Habits\HabitsService;
+use App\Mcp\Tool\ToolInterface;
 
-class HabitsListHabitsTool implements ToolInterface
+use App\Integrations\Habits\HabitsService;
+
+class HabitsListOpenCheckinsTool implements ToolInterface
 {
     public function __construct(
         private readonly HabitsService $habitsService,
@@ -13,12 +15,12 @@ class HabitsListHabitsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'habits_list_habits';
+        return 'habits_list_open_check_ins';
     }
 
     public function getDescription(): string
     {
-        return 'List habits with goal modes (daily_total, weekly_total, weekly_sessions, abstain), scoring fields, members, and xuids. Goal types support hydration totals, N×/week exercise, and break/de-learning habits with relapse scoring.';
+        return 'List open (pending) check-in requests, optionally filtered by habit_xuid.';
     }
 
     public function getInputSchema(): array
@@ -26,7 +28,7 @@ class HabitsListHabitsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'include_inactive' => ['type' => 'boolean'],
+                'habit_xuid' => ['type' => 'string'],
             ],
         ];
     }
@@ -39,10 +41,11 @@ class HabitsListHabitsTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $rows = $this->habitsService->listHabits((bool) ($arguments['include_inactive'] ?? false));
+            $hx = isset($arguments['habit_xuid']) ? (string) $arguments['habit_xuid'] : null;
+            $rows = $this->habitsService->listOpenCheckIns($hx);
 
             return [
-                'content' => [['type' => 'text', 'text' => json_encode(['habits' => $rows], JSON_THROW_ON_ERROR)]],
+                'content' => [['type' => 'text', 'text' => json_encode(['check_ins' => $rows], JSON_THROW_ON_ERROR)]],
             ];
         } catch (\Throwable $e) {
             return [

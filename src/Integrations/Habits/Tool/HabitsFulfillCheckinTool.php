@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Habits\Tool;
 
-use App\Habits\HabitsService;
+use App\Mcp\Tool\ToolInterface;
 
-class HabitsScoreboardTool implements ToolInterface
+use App\Integrations\Habits\HabitsService;
+
+class HabitsFulfillCheckinTool implements ToolInterface
 {
     public function __construct(
         private readonly HabitsService $habitsService,
@@ -13,12 +15,12 @@ class HabitsScoreboardTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'habits_scoreboard';
+        return 'habits_fulfill_check_in';
     }
 
     public function getDescription(): string
     {
-        return 'Per-habit leaderboard for a calendar day or ISO week: ranked points from ledger plus increment totals for friendly competition or collaboration.';
+        return 'Mark an open check-in as fulfilled when the participant replied; records checkin_ack and optional points_checkin_ack.';
     }
 
     public function getInputSchema(): array
@@ -26,11 +28,10 @@ class HabitsScoreboardTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'habit_xuid' => ['type' => 'string'],
-                'period' => ['type' => 'string', 'description' => 'day or week'],
-                'anchor_date' => ['type' => 'string', 'description' => 'Y-m-d in server TZ; default today'],
+                'check_in_xuid' => ['type' => 'string'],
+                'note' => ['type' => 'string'],
             ],
-            'required' => ['habit_xuid', 'period'],
+            'required' => ['check_in_xuid'],
         ];
     }
 
@@ -42,10 +43,9 @@ class HabitsScoreboardTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $out = $this->habitsService->scoreboard(
-                (string) $arguments['habit_xuid'],
-                (string) $arguments['period'],
-                isset($arguments['anchor_date']) ? (string) $arguments['anchor_date'] : null,
+            $out = $this->habitsService->fulfillCheckIn(
+                (string) $arguments['check_in_xuid'],
+                isset($arguments['note']) ? (string) $arguments['note'] : null,
             );
 
             return [

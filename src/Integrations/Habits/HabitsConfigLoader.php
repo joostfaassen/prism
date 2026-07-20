@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Habits;
+namespace App\Integrations\Habits;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
