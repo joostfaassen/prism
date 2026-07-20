@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Transip\Tool;
 
-use App\Transip\TransipService;
+use App\Mcp\Tool\ToolInterface;
 
-class TransipGetDomainTool implements ToolInterface
+use App\Integrations\Transip\TransipService;
+
+class TransipListDnsRecordsTool implements ToolInterface
 {
     public function __construct(
         private readonly TransipService $transipService,
@@ -13,12 +15,12 @@ class TransipGetDomainTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'transip_get_domain';
+        return 'transip_get_dns_records';
     }
 
     public function getDescription(): string
     {
-        return 'Get the settings of a single TransIP domain: registration and renewal dates, transfer lock, DNSSEC, auth code, tags, status, plus its nameservers and WHOIS contacts. Use transip_get_dns_records for the DNS zone.';
+        return 'List all DNS records of a TransIP domain. Each record has name (e.g. "@", "www"), expire (TTL in seconds), type (A, AAAA, CNAME, MX, NS, TXT, SRV, SSHFP, TLSA, CAA, NAPTR) and content. DNS changes only take effect when the domain uses TransIP nameservers.';
     }
 
     public function getInputSchema(): array
@@ -28,7 +30,7 @@ class TransipGetDomainTool implements ToolInterface
             'properties' => [
                 'domain' => [
                     'type' => 'string',
-                    'description' => 'The domain name to inspect, e.g. "example.com".',
+                    'description' => 'The domain name, e.g. "example.com".',
                 ],
                 'account' => [
                     'type' => 'string',
@@ -55,17 +57,18 @@ class TransipGetDomainTool implements ToolInterface
         }
 
         try {
-            $info = $this->transipService->getDomain($domain, $arguments['account'] ?? null);
+            $entries = $this->transipService->getDnsEntries($domain, $arguments['account'] ?? null);
 
             return [
-                'content' => [['type' => 'text', 'text' => json_encode(
-                    $info,
-                    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
-                )]],
+                'content' => [['type' => 'text', 'text' => json_encode([
+                    'domain' => rtrim($domain, '.'),
+                    'count' => count($entries),
+                    'dnsEntries' => $entries,
+                ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching TransIP domain: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching TransIP DNS records: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

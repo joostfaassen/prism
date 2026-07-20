@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Transip;
+namespace App\Integrations\Transip;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

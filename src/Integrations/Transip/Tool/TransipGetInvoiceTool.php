@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Transip\Tool;
 
-use App\Transip\TransipService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Transip\TransipService;
 
 class TransipGetInvoiceTool implements ToolInterface
 {

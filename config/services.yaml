@@ -42,7 +42,7 @@ services:
             $username: '%app.auth_user%'
             $password: '%app.auth_password%'
 
-    App\Transip\TransipConfigLoader:
+    App\Integrations\Transip\TransipConfigLoader:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
