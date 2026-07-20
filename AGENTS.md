@@ -38,7 +38,7 @@ Servers are loaded by `PrismConfigLoader` and stored as `ServerConfig` objects.
 
 ### Accounts
 
-Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo`, `telegram`, and others (extend by adding your own).
+Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo`, `tmdb`, `igdb`, `telegram`, `picnic`, and others (extend by adding your own).
 
 Each account type has:
 - An `*AccountConfig` DTO (e.g. `EmailAccountConfig`) — typed value object for credentials
@@ -137,13 +137,46 @@ src/
 │       ├── MatomoGetVisitsSummaryTool.php
 │       ├── MatomoGetTopPagesTool.php
 │       ├── MatomoGetReportTool.php
+│       ├── TmdbListAccountsTool.php
+│       ├── TmdbFindByImdbTool.php
+│       ├── TmdbSearchTool.php
+│       ├── TmdbGetMovieTool.php
+│       ├── TmdbGetTvTool.php
+│       ├── TmdbCreateSessionTool.php
+│       ├── TmdbRateTool.php
+│       ├── TmdbDeleteRatingTool.php
+│       ├── TmdbListRatedTool.php
+│       ├── TmdbSetWatchlistTool.php
+│       ├── TmdbListWatchlistTool.php
+│       ├── IgdbListAccountsTool.php
+│       ├── IgdbFindTool.php
+│       ├── IgdbSearchTool.php
 │       ├── TelegramListAccountsTool.php
 │       ├── TelegramGetMeTool.php
 │       ├── TelegramSendMessageTool.php
 │       ├── TelegramGetUpdatesTool.php
 │       ├── TelegramGetChatTool.php
 │       ├── TelegramEditMessageTool.php
-│       └── TelegramDeleteMessageTool.php
+│       ├── TelegramDeleteMessageTool.php
+│       ├── PicnicListAccountsTool.php
+│       ├── PicnicGenerate2faCodeTool.php
+│       ├── PicnicVerify2faCodeTool.php
+│       ├── PicnicSearchTool.php
+│       ├── PicnicSearchProductsTool.php
+│       ├── PicnicGetProductTool.php
+│       ├── PicnicGetImageUrlTool.php
+│       ├── PicnicGetCartTool.php
+│       ├── PicnicAddToCartTool.php
+│       ├── PicnicRemoveFromCartTool.php
+│       ├── PicnicClearCartTool.php
+│       ├── PicnicBrowseRecipesTool.php
+│       ├── PicnicGetRecipeTool.php
+│       ├── PicnicAddRecipeToCartTool.php
+│       ├── PicnicRemoveRecipeFromCartTool.php
+│       ├── PicnicSaveRecipeTool.php
+│       ├── PicnicUnsaveRecipeTool.php
+│       ├── PicnicListDeliveriesTool.php
+│       └── PicnicGetDeliveryTool.php
 ├── Bunq/                        # bunq banking integration
 │   ├── BunqAccountConfig.php
 │   ├── BunqConfigLoader.php
@@ -185,10 +218,26 @@ src/
 │   ├── MatomoAccountConfig.php
 │   ├── MatomoConfigLoader.php
 │   └── MatomoService.php
+├── Tmdb/                        # TMDb film/TV metadata + ratings/watchlist
+│   ├── TmdbAccountConfig.php
+│   ├── TmdbConfigLoader.php
+│   └── TmdbService.php
+├── Igdb/                        # IGDB game metadata (read-only, Twitch OAuth)
+│   ├── IgdbAccountConfig.php
+│   ├── IgdbConfigLoader.php
+│   └── IgdbService.php
 ├── Telegram/                    # Telegram Bot API integration
 │   ├── TelegramAccountConfig.php
 │   ├── TelegramConfigLoader.php
 │   └── TelegramService.php
+├── Picnic/                      # Picnic supermarket (unofficial storefront API)
+│   ├── PicnicAccountConfig.php
+│   ├── PicnicConfigLoader.php
+│   ├── PicnicService.php
+│   ├── PicnicImage.php
+│   ├── PicnicFusion.php
+│   ├── PicnicRecipeParser.php
+│   └── PicnicTwoFactorRequiredException.php
 └── Security/
     ├── BearerTokenAuthenticator.php  # MCP firewall: Bearer → ServerConfig
     └── EnvUserProvider.php           # Admin login from APP_AUTH_USER/PASSWORD

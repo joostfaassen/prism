@@ -69,6 +69,25 @@ servers:
         api_key: "replace-with-your-sendgrid-api-key"
         # Optional: use "https://api.eu.sendgrid.com" for EU regional accounts.
         base_url: "https://api.sendgrid.com"
+      demo-tmdb:
+        type: tmdb
+        label: "Example TMDb"
+        # v3 API key from https://www.themoviedb.org/settings/api
+        api_key: "replace-with-tmdb-v3-api-key"
+        # Optional: default language for metadata (agents may override per call).
+        language: "en-US"
+        # Required for rating + watchlist tools. Create once via tmdb_create_session
+        # (username/password) and paste the returned session_id here.
+        # session_id: "replace-with-tmdb-session-id"
+        # Optional: skip a lookup on every write (returned by tmdb_create_session).
+        # account_id: 123456
+      demo-igdb:
+        type: igdb
+        label: "Example IGDB"
+        # Twitch app credentials from https://dev.twitch.tv/console/apps
+        # (client_credentials grant). Used for IGDB API access.
+        client_id: "replace-with-twitch-client-id"
+        client_secret: "replace-with-twitch-client-secret"
       demo-n8n:
         type: n8n
         label: "Example n8n automation"
@@ -202,6 +221,16 @@ servers:
         # Optional hard allowlist for send/edit/delete targets. Omit to allow any chat.
         # allowed_chat_ids:
         #   - "123456789"
+      demo-picnic:
+        type: picnic
+        label: "Example Picnic household"
+        # Picnic app login email + password (unofficial storefront API — use at your own risk).
+        username: "user@example.com"
+        password: "replace-me"
+        country_code: "NL"   # NL | DE | FR
+        # Optional: reuse a known x-picnic-auth session key instead of logging in.
+        # auth_key: "replace-me"
+        # api_version: "15"
 
 # ──────────────────────────────────────────────────────────────────────
 # Telegram Setup Instructions
@@ -625,6 +654,61 @@ servers:
 #        type: sendgrid
 #        label: "Transactional"
 #        api_key: "key-for-transactional-account"
+
+# ──────────────────────────────────────────────────────────────────────
+# TMDb Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Create a free TMDb account, then open Settings → API and request a
+#    developer API key (v3). Copy the key into `api_key`.
+#    Docs: https://developer.themoviedb.org/reference/
+#
+# 2. Optionally set `language` (default en-US). Tools accept a per-call
+#    language override.
+#
+# 3. Metadata tools (api_key only):
+#    - tmdb_list_accounts  — list configured TMDb accounts
+#    - tmdb_find_by_imdb   — resolve movie/TV from an IMDb id (tt…)
+#    - tmdb_search         — search by title (+ optional year / kind)
+#    - tmdb_get_movie      — fetch movie by numeric TMDb id
+#    - tmdb_get_tv         — fetch TV series by numeric TMDb id
+#
+#    Responses use a stable normalized record shape with absolute
+#    coverUrl (w780) and backdropUrl (w1280). Prism does not download
+#    image binaries — consumers fetch covers themselves.
+#
+# 4. Account write tools need a user session_id (not just api_key):
+#    - tmdb_create_session — one-time: username/password → session_id
+#                            (paste into YAML; Prism does not store the password)
+#    - tmdb_rate           — rate movie/TV 0.5–10
+#    - tmdb_delete_rating  — remove a rating
+#    - tmdb_list_rated     — list your rated movies or TV
+#    - tmdb_set_watchlist  — add/remove movie or TV on the watchlist
+#    - tmdb_list_watchlist — list watchlist movies or TV
+#
+# 5. Multiple TMDb accounts can be configured if needed (usually one).
+
+# ──────────────────────────────────────────────────────────────────────
+# IGDB Setup Instructions
+# ──────────────────────────────────────────────────────────────────────
+#
+# 1. Create a Twitch developer application at
+#    https://dev.twitch.tv/console/apps and copy Client ID + Client Secret
+#    into `client_id` / `client_secret`. IGDB uses Twitch OAuth
+#    (client_credentials). Docs: https://api-docs.igdb.com/
+#
+# 2. Access tokens are cached under var/igdb-token-{accountKey}.json so
+#    Twitch is not hit on every tool call.
+#
+# 3. Available tools (all read-only):
+#    - igdb_list_accounts  — list configured IGDB accounts
+#    - igdb_find           — look up a game by numeric id or slug
+#    - igdb_search         — search games by name
+#
+#    Responses use the same normalized record shape as TMDb, with
+#    absolute coverUrl (t_1080p) and platforms/genres filled in.
+#
+# 4. Multiple IGDB accounts can be configured if needed (usually one).
 
 # ──────────────────────────────────────────────────────────────────────
 # n8n Setup Instructions
