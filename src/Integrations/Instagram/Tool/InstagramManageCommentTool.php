@@ -29,7 +29,7 @@ class InstagramManageCommentTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'comment_id' => ['type' => 'string', 'description' => 'The comment id to moderate.'],
                 'action' => [
                     'type' => 'string',
@@ -41,7 +41,7 @@ class InstagramManageCommentTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -59,11 +59,11 @@ class InstagramManageCommentTool implements ToolInterface
         }
 
         try {
-            $account = $arguments['account'] ?? null;
+            $profile = $arguments['profile'] ?? null;
             $result = match ($action) {
-                'hide' => $this->instagramService->setCommentHidden($account, $commentId, true),
-                'unhide' => $this->instagramService->setCommentHidden($account, $commentId, false),
-                'delete' => $this->instagramService->deleteComment($account, $commentId),
+                'hide' => $this->instagramService->setCommentHidden($profile, $commentId, true),
+                'unhide' => $this->instagramService->setCommentHidden($profile, $commentId, false),
+                'delete' => $this->instagramService->deleteComment($profile, $commentId),
             };
 
             return [

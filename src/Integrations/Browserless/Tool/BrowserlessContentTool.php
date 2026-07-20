@@ -30,7 +30,7 @@ class BrowserlessContentTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Browserless account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Browserless profile key. Optional if only one is configured.'],
                 'url' => ['type' => 'string', 'description' => 'The fully-qualified URL to load (http/https).'],
                 'max_bytes' => ['type' => 'integer', 'description' => 'Truncate the returned HTML to this many bytes. Default 0 (no limit).'],
             ],
@@ -38,7 +38,7 @@ class BrowserlessContentTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'browserless';
     }
@@ -54,7 +54,7 @@ class BrowserlessContentTool implements ToolInterface
         }
 
         try {
-            $result = $this->browserlessService->content($arguments['account'] ?? null, $url);
+            $result = $this->browserlessService->content($arguments['profile'] ?? null, $url);
 
             $html = $result['html'];
             $truncated = false;

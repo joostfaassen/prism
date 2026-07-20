@@ -28,13 +28,13 @@ class MatomoGetTopPagesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Matomo account key. Optional if only one account is configured.',
+                    'description' => 'Matomo profile key. Optional if only one profile is configured.',
                 ],
                 'idSite' => [
                     'type' => 'integer',
-                    'description' => 'Site id to query (from matomo_list_sites). Optional if a default_id_site is configured for the account.',
+                    'description' => 'Site id to query (from matomo_list_sites). Optional if a default_id_site is configured for the profile.',
                 ],
                 'period' => [
                     'type' => 'string',
@@ -58,7 +58,7 @@ class MatomoGetTopPagesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'matomo';
     }
@@ -67,7 +67,7 @@ class MatomoGetTopPagesTool implements ToolInterface
     {
         try {
             $pages = $this->matomoService->getTopPageUrls(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 idSite: isset($arguments['idSite']) ? (int) $arguments['idSite'] : null,
                 period: $arguments['period'] ?? 'day',
                 date: $arguments['date'] ?? 'today',

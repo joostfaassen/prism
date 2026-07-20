@@ -20,7 +20,7 @@ class TmdbCreateSessionTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'One-time setup: exchange a TMDb username and password for a session_id (and account_id) to paste into the tmdb account YAML. Required before rating or watchlist tools work. Does not write the config file — copy the returned session_id into prism.*.yaml yourself.';
+        return 'One-time setup: exchange a TMDb username and password for a session_id (and account_id) to paste into the tmdb profile YAML. Required before rating or watchlist tools work. Does not write the config file — copy the returned session_id into prism.*.yaml yourself.';
     }
 
     public function getInputSchema(): array
@@ -30,22 +30,22 @@ class TmdbCreateSessionTool implements ToolInterface
             'properties' => [
                 'username' => [
                     'type' => 'string',
-                    'description' => 'TMDb account username',
+                    'description' => 'TMDb profile username',
                 ],
                 'password' => [
                     'type' => 'string',
-                    'description' => 'TMDb account password (used once to create a session; not stored by Prism)',
+                    'description' => 'TMDb profile password (used once to create a session; not stored by Prism)',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key (from tmdb_list_accounts). Optional if only one account is configured.',
+                    'description' => 'TMDb profile key (from tmdb_list_profiles). Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['username', 'password'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -63,7 +63,7 @@ class TmdbCreateSessionTool implements ToolInterface
             $result = $this->tmdbService->createSession(
                 username: (string) $arguments['username'],
                 password: (string) $arguments['password'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

@@ -28,7 +28,7 @@ Matching is done on (name, type); the rest of the zone is never touched:
 - exactly one existing record with that name+type → its content/TTL is updated
 - multiple records share that name+type (e.g. several A or TXT records) → pass "replace_content" with the exact current content of the one you want to update
 
-The domain must already exist in the account and use TransIP nameservers for changes to take effect.
+The domain must already exist in the profile and use TransIP nameservers for changes to take effect.
 TXT;
     }
 
@@ -63,16 +63,16 @@ TXT;
                     'type' => 'string',
                     'description' => 'Only needed when several records share the same name+type: the exact current content of the record to update.',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TransIP account key. Optional when only one account is configured.',
+                    'description' => 'TransIP profile key. Optional when only one profile is configured.',
                 ],
             ],
             'required' => ['domain', 'name', 'type', 'content'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'transip';
     }
@@ -104,7 +104,7 @@ TXT;
                 content: $content,
                 expire: $expire,
                 replaceContent: isset($arguments['replace_content']) ? (string) $arguments['replace_content'] : null,
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

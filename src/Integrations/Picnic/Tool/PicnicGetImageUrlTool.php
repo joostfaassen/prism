@@ -39,16 +39,16 @@ class PicnicGetImageUrlTool implements ToolInterface
                     'description' => 'Image size',
                     'enum' => PicnicImage::SIZES,
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key (used for country_code in the URL). Defaults to the first account.',
+                    'description' => 'Picnic profile key (used for country_code in the URL). Defaults to the first profile.',
                 ],
             ],
             'required' => ['image_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -57,7 +57,7 @@ class PicnicGetImageUrlTool implements ToolInterface
     {
         $imageId = trim((string) ($arguments['image_id'] ?? ''));
         $size = (string) ($arguments['size'] ?? 'medium');
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($imageId === '') {
             return [
@@ -67,7 +67,7 @@ class PicnicGetImageUrlTool implements ToolInterface
         }
 
         try {
-            $result = $this->picnicService->getImageUrl($imageId, $size, $account);
+            $result = $this->picnicService->getImageUrl($imageId, $size, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

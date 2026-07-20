@@ -32,16 +32,16 @@ class IgdbSearchTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Game title to search for',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'IGDB account key (from igdb_list_accounts). Optional if only one account is configured.',
+                    'description' => 'IGDB profile key (from igdb_list_profiles). Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['query'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'igdb';
     }
@@ -58,7 +58,7 @@ class IgdbSearchTool implements ToolInterface
 
             $payload = $this->igdbService->search(
                 query: (string) $arguments['query'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

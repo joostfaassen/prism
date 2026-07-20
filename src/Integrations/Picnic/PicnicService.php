@@ -24,14 +24,14 @@ class PicnicService
     /**
      * @return list<array{key: string, label: string, country_code: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
         $out = [];
-        foreach ($this->configLoader->getAccounts() as $account) {
+        foreach ($this->configLoader->getProfiles() as $profile) {
             $out[] = [
-                'key' => $account->key,
-                'label' => $account->label,
-                'country_code' => $account->countryCode,
+                'key' => $profile->key,
+                'label' => $profile->label,
+                'country_code' => $profile->countryCode,
             ];
         }
 
@@ -41,9 +41,9 @@ class PicnicService
     /**
      * @return array{query: string, count: int, products: list<array<string, mixed>>}
      */
-    public function searchProducts(string $query, ?string $accountKey = null, int $limit = 20): array
+    public function searchProducts(string $query, ?string $profileKey = null, int $limit = 20): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $limit = max(1, min(50, $limit));
         $products = [];
 
@@ -52,10 +52,10 @@ class PicnicService
                 'GET',
                 '/pages/search-page-results?search_term=' . rawurlencode($query),
                 ['picnic_headers' => true],
-                $account->key,
+                $profile->key,
             );
             foreach (PicnicFusion::collectKeyed($page, 'sellingUnit') as $unit) {
-                $normalized = $this->normalizeSellingUnit($unit, $account);
+                $normalized = $this->normalizeSellingUnit($unit, $profile);
                 if ($normalized !== null) {
                     $products[] = $normalized;
                 }
@@ -64,9 +64,9 @@ class PicnicService
             $response = $this->request(
                 'GET',
                 '/search?search_term=' . rawurlencode($query),
-                accountKey: $account->key,
+                profileKey: $profile->key,
             );
-            $products = $this->flattenLegacySearchResults($response, $account);
+            $products = $this->flattenLegacySearchResults($response, $profile);
         }
 
         $products = $this->dedupeById($products);
@@ -84,9 +84,9 @@ class PicnicService
     /**
      * @return array<string, mixed>
      */
-    public function getProduct(string $productId, ?string $accountKey = null): array
+    public function getProduct(string $productId, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $productId = $this->normalizeProductId($productId);
 
         $page = $this->request(
@@ -94,7 +94,7 @@ class PicnicService
             '/pages/product-details-page-root?id=' . rawurlencode($productId)
                 . '&show_category_action=true&show_remove_from_purchases_page_action=true',
             ['picnic_headers' => true],
-            $account->key,
+            $profile->key,
         );
 
         $units = PicnicFusion::collectKeyed($page, 'sellingUnit');
@@ -106,7 +106,7 @@ class PicnicService
             }
         }
         $main ??= $units[0] ?? null;
-        $light = $main !== null ? $this->normalizeSellingUnit($main, $account) : [
+        $light = $main !== null ? $this->normalizeSellingUnit($main, $profile) : [
             'id' => $productId,
             'name' => null,
             'unit_quantity' => null,
@@ -133,7 +133,7 @@ class PicnicService
 
         $imageUrls = [];
         foreach (array_values($imageIds) as $imageId) {
-            $imageUrls[] = PicnicImage::url($account->countryCode, $imageId, 'medium');
+            $imageUrls[] = PicnicImage::url($profile->countryCode, $imageId, 'medium');
         }
 
         $markdown = PicnicFusion::collectMarkdownLines($page, [
@@ -161,9 +161,9 @@ class PicnicService
     /**
      * @return array{image_id: string, size: string, url: string}
      */
-    public function getImageUrl(string $imageId, string $size = 'medium', ?string $accountKey = null): array
+    public function getImageUrl(string $imageId, string $size = 'medium', ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $imageId = trim($imageId);
         if ($imageId === '') {
             throw new \InvalidArgumentException('image_id is required');
@@ -172,77 +172,77 @@ class PicnicService
         return [
             'image_id' => $imageId,
             'size' => in_array($size, PicnicImage::SIZES, true) ? $size : 'medium',
-            'url' => PicnicImage::url($account->countryCode, $imageId, $size),
+            'url' => PicnicImage::url($profile->countryCode, $imageId, $size),
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getCart(?string $accountKey = null): array
+    public function getCart(?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $raw = $this->request('GET', '/cart', ['picnic_headers' => true], $account->key);
+        $profile = $this->resolveProfile($profileKey);
+        $raw = $this->request('GET', '/cart', ['picnic_headers' => true], $profile->key);
 
-        return $this->normalizeCart($raw, $account);
+        return $this->normalizeCart($raw, $profile);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function addToCart(string $productId, int $count = 1, ?string $accountKey = null): array
+    public function addToCart(string $productId, int $count = 1, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $raw = $this->request('POST', '/cart/add_product', [
             'picnic_headers' => true,
             'json' => [
                 'product_id' => $this->normalizeProductId($productId),
                 'count' => max(1, $count),
             ],
-        ], $account->key);
+        ], $profile->key);
 
-        return $this->normalizeCart($raw, $account);
+        return $this->normalizeCart($raw, $profile);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function removeFromCart(string $productId, int $count = 1, ?string $accountKey = null): array
+    public function removeFromCart(string $productId, int $count = 1, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $raw = $this->request('POST', '/cart/remove_product', [
             'picnic_headers' => true,
             'json' => [
                 'product_id' => $this->normalizeProductId($productId),
                 'count' => max(1, $count),
             ],
-        ], $account->key);
+        ], $profile->key);
 
-        return $this->normalizeCart($raw, $account);
+        return $this->normalizeCart($raw, $profile);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function clearCart(?string $accountKey = null): array
+    public function clearCart(?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $raw = $this->request('POST', '/cart/clear', ['picnic_headers' => true], $account->key);
+        $profile = $this->resolveProfile($profileKey);
+        $raw = $this->request('POST', '/cart/clear', ['picnic_headers' => true], $profile->key);
 
-        return $this->normalizeCart($raw, $account);
+        return $this->normalizeCart($raw, $profile);
     }
 
     /**
      * @return array{ok: true, channel: string}
      */
-    public function generate2faCode(string $channel = 'SMS', ?string $accountKey = null): array
+    public function generate2faCode(string $channel = 'SMS', ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $this->ensureAuthTokenAllowing2fa($account);
+        $profile = $this->resolveProfile($profileKey);
+        $this->ensureAuthTokenAllowing2fa($profile);
         $this->request('POST', '/user/2fa/generate', [
             'picnic_headers' => true,
             'json' => ['channel' => $channel],
-        ], $account->key);
+        ], $profile->key);
 
         return ['ok' => true, 'channel' => $channel];
     }
@@ -250,14 +250,14 @@ class PicnicService
     /**
      * @return array{ok: true}
      */
-    public function verify2faCode(string $code, ?string $accountKey = null): array
+    public function verify2faCode(string $code, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $this->ensureAuthTokenAllowing2fa($account);
-        $token = $this->getAuthToken($account);
+        $profile = $this->resolveProfile($profileKey);
+        $this->ensureAuthTokenAllowing2fa($profile);
+        $token = $this->getAuthToken($profile);
 
-        $response = $this->httpClient->request('POST', $this->baseUrl($account) . '/user/2fa/verify', [
-            'headers' => array_merge($this->defaultHeaders($account), $this->picnicHeaders(), [
+        $response = $this->httpClient->request('POST', $this->baseUrl($profile) . '/user/2fa/verify', [
+            'headers' => array_merge($this->defaultHeaders($profile), $this->picnicHeaders(), [
                 'x-picnic-auth' => $token,
             ]),
             'json' => ['otp' => $code],
@@ -278,7 +278,7 @@ class PicnicService
             throw new \RuntimeException('Picnic 2FA verification succeeded but no x-picnic-auth header was returned');
         }
 
-        $this->persistToken($account, $newToken);
+        $this->persistToken($profile, $newToken);
 
         return ['ok' => true];
     }
@@ -286,19 +286,19 @@ class PicnicService
     /**
      * @return array{count: int, recipes: list<array<string, mixed>>}
      */
-    public function browseRecipes(?string $accountKey = null, ?string $segment = null): array
+    public function browseRecipes(?string $profileKey = null, ?string $segment = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $page = $this->request(
             'GET',
             '/pages/cookbook-page-content',
             ['picnic_headers' => true],
-            $account->key,
+            $profile->key,
         );
 
         $recipes = PicnicRecipeParser::parseRecipeList(
             $page,
-            PicnicImage::staticBaseUrl($account->countryCode),
+            PicnicImage::staticBaseUrl($profile->countryCode),
         );
 
         if ($segment !== null && $segment !== '') {
@@ -326,32 +326,32 @@ class PicnicService
     /**
      * @return array<string, mixed>
      */
-    public function getRecipe(string $recipeIdOrUrl, ?string $accountKey = null): array
+    public function getRecipe(string $recipeIdOrUrl, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $recipeId = PicnicRecipeParser::resolveRecipeId($recipeIdOrUrl);
 
         $page = $this->request(
             'GET',
             '/pages/selling-group-details-page?selling_group_id=' . rawurlencode($recipeId),
             ['picnic_headers' => true],
-            $account->key,
+            $profile->key,
         );
 
         return PicnicRecipeParser::parseRecipeDetails(
             $page,
             $recipeId,
-            PicnicImage::staticBaseUrl($account->countryCode),
-            $account->countryCode,
+            PicnicImage::staticBaseUrl($profile->countryCode),
+            $profile->countryCode,
         );
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function addRecipeToCart(string $recipeIdOrUrl, ?int $portions = null, ?string $accountKey = null): array
+    public function addRecipeToCart(string $recipeIdOrUrl, ?int $portions = null, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $recipeId = PicnicRecipeParser::resolveRecipeId($recipeIdOrUrl);
 
         $payload = ['selling_group_id' => $recipeId];
@@ -362,17 +362,17 @@ class PicnicService
         $this->request('POST', '/pages/task/assign-selling-group-to-basket', [
             'picnic_headers' => true,
             'json' => ['payload' => $payload],
-        ], $account->key);
+        ], $profile->key);
 
-        return $this->getCart($account->key);
+        return $this->getCart($profile->key);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function removeRecipeFromCart(string $recipeIdOrUrl, ?string $accountKey = null): array
+    public function removeRecipeFromCart(string $recipeIdOrUrl, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $recipeId = PicnicRecipeParser::resolveRecipeId($recipeIdOrUrl);
 
         $this->request('POST', '/pages/task/remove-selling-group-from-basket', [
@@ -382,17 +382,17 @@ class PicnicService
                     'selling_group_id' => $recipeId,
                 ],
             ],
-        ], $account->key);
+        ], $profile->key);
 
-        return $this->getCart($account->key);
+        return $this->getCart($profile->key);
     }
 
     /**
      * @return array{ok: true, recipe_id: string, saved: bool}
      */
-    public function saveRecipe(string $recipeIdOrUrl, bool $saved = true, ?string $accountKey = null): array
+    public function saveRecipe(string $recipeIdOrUrl, bool $saved = true, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $recipeId = PicnicRecipeParser::resolveRecipeId($recipeIdOrUrl);
 
         $this->request('POST', '/pages/task/recipe-saving', [
@@ -403,7 +403,7 @@ class PicnicService
                     'saved_at' => $saved ? (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.v\Z') : null,
                 ],
             ],
-        ], $account->key);
+        ], $profile->key);
 
         return ['ok' => true, 'recipe_id' => $recipeId, 'saved' => $saved];
     }
@@ -413,11 +413,11 @@ class PicnicService
      *
      * @return list<array<string, mixed>>
      */
-    public function listDeliveries(array $stateFilter = [], ?string $accountKey = null): array
+    public function listDeliveries(array $stateFilter = [], ?string $profileKey = null): array
     {
         $response = $this->request('POST', '/deliveries', [
             'json' => array_values($stateFilter),
-        ], $accountKey);
+        ], $profileKey);
 
         if (isset($response[0]) || $response === []) {
             return $response;
@@ -429,76 +429,76 @@ class PicnicService
     /**
      * @return array<string, mixed>
      */
-    public function getDelivery(string $deliveryId, ?string $accountKey = null): array
+    public function getDelivery(string $deliveryId, ?string $profileKey = null): array
     {
-        return $this->request('GET', '/deliveries/' . rawurlencode($deliveryId), accountKey: $accountKey);
+        return $this->request('GET', '/deliveries/' . rawurlencode($deliveryId), profileKey: $profileKey);
     }
 
-    private function resolveAccount(?string $accountKey): PicnicAccountConfig
+    private function resolveProfile(?string $profileKey): PicnicProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if ($accounts === []) {
-            throw new \RuntimeException('No Picnic accounts configured');
+        $profiles = $this->configLoader->getProfiles();
+        if ($profiles === []) {
+            throw new \RuntimeException('No Picnic profiles configured');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
      * Ensure a session token exists even when login reports that 2FA is still required.
      */
-    private function ensureAuthTokenAllowing2fa(PicnicAccountConfig $account): void
+    private function ensureAuthTokenAllowing2fa(PicnicProfileConfig $profile): void
     {
         try {
-            $this->getAuthToken($account);
+            $this->getAuthToken($profile);
         } catch (PicnicTwoFactorRequiredException) {
             // Token was persisted during login; 2FA endpoints can use it.
         }
     }
 
-    private function getAuthToken(PicnicAccountConfig $account, bool $forceRefresh = false): string
+    private function getAuthToken(PicnicProfileConfig $profile, bool $forceRefresh = false): string
     {
-        if (!$forceRefresh && isset($this->tokenCache[$account->key])) {
-            return $this->tokenCache[$account->key];
+        if (!$forceRefresh && isset($this->tokenCache[$profile->key])) {
+            return $this->tokenCache[$profile->key];
         }
 
-        if (!$forceRefresh && $account->authKey !== null) {
-            $this->tokenCache[$account->key] = $account->authKey;
+        if (!$forceRefresh && $profile->authKey !== null) {
+            $this->tokenCache[$profile->key] = $profile->authKey;
 
-            return $account->authKey;
+            return $profile->authKey;
         }
 
-        $tokenFile = $this->configLoader->getTokenFilePath($account->username);
+        $tokenFile = $this->configLoader->getTokenFilePath($profile->username);
         if (!$forceRefresh && file_exists($tokenFile)) {
             $cached = trim((string) file_get_contents($tokenFile));
             if ($cached !== '') {
-                $this->tokenCache[$account->key] = $cached;
+                $this->tokenCache[$profile->key] = $cached;
 
                 return $cached;
             }
         }
 
-        return $this->login($account);
+        return $this->login($profile);
     }
 
-    private function login(PicnicAccountConfig $account): string
+    private function login(PicnicProfileConfig $profile): string
     {
-        if ($account->username === '' || $account->password === '') {
+        if ($profile->username === '' || $profile->password === '') {
             throw new \RuntimeException(sprintf(
-                'Picnic account "%s" is missing username or password',
-                $account->key,
+                'Picnic profile "%s" is missing username or password',
+                $profile->key,
             ));
         }
 
-        $response = $this->httpClient->request('POST', $this->baseUrl($account) . '/user/login', [
-            'headers' => $this->defaultHeaders($account),
+        $response = $this->httpClient->request('POST', $this->baseUrl($profile) . '/user/login', [
+            'headers' => $this->defaultHeaders($profile),
             'json' => [
-                'key' => $account->username,
-                'secret' => md5($account->password),
+                'key' => $profile->username,
+                'secret' => md5($profile->password),
                 'client_id' => self::CLIENT_ID,
             ],
         ]);
@@ -518,22 +518,22 @@ class PicnicService
             throw new \RuntimeException('Picnic login succeeded but no x-picnic-auth header was returned');
         }
 
-        $this->persistToken($account, $token);
+        $this->persistToken($profile, $token);
 
         $body = $this->decodeJsonBody($response);
         if (($body['second_factor_authentication_required'] ?? false) === true) {
-            throw new PicnicTwoFactorRequiredException($account->key);
+            throw new PicnicTwoFactorRequiredException($profile->key);
         }
 
         return $token;
     }
 
-    private function persistToken(PicnicAccountConfig $account, string $token): void
+    private function persistToken(PicnicProfileConfig $profile, string $token): void
     {
-        $tokenFile = $this->configLoader->getTokenFilePath($account->username);
+        $tokenFile = $this->configLoader->getTokenFilePath($profile->username);
         file_put_contents($tokenFile, $token);
         chmod($tokenFile, 0600);
-        $this->tokenCache[$account->key] = $token;
+        $this->tokenCache[$profile->key] = $token;
     }
 
     /**
@@ -541,17 +541,17 @@ class PicnicService
      *
      * @return array<string, mixed>|list<mixed>
      */
-    private function request(string $method, string $path, array $options = [], ?string $accountKey = null): array
+    private function request(string $method, string $path, array $options = [], ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $picnicHeaders = (bool) ($options['picnic_headers'] ?? false);
         unset($options['picnic_headers']);
 
         $attempt = 0;
         while (true) {
-            $token = $this->getAuthToken($account, forceRefresh: $attempt > 0);
+            $token = $this->getAuthToken($profile, forceRefresh: $attempt > 0);
 
-            $headers = array_merge($this->defaultHeaders($account), [
+            $headers = array_merge($this->defaultHeaders($profile), [
                 'x-picnic-auth' => $token,
             ]);
             if ($picnicHeaders) {
@@ -560,7 +560,7 @@ class PicnicService
 
             $response = $this->httpClient->request(
                 $method,
-                $this->baseUrl($account) . $path,
+                $this->baseUrl($profile) . $path,
                 array_merge(['headers' => $headers], $options),
             );
 
@@ -628,21 +628,21 @@ class PicnicService
         return is_array($data) ? $data : [];
     }
 
-    private function baseUrl(PicnicAccountConfig $account): string
+    private function baseUrl(PicnicProfileConfig $profile): string
     {
         return sprintf(
             'https://storefront-prod.%s.picnicinternational.com/api/%s',
-            $account->countryCode,
-            $account->apiVersion,
+            $profile->countryCode,
+            $profile->apiVersion,
         );
     }
 
     /**
      * @return array<string, string>
      */
-    private function defaultHeaders(PicnicAccountConfig $account): array
+    private function defaultHeaders(PicnicProfileConfig $profile): array
     {
-        $lang = match ($account->countryCode) {
+        $lang = match ($profile->countryCode) {
             'de' => 'de',
             'fr' => 'fr',
             default => 'nl',
@@ -685,7 +685,7 @@ class PicnicService
      *
      * @return array<string, mixed>|null
      */
-    private function normalizeSellingUnit(array $unit, PicnicAccountConfig $account): ?array
+    private function normalizeSellingUnit(array $unit, PicnicProfileConfig $profile): ?array
     {
         $id = $unit['id'] ?? null;
         if (!is_string($id) && !is_int($id)) {
@@ -705,7 +705,7 @@ class PicnicService
             'currency' => 'EUR',
             'image_id' => $imageId,
             'image_url' => $imageId !== null
-                ? PicnicImage::url($account->countryCode, $imageId, 'medium')
+                ? PicnicImage::url($profile->countryCode, $imageId, 'medium')
                 : null,
             'max_count' => $unit['max_count'] ?? null,
         ];
@@ -716,7 +716,7 @@ class PicnicService
      *
      * @return list<array<string, mixed>>
      */
-    private function flattenLegacySearchResults(array $response, PicnicAccountConfig $account): array
+    private function flattenLegacySearchResults(array $response, PicnicProfileConfig $profile): array
     {
         $sections = isset($response[0]) ? $response : ($response['search_results'] ?? [$response]);
         $products = [];
@@ -734,7 +734,7 @@ class PicnicService
                 if ($type === 'CATEGORY' || $type === 'SECTION') {
                     continue;
                 }
-                $normalized = $this->normalizeSellingUnit($item, $account);
+                $normalized = $this->normalizeSellingUnit($item, $profile);
                 if ($normalized !== null) {
                     $products[] = $normalized;
                 }
@@ -770,10 +770,10 @@ class PicnicService
      *
      * @return array<string, mixed>
      */
-    private function normalizeCart(array $raw, PicnicAccountConfig $account): array
+    private function normalizeCart(array $raw, PicnicProfileConfig $profile): array
     {
         $items = [];
-        PicnicFusion::walk($raw, function (array $n) use (&$items, $account): void {
+        PicnicFusion::walk($raw, function (array $n) use (&$items, $profile): void {
             $id = $n['id'] ?? null;
             $name = $n['name'] ?? null;
             if (!is_string($id) || !is_string($name)) {
@@ -808,7 +808,7 @@ class PicnicService
                 'price_eur' => $priceCents !== null ? round($priceCents / 100, 2) : null,
                 'image_id' => $imageId,
                 'image_url' => $imageId !== null
-                    ? PicnicImage::url($account->countryCode, $imageId, 'medium')
+                    ? PicnicImage::url($profile->countryCode, $imageId, 'medium')
                     : null,
             ];
         });

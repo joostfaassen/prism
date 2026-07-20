@@ -28,9 +28,9 @@ class SlackAddReactionTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'channel' => [
                     'type' => 'string',
@@ -45,31 +45,31 @@ class SlackAddReactionTool implements ToolInterface
                     'description' => 'Emoji name without colons (e.g. "thumbsup", "eyes", "white_check_mark")',
                 ],
             ],
-            'required' => ['account', 'channel', 'timestamp', 'reaction'],
+            'required' => ['profile', 'channel', 'timestamp', 'reaction'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $channelId = $arguments['channel'] ?? '';
         $timestamp = $arguments['timestamp'] ?? '';
         $reaction = trim($arguments['reaction'] ?? '', ': ');
 
-        if ($accountKey === '' || $channelId === '' || $timestamp === '' || $reaction === '') {
+        if ($profileKey === '' || $channelId === '' || $timestamp === '' || $reaction === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "channel", "timestamp", and "reaction" are all required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "channel", "timestamp", and "reaction" are all required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->slackService->addReaction($accountKey, $channelId, $timestamp, $reaction);
+            $result = $this->slackService->addReaction($profileKey, $channelId, $timestamp, $reaction);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

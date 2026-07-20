@@ -27,8 +27,8 @@
 
             {% if not serverHasHabits %}
             <div class="rounded-2xl border border-amber-800/50 bg-amber-950/20 px-6 py-8 text-center">
-                <p class="text-slate-300 text-sm mb-4">Add a <span class="font-mono text-amber-200/90">habits</span> account under this server in <code class="text-xs bg-slate-800 px-2 py-1 rounded">prism.config.yaml</code> to enable the habits UI, REST API, and MCP tools.</p>
-                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View accounts →</a>
+                <p class="text-slate-300 text-sm mb-4">Add a <span class="font-mono text-amber-200/90">habits</span> profile under this server in <code class="text-xs bg-slate-800 px-2 py-1 rounded">prism.config.yaml</code> to enable the habits UI, REST API, and MCP tools.</p>
+                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'profiles'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View profiles →</a>
             </div>
             {% else %}
             <p class="text-sm text-slate-500 mb-6">REST base URL (Bearer <span class="font-mono text-slate-400">rest_ingest_token</span>):<br><code class="mt-2 inline-block text-xs bg-slate-800 px-3 py-2 rounded text-cyan-300/90 break-all">{{ restBaseUrl }}</code></p>

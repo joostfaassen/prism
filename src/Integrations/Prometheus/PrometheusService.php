@@ -15,18 +15,18 @@ class PrometheusService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -34,14 +34,14 @@ class PrometheusService
      *
      * @return array<string, mixed>
      */
-    public function query(?string $accountKey, string $query, ?string $time = null): array
+    public function query(?string $profileKey, string $query, ?string $time = null): array
     {
         $params = ['query' => $query];
         if ($time !== null && $time !== '') {
             $params['time'] = $time;
         }
 
-        return $this->request($accountKey, 'POST', '/api/v1/query', $params);
+        return $this->request($profileKey, 'POST', '/api/v1/query', $params);
     }
 
     /**
@@ -50,13 +50,13 @@ class PrometheusService
      * @return array<string, mixed>
      */
     public function queryRange(
-        ?string $accountKey,
+        ?string $profileKey,
         string $query,
         string $start,
         string $end,
         string $step,
     ): array {
-        return $this->request($accountKey, 'POST', '/api/v1/query_range', [
+        return $this->request($profileKey, 'POST', '/api/v1/query_range', [
             'query' => $query,
             'start' => $start,
             'end' => $end,
@@ -69,9 +69,9 @@ class PrometheusService
      *
      * @return array<string, mixed>
      */
-    public function listAlerts(?string $accountKey): array
+    public function listAlerts(?string $profileKey): array
     {
-        return $this->request($accountKey, 'GET', '/api/v1/alerts');
+        return $this->request($profileKey, 'GET', '/api/v1/alerts');
     }
 
     /**
@@ -79,14 +79,14 @@ class PrometheusService
      *
      * @return array<string, mixed>
      */
-    public function listRules(?string $accountKey, ?string $type = null): array
+    public function listRules(?string $profileKey, ?string $type = null): array
     {
         $params = [];
         if ($type !== null && $type !== '') {
             $params['type'] = $type;
         }
 
-        return $this->request($accountKey, 'GET', '/api/v1/rules', $params);
+        return $this->request($profileKey, 'GET', '/api/v1/rules', $params);
     }
 
     /**
@@ -94,14 +94,14 @@ class PrometheusService
      *
      * @return array<string, mixed>
      */
-    public function listTargets(?string $accountKey, ?string $state = null): array
+    public function listTargets(?string $profileKey, ?string $state = null): array
     {
         $params = [];
         if ($state !== null && $state !== '') {
             $params['state'] = $state;
         }
 
-        return $this->request($accountKey, 'GET', '/api/v1/targets', $params);
+        return $this->request($profileKey, 'GET', '/api/v1/targets', $params);
     }
 
     /**
@@ -109,9 +109,9 @@ class PrometheusService
      *
      * @return list<string>
      */
-    public function listMetricNames(?string $accountKey): array
+    public function listMetricNames(?string $profileKey): array
     {
-        return $this->labelValues($accountKey, '__name__');
+        return $this->labelValues($profileKey, '__name__');
     }
 
     /**
@@ -121,31 +121,31 @@ class PrometheusService
      *
      * @return list<string>
      */
-    public function labelValues(?string $accountKey, string $label, array $match = []): array
+    public function labelValues(?string $profileKey, string $label, array $match = []): array
     {
         $params = [];
         if ($match !== []) {
             $params['match[]'] = $match;
         }
 
-        $data = $this->request($accountKey, 'GET', '/api/v1/label/' . rawurlencode($label) . '/values', $params);
+        $data = $this->request($profileKey, 'GET', '/api/v1/label/' . rawurlencode($label) . '/values', $params);
         $values = $data['data'] ?? [];
 
         return is_array($values) ? array_values(array_filter($values, 'is_string')) : [];
     }
 
-    private function resolveAccount(?string $accountKey): PrometheusAccountConfig
+    private function resolveProfile(?string $profileKey): PrometheusProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No Prometheus accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No Prometheus profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -153,23 +153,23 @@ class PrometheusService
      *
      * @return array<string, mixed>
      */
-    private function request(?string $accountKey, string $method, string $path, array $params = []): array
+    private function request(?string $profileKey, string $method, string $path, array $params = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '') {
+        if ($profile->baseUrl === '') {
             throw new \RuntimeException(sprintf(
-                'Prometheus account "%s" is missing base_url',
-                $account->key,
+                'Prometheus profile "%s" is missing base_url',
+                $profile->key,
             ));
         }
 
         $options = ['timeout' => 30];
 
-        if ($account->bearerToken !== '') {
-            $options['auth_bearer'] = $account->bearerToken;
-        } elseif ($account->username !== '') {
-            $options['auth_basic'] = [$account->username, $account->password];
+        if ($profile->bearerToken !== '') {
+            $options['auth_bearer'] = $profile->bearerToken;
+        } elseif ($profile->username !== '') {
+            $options['auth_basic'] = [$profile->username, $profile->password];
         }
 
         if ($method === 'GET') {
@@ -178,7 +178,7 @@ class PrometheusService
             $options['body'] = $params;
         }
 
-        $response = $this->httpClient->request($method, $account->baseUrl . $path, $options);
+        $response = $this->httpClient->request($method, $profile->baseUrl . $path, $options);
 
         $statusCode = $response->getStatusCode();
         $content = $response->getContent(false);

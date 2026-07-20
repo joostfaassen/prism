@@ -32,16 +32,16 @@ class IgdbFindTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Numeric IGDB id or slug string (e.g. "119171" or "nier-automata")',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'IGDB account key (from igdb_list_accounts). Optional if only one account is configured.',
+                    'description' => 'IGDB profile key (from igdb_list_profiles). Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'igdb';
     }
@@ -58,7 +58,7 @@ class IgdbFindTool implements ToolInterface
 
             $record = $this->igdbService->find(
                 idOrSlug: (string) $arguments['id'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

@@ -30,9 +30,9 @@ class EmailUpdateMessageFlagsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID.',
+                    'description' => 'Email profile ID.',
                 ],
                 'folder' => [
                     'type' => 'string',
@@ -69,23 +69,23 @@ class EmailUpdateMessageFlagsTool implements ToolInterface
                     'description' => 'Custom IMAP keywords to remove. Do not include spaces.',
                 ],
             ],
-            'required' => ['account', 'uid'],
+            'required' => ['profile', 'uid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $folder = (string) ($arguments['folder'] ?? 'INBOX');
         $uid = $arguments['uid'] ?? null;
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($folder === '') {
@@ -110,7 +110,7 @@ class EmailUpdateMessageFlagsTool implements ToolInterface
 
         try {
             $result = $this->emailService->updateMessageFlags(
-                accountId: $account,
+                profileId: $profile,
                 folder: $folder,
                 uid: $uid,
                 standardFlags: $standardFlags,

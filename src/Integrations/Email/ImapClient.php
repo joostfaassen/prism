@@ -12,30 +12,30 @@ class ImapClient
     /**
      * @return array<string, mixed>
      */
-    public function listAccountSummary(EmailAccountConfig $account): array
+    public function listAccountSummary(EmailProfileConfig $profile): array
     {
         return [
-            'id' => $account->id,
-            'label' => $account->label,
-            'imap_host' => $account->imap->host,
-            'username' => $account->imap->username,
-            'can_send' => $account->hasSmtp(),
-            'from' => $account->getFromAddress(),
-            'from_name' => $account->getFromName(),
-            'sent_folder' => $account->sentFolder,
-            'drafts_folder' => $account->draftsFolder,
+            'id' => $profile->id,
+            'label' => $profile->label,
+            'imap_host' => $profile->imap->host,
+            'username' => $profile->imap->username,
+            'can_send' => $profile->hasSmtp(),
+            'from' => $profile->getFromAddress(),
+            'from_name' => $profile->getFromName(),
+            'sent_folder' => $profile->sentFolder,
+            'drafts_folder' => $profile->draftsFolder,
         ];
     }
 
     /**
      * @return list<array{name: string, delimiter: string, total: int, unseen: int}>
      */
-    public function listFolders(EmailAccountConfig $account, string $pattern = '*'): array
+    public function listFolders(EmailProfileConfig $profile, string $pattern = '*'): array
     {
-        $conn = $this->connect($account);
+        $conn = $this->connect($profile);
 
         try {
-            $serverStr = $account->imap->getServerString();
+            $serverStr = $profile->imap->getServerString();
             $folders = imap_list($conn, $serverStr, $pattern);
             if ($folders === false) {
                 return [];
@@ -64,15 +64,15 @@ class ImapClient
      *
      * @return array{folder: string, created: true}
      */
-    public function createFolder(EmailAccountConfig $account, string $folder): array
+    public function createFolder(EmailProfileConfig $profile, string $folder): array
     {
         $folder = trim($folder);
         if ($folder === '') {
             throw new \InvalidArgumentException('Folder name must be a non-empty string');
         }
 
-        $conn = $this->connect($account);
-        $serverStr = $account->imap->getServerString();
+        $conn = $this->connect($profile);
+        $serverStr = $profile->imap->getServerString();
         $folderPath = $serverStr . $folder;
 
         try {
@@ -118,14 +118,14 @@ class ImapClient
      * @return array<string, mixed>
      */
     public function listLabels(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder = 'INBOX',
         bool $includeFolders = true,
         bool $includeKeywords = true,
         int $messageLimit = 1000,
     ): array {
         $result = [
-            'folders' => $includeFolders ? $this->listFolders($account) : [],
+            'folders' => $includeFolders ? $this->listFolders($profile) : [],
             'standard_flags' => ['\\Seen', '\\Answered', '\\Flagged', '\\Deleted', '\\Draft'],
             'custom_keywords' => [],
             'permanent_keywords' => [],
@@ -137,7 +137,7 @@ class ImapClient
             return $result;
         }
 
-        $scan = $this->withRawImap($account, $folder, function ($stream) use ($messageLimit): array {
+        $scan = $this->withRawImap($profile, $folder, function ($stream) use ($messageLimit): array {
             $searchLines = $this->imapCommand($stream, 'UID SEARCH ALL');
             $uids = $this->parseSearchUids($searchLines);
             rsort($uids, SORT_NUMERIC);
@@ -174,11 +174,11 @@ class ImapClient
      * @return array<string, mixed>
      */
     public function getMessageLabels(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         int $uid,
     ): array {
-        $flagSets = $this->fetchMessageFlagSets($account, $folder, [$uid]);
+        $flagSets = $this->fetchMessageFlagSets($profile, $folder, [$uid]);
         if (!isset($flagSets[$uid])) {
             throw new \RuntimeException(sprintf('Message UID %d not found in folder "%s"', $uid, $folder));
         }
@@ -190,7 +190,7 @@ class ImapClient
      * @return array{total: int, offset: int, messages: list<array<string, mixed>>}
      */
     public function search(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         ?string $from,
         ?string $to,
@@ -204,7 +204,7 @@ class ImapClient
         int $offset,
         bool $includeDeleted = false,
     ): array {
-        $conn = $this->connect($account, $folder);
+        $conn = $this->connect($profile, $folder);
 
         try {
             $criteria = $this->buildSearchCriteria(
@@ -242,13 +242,13 @@ class ImapClient
      * @return array<string, mixed>
      */
     public function getMessage(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         int $uid,
         bool $includeHtml = false,
         int $maxBodyChars = 8000,
     ): array {
-        $messages = $this->getMessages($account, $folder, [$uid], $includeHtml, $maxBodyChars);
+        $messages = $this->getMessages($profile, $folder, [$uid], $includeHtml, $maxBodyChars);
         if ($messages === []) {
             throw new \RuntimeException(sprintf('Message UID %d not found', $uid));
         }
@@ -262,7 +262,7 @@ class ImapClient
      * @return list<array<string, mixed>>
      */
     public function getMessages(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         array $uids,
         bool $includeHtml = false,
@@ -275,22 +275,22 @@ class ImapClient
             return [];
         }
 
-        $conn = $this->connect($account, $folder);
+        $conn = $this->connect($profile, $folder);
 
         try {
-            $signature = $this->refreshFolderSignature($account, $folder, $conn);
+            $signature = $this->refreshFolderSignature($profile, $folder, $conn);
             $resultByUid = [];
             $missUids = [];
             $knownMessageIds = $this->normalizeKnownMessageIds($knownMessageIds);
 
             foreach ($uids as $uid) {
                 $messageId = $knownMessageIds[$uid]
-                    ?? $this->messageCache->getMessagePointer($account->id, $folder, $signature->uidValidity, $uid);
+                    ?? $this->messageCache->getMessagePointer($profile->id, $folder, $signature->uidValidity, $uid);
 
                 if ($messageId !== null) {
-                    $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $messageId);
+                    $this->messageCache->setMessagePointer($profile->id, $folder, $signature->uidValidity, $uid, $messageId);
                     $cached = $this->messageCache->getMessageContentByMessageId(
-                        $account->id,
+                        $profile->id,
                         $messageId,
                         $includeHtml,
                         $maxBodyChars,
@@ -301,7 +301,7 @@ class ImapClient
 
                 if ($cached === null) {
                     $cached = $this->messageCache->getMessageBody(
-                        $account->id,
+                        $profile->id,
                         $folder,
                         $signature->uidValidity,
                         $uid,
@@ -310,9 +310,9 @@ class ImapClient
                     );
                     $legacyMessageId = $this->messageIdFromMessage($cached);
                     if ($legacyMessageId !== null) {
-                        $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $legacyMessageId);
+                        $this->messageCache->setMessagePointer($profile->id, $folder, $signature->uidValidity, $uid, $legacyMessageId);
                         $this->messageCache->setMessageContentByMessageId(
-                            $account->id,
+                            $profile->id,
                             $legacyMessageId,
                             $includeHtml,
                             $maxBodyChars,
@@ -328,7 +328,7 @@ class ImapClient
 
                 $resultByUid[$uid] = $this->withCurrentFolderState(
                     $cached,
-                    $account->id,
+                    $profile->id,
                     $folder,
                     $signature->uidValidity,
                     $uid,
@@ -344,10 +344,10 @@ class ImapClient
                     }
 
                     $knownMessageIds[$uid] = $messageId;
-                    $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $messageId);
+                    $this->messageCache->setMessagePointer($profile->id, $folder, $signature->uidValidity, $uid, $messageId);
 
                     $cached = $this->messageCache->getMessageContentByMessageId(
-                        $account->id,
+                        $profile->id,
                         $messageId,
                         $includeHtml,
                         $maxBodyChars,
@@ -357,7 +357,7 @@ class ImapClient
                     }
 
                     $this->messageCache->setMessageFlags(
-                        $account->id,
+                        $profile->id,
                         $folder,
                         $signature->uidValidity,
                         $uid,
@@ -368,7 +368,7 @@ class ImapClient
                     );
                     $resultByUid[$uid] = $this->withCurrentFolderState(
                         $cached,
-                        $account->id,
+                        $profile->id,
                         $folder,
                         $signature->uidValidity,
                         $uid,
@@ -408,9 +408,9 @@ class ImapClient
                 $messageId = (string) ($message['message_id'] ?? '');
 
                 if ($messageId !== '') {
-                    $this->messageCache->setMessagePointer($account->id, $folder, $signature->uidValidity, $uid, $messageId);
+                    $this->messageCache->setMessagePointer($profile->id, $folder, $signature->uidValidity, $uid, $messageId);
                     $this->messageCache->setMessageContentByMessageId(
-                        $account->id,
+                        $profile->id,
                         $messageId,
                         $includeHtml,
                         $maxBodyChars,
@@ -419,7 +419,7 @@ class ImapClient
                 }
 
                 $this->messageCache->setMessageBody(
-                    $account->id,
+                    $profile->id,
                     $folder,
                     $signature->uidValidity,
                     $uid,
@@ -428,7 +428,7 @@ class ImapClient
                     $message,
                 );
                 $this->messageCache->setMessageFlags(
-                    $account->id,
+                    $profile->id,
                     $folder,
                     $signature->uidValidity,
                     $uid,
@@ -464,7 +464,7 @@ class ImapClient
      * @return array{queries: list<array{folder: string, total: int, offset: int, messages: list<array<string,mixed>>}>}
      */
     public function multiSearch(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         array $folders,
         ?string $from,
         ?string $to,
@@ -486,7 +486,7 @@ class ImapClient
 
         foreach ($normalizedFolders as $folder) {
             $result = $this->search(
-                $account,
+                $profile,
                 $folder,
                 $from,
                 $to,
@@ -516,7 +516,7 @@ class ImapClient
      * @return array{folder: string, warmed: int, inspected: int, cached: int}
      */
     public function warmRecentCache(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         int $days = 7,
         int $limit = 200,
@@ -527,7 +527,7 @@ class ImapClient
         $since = (new \DateTimeImmutable(sprintf('-%d days', $days)))->format('c');
 
         $search = $this->search(
-            $account,
+            $profile,
             $folder,
             null,
             null,
@@ -557,7 +557,7 @@ class ImapClient
         $cacheScan = ['cached' => 0, 'missing' => count($uids)];
         $downloaded = 0;
         $this->getMessages(
-            $account,
+            $profile,
             $folder,
             $uids,
             false,
@@ -588,9 +588,9 @@ class ImapClient
     /**
      * @return array<string, mixed>
      */
-    public function moveMessage(EmailAccountConfig $account, string $fromFolder, int $uid, string $toFolder): array
+    public function moveMessage(EmailProfileConfig $profile, string $fromFolder, int $uid, string $toFolder): array
     {
-        $conn = $this->connect($account, $fromFolder);
+        $conn = $this->connect($profile, $fromFolder);
 
         try {
             if (!@imap_mail_move($conn, (string) $uid, $toFolder, CP_UID)) {
@@ -633,7 +633,7 @@ class ImapClient
      * @return array<string, mixed>
      */
     public function updateMessageFlags(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         int $uid,
         array $standardFlags,
@@ -653,7 +653,7 @@ class ImapClient
         $setFlags = array_values(array_unique(array_merge($setFlags, $addLabels)));
         $unsetFlags = array_values(array_unique(array_merge($unsetFlags, $removeLabels)));
 
-        $conn = $this->connect($account, $folder);
+        $conn = $this->connect($profile, $folder);
 
         try {
             if ($setFlags !== []) {
@@ -663,16 +663,16 @@ class ImapClient
                 $this->unsetFlags($conn, $uid, $unsetFlags);
             }
 
-            $signature = $this->refreshFolderSignature($account, $folder, $conn);
-            $this->messageCache->deleteMessageFlags($account->id, $folder, $signature->uidValidity, $uid);
+            $signature = $this->refreshFolderSignature($profile, $folder, $conn);
+            $this->messageCache->deleteMessageFlags($profile->id, $folder, $signature->uidValidity, $uid);
             $summary = $this->fetchMessageSummaries($conn, [$uid])[0] ?? ['uid' => $uid];
         } finally {
             imap_close($conn);
         }
 
-        $labels = $this->getMessageLabels($account, $folder, $uid);
+        $labels = $this->getMessageLabels($profile, $folder, $uid);
         $this->messageCache->setMessageFlags(
-            $account->id,
+            $profile->id,
             $folder,
             $signature->uidValidity,
             $uid,
@@ -703,9 +703,9 @@ class ImapClient
     /**
      * @return array<string, mixed>
      */
-    public function getMessageForReply(EmailAccountConfig $account, string $folder, int $uid): array
+    public function getMessageForReply(EmailProfileConfig $profile, string $folder, int $uid): array
     {
-        return $this->getMessage($account, $folder, $uid, includeHtml: true, maxBodyChars: 200000);
+        return $this->getMessage($profile, $folder, $uid, includeHtml: true, maxBodyChars: 200000);
     }
 
     /**
@@ -715,9 +715,9 @@ class ImapClient
      * including base64/quoted-printable encoded attachment parts). Uses FT_PEEK
      * so the \Seen flag is not affected.
      */
-    public function getRawMessage(EmailAccountConfig $account, string $folder, int $uid): string
+    public function getRawMessage(EmailProfileConfig $profile, string $folder, int $uid): string
     {
-        $conn = $this->connect($account, $folder);
+        $conn = $this->connect($profile, $folder);
 
         try {
             $header = @imap_fetchheader($conn, $uid, FT_UID | FT_PREFETCHTEXT);
@@ -745,14 +745,14 @@ class ImapClient
      * Message-ID match). Returns null when UID resolution is not requested or fails.
      */
     public function appendToFolder(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         string $rawMessage,
         string $flags = '\\Seen',
         ?string $expectedMessageId = null,
     ): ?int {
-        $conn = $this->connect($account);
-        $serverStr = $account->imap->getServerString();
+        $conn = $this->connect($profile);
+        $serverStr = $profile->imap->getServerString();
         $folderPath = $serverStr . $folder;
 
         try {
@@ -802,7 +802,7 @@ class ImapClient
      * @return array<string, mixed> overview summary of the deleted message
      */
     public function deleteMessage(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         int $uid,
         bool $requireDraftFlag = true,
@@ -812,7 +812,7 @@ class ImapClient
             throw new \InvalidArgumentException('uid must be a positive integer');
         }
 
-        $conn = $this->connect($account, $folder);
+        $conn = $this->connect($profile, $folder);
 
         try {
             $overview = imap_fetch_overview($conn, (string) $uid, FT_UID);
@@ -851,7 +851,7 @@ class ImapClient
 
             $subject = isset($item->subject) ? $this->decodeMime((string) $item->subject) : '';
 
-            $signature = $this->refreshFolderSignature($account, $folder, $conn);
+            $signature = $this->refreshFolderSignature($profile, $folder, $conn);
 
             if (!@imap_delete($conn, (string) $uid, FT_UID)) {
                 $errors = imap_errors() ?: [];
@@ -873,7 +873,7 @@ class ImapClient
                 ));
             }
 
-            $this->messageCache->deleteMessageFlags($account->id, $folder, $signature->uidValidity, $uid);
+            $this->messageCache->deleteMessageFlags($profile->id, $folder, $signature->uidValidity, $uid);
 
             return [
                 'uid' => $uid,
@@ -924,15 +924,15 @@ class ImapClient
         return null;
     }
 
-    private function connect(EmailAccountConfig $account, string $folder = 'INBOX'): \IMAP\Connection
+    private function connect(EmailProfileConfig $profile, string $folder = 'INBOX'): \IMAP\Connection
     {
-        $mailbox = $account->imap->getMailboxString($folder);
-        $conn = @imap_open($mailbox, $account->imap->username, $account->imap->password, 0, 3);
+        $mailbox = $profile->imap->getMailboxString($folder);
+        $conn = @imap_open($mailbox, $profile->imap->username, $profile->imap->password, 0, 3);
         if ($conn === false) {
             $errors = imap_errors() ?: [];
             throw new \RuntimeException(sprintf(
-                'Failed to connect to email account "%s" (IMAP): %s',
-                $account->id,
+                'Failed to connect to email profile "%s" (IMAP): %s',
+                $profile->id,
                 implode('; ', $errors),
             ));
         }
@@ -941,13 +941,13 @@ class ImapClient
     }
 
     private function refreshFolderSignature(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         string $folder,
         \IMAP\Connection $conn,
     ): FolderSignature {
-        $status = imap_status($conn, $account->imap->getServerString() . $folder, SA_UIDVALIDITY | SA_UIDNEXT | SA_MESSAGES);
+        $status = imap_status($conn, $profile->imap->getServerString() . $folder, SA_UIDVALIDITY | SA_UIDNEXT | SA_MESSAGES);
         $signature = FolderSignature::fromImapStatus($status);
-        $this->messageCache->setFolderSignature($account->id, $folder, $signature);
+        $this->messageCache->setFolderSignature($profile->id, $folder, $signature);
 
         return $signature;
     }
@@ -1004,11 +1004,11 @@ class ImapClient
      * @param array<string, mixed> $message
      * @return array<string, mixed>
      */
-    private function withCurrentFolderState(array $message, string $accountId, string $folder, int $uidValidity, int $uid): array
+    private function withCurrentFolderState(array $message, string $profileId, string $folder, int $uidValidity, int $uid): array
     {
         $message['uid'] = $uid;
 
-        $flags = $this->messageCache->getMessageFlags($accountId, $folder, $uidValidity, $uid);
+        $flags = $this->messageCache->getMessageFlags($profileId, $folder, $uidValidity, $uid);
         if ($flags !== null) {
             $message['seen'] = $flags['seen'];
             $message['flagged'] = $flags['flagged'];
@@ -1424,14 +1424,14 @@ class ImapClient
      * @param list<int> $uids
      * @return array<int, list<string>>
      */
-    private function fetchMessageFlagSets(EmailAccountConfig $account, string $folder, array $uids): array
+    private function fetchMessageFlagSets(EmailProfileConfig $profile, string $folder, array $uids): array
     {
         $uids = $this->normalizeUids($uids);
         if ($uids === []) {
             return [];
         }
 
-        return $this->withRawImap($account, $folder, function ($stream) use ($uids): array {
+        return $this->withRawImap($profile, $folder, function ($stream) use ($uids): array {
             $result = [];
             foreach (array_chunk($uids, 100) as $chunk) {
                 foreach ($this->fetchFlagsFromStream($stream, $chunk) as $uid => $flags) {
@@ -1518,14 +1518,14 @@ class ImapClient
      * @param callable(resource): T $callback
      * @return array{result: T, permanent_keywords: list<string>}
      */
-    private function withRawImap(EmailAccountConfig $account, string $folder, callable $callback): array
+    private function withRawImap(EmailProfileConfig $profile, string $folder, callable $callback): array
     {
-        $stream = $this->openRawImapStream($account);
+        $stream = $this->openRawImapStream($profile);
 
         try {
             $this->imapCommand(
                 $stream,
-                'LOGIN ' . $this->quoteImapString($account->imap->username) . ' ' . $this->quoteImapString($account->imap->password),
+                'LOGIN ' . $this->quoteImapString($profile->imap->username) . ' ' . $this->quoteImapString($profile->imap->password),
             );
 
             $selectLines = $this->imapCommand($stream, 'SELECT ' . $this->quoteImapString($folder));
@@ -1550,12 +1550,12 @@ class ImapClient
     /**
      * @return resource
      */
-    private function openRawImapStream(EmailAccountConfig $account)
+    private function openRawImapStream(EmailProfileConfig $profile)
     {
-        $host = $account->imap->host;
-        $port = $account->imap->port;
-        $validateCert = $account->imap->validateCert;
-        $encryption = $account->imap->encryption;
+        $host = $profile->imap->host;
+        $port = $profile->imap->port;
+        $validateCert = $profile->imap->validateCert;
+        $encryption = $profile->imap->encryption;
 
         $remote = ($encryption === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port;
         $context = stream_context_create([
@@ -1576,8 +1576,8 @@ class ImapClient
         );
         if ($stream === false) {
             throw new \RuntimeException(sprintf(
-                'Failed to open IMAP socket for account "%s": %s (%d)',
-                $account->id,
+                'Failed to open IMAP socket for profile "%s": %s (%d)',
+                $profile->id,
                 $errstr !== '' ? $errstr : 'unknown error',
                 $errno,
             ));
@@ -1592,8 +1592,8 @@ class ImapClient
             if ($crypto !== true) {
                 fclose($stream);
                 throw new \RuntimeException(sprintf(
-                    'Failed to negotiate STARTTLS for email account "%s"',
-                    $account->id,
+                    'Failed to negotiate STARTTLS for email profile "%s"',
+                    $profile->id,
                 ));
             }
         }

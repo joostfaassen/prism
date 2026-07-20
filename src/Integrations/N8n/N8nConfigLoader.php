@@ -14,15 +14,15 @@ class N8nConfigLoader
     }
 
     /**
-     * @return array<string, N8nAccountConfig>
+     * @return array<string, N8nProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('n8n', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('n8n', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new N8nAccountConfig(
+            $profiles[$key] = new N8nProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: rtrim($cfg['base_url'] ?? '', '/'),
@@ -30,21 +30,21 @@ class N8nConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): N8nAccountConfig
+    public function getProfile(string $key): N8nProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown n8n account: "%s". Available: %s',
+                'Unknown n8n profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

@@ -20,7 +20,7 @@ class FreescoutListMailboxesTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List mailboxes in a Freescout account. Returns mailbox IDs, names, and email addresses. Use mailbox IDs when listing conversations.';
+        return 'List mailboxes in a Freescout profile. Returns mailbox IDs, names, and email addresses. Use mailbox IDs when listing conversations.';
     }
 
     public function getInputSchema(): array
@@ -28,32 +28,32 @@ class FreescoutListMailboxesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Freescout account key. Use freescout_list_accounts to see available accounts.',
+                    'description' => 'Freescout profile key. Use freescout_list_profiles to see available profiles.',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'freescout';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $mailboxes = $this->freescoutService->listMailboxes($accountKey);
+            $mailboxes = $this->freescoutService->listMailboxes($profileKey);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

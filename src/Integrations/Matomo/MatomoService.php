@@ -15,19 +15,19 @@ class MatomoService
     /**
      * @return list<array{key: string, label: string, base_url: string, default_id_site: int|null}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
-                'default_id_site' => $account->defaultIdSite,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
+                'default_id_site' => $profile->defaultIdSite,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -35,9 +35,9 @@ class MatomoService
      *
      * @return list<array<string, mixed>>
      */
-    public function listSites(?string $accountKey = null): array
+    public function listSites(?string $profileKey = null): array
     {
-        $data = $this->request($accountKey, 'SitesManager.getSitesWithAtLeastViewAccess');
+        $data = $this->request($profileKey, 'SitesManager.getSitesWithAtLeastViewAccess');
 
         if (!is_array($data)) {
             return [];
@@ -69,14 +69,14 @@ class MatomoService
      * @return array<string, mixed>
      */
     public function getVisitsSummary(
-        ?string $accountKey,
+        ?string $profileKey,
         ?int $idSite,
         string $period = 'day',
         string $date = 'today',
         ?string $segment = null,
     ): array {
-        $data = $this->request($accountKey, 'VisitsSummary.get', [
-            'idSite' => $this->resolveIdSite($accountKey, $idSite),
+        $data = $this->request($profileKey, 'VisitsSummary.get', [
+            'idSite' => $this->resolveIdSite($profileKey, $idSite),
             'period' => $period,
             'date' => $date,
             'segment' => $segment,
@@ -91,15 +91,15 @@ class MatomoService
      * @return list<array<string, mixed>>
      */
     public function getTopPageUrls(
-        ?string $accountKey,
+        ?string $profileKey,
         ?int $idSite,
         string $period = 'day',
         string $date = 'today',
         int $limit = 25,
         ?string $segment = null,
     ): array {
-        $data = $this->request($accountKey, 'Actions.getPageUrls', [
-            'idSite' => $this->resolveIdSite($accountKey, $idSite),
+        $data = $this->request($profileKey, 'Actions.getPageUrls', [
+            'idSite' => $this->resolveIdSite($profileKey, $idSite),
             'period' => $period,
             'date' => $date,
             'segment' => $segment,
@@ -140,7 +140,7 @@ class MatomoService
      * @return mixed Decoded JSON response (array or scalar)
      */
     public function getReport(
-        ?string $accountKey,
+        ?string $profileKey,
         string $method,
         ?int $idSite,
         string $period = 'day',
@@ -148,43 +148,43 @@ class MatomoService
         ?string $segment = null,
         array $params = [],
     ): mixed {
-        return $this->request($accountKey, $method, array_merge([
-            'idSite' => $this->resolveIdSite($accountKey, $idSite),
+        return $this->request($profileKey, $method, array_merge([
+            'idSite' => $this->resolveIdSite($profileKey, $idSite),
             'period' => $period,
             'date' => $date,
             'segment' => $segment,
         ], $params));
     }
 
-    private function resolveIdSite(?string $accountKey, ?int $idSite): int
+    private function resolveIdSite(?string $profileKey, ?int $idSite): int
     {
         if ($idSite !== null) {
             return $idSite;
         }
 
-        $default = $this->resolveAccount($accountKey)->defaultIdSite;
+        $default = $this->resolveProfile($profileKey)->defaultIdSite;
         if ($default !== null) {
             return $default;
         }
 
         throw new \InvalidArgumentException(
-            'No idSite provided and no default_id_site configured for this Matomo account. '
+            'No idSite provided and no default_id_site configured for this Matomo profile. '
             . 'Use matomo_list_sites to discover available site IDs.',
         );
     }
 
-    private function resolveAccount(?string $accountKey): MatomoAccountConfig
+    private function resolveProfile(?string $profileKey): MatomoProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No Matomo accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No Matomo profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -192,14 +192,14 @@ class MatomoService
      *
      * @return mixed
      */
-    private function request(?string $accountKey, string $method, array $params = []): mixed
+    private function request(?string $profileKey, string $method, array $params = []): mixed
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '' || $account->tokenAuth === '') {
+        if ($profile->baseUrl === '' || $profile->tokenAuth === '') {
             throw new \RuntimeException(sprintf(
-                'Matomo account "%s" is missing base_url or token_auth',
-                $account->key,
+                'Matomo profile "%s" is missing base_url or token_auth',
+                $profile->key,
             ));
         }
 
@@ -207,7 +207,7 @@ class MatomoService
             'module' => 'API',
             'method' => $method,
             'format' => 'json',
-            'token_auth' => $account->tokenAuth,
+            'token_auth' => $profile->tokenAuth,
         ];
 
         foreach ($params as $name => $value) {
@@ -217,7 +217,7 @@ class MatomoService
             $body[$name] = $value;
         }
 
-        $response = $this->httpClient->request('POST', $account->baseUrl . '/index.php', [
+        $response = $this->httpClient->request('POST', $profile->baseUrl . '/index.php', [
             'body' => $body,
             'timeout' => 30,
         ]);

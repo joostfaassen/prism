@@ -38,13 +38,13 @@ class ServerContext
     /**
      * @return list<string>
      */
-    public function getAllowedAccountNames(): array
+    public function getAllowedProfileNames(): array
     {
-        return $this->getServer()->getAccountNames();
+        return $this->getServer()->getProfileNames();
     }
 
-    public function isAccountAllowed(string $accountName): bool
+    public function isProfileAllowed(string $profileName): bool
     {
-        return array_key_exists($accountName, $this->getServer()->accounts);
+        return array_key_exists($profileName, $this->getServer()->profiles);
     }
 }

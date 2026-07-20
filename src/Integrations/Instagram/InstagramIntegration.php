@@ -18,6 +18,6 @@ class InstagramIntegration implements IntegrationInterface
 
     public function getDescription(): string
     {
-        return 'Instagram Graph API — media, comments, insights, publishing and account discovery.';
+        return 'Instagram Graph API — media, comments, insights, publishing and profile discovery.';
     }
 }

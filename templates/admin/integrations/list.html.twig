@@ -7,7 +7,7 @@
                 <h1 class="text-3xl font-bold text-white mb-2">Integrations</h1>
                 <p class="text-slate-400">
                     Capability packs for this server.
-                    {{ activeCount }} with accounts &middot; {{ unusedCount }} unused &middot; {{ totalCount }} registered
+                    {{ activeCount }} with profiles &middot; {{ unusedCount }} unused &middot; {{ totalCount }} registered
                 </p>
             </div>
 {% endblock %}
@@ -20,7 +20,7 @@
                 </a>
                 <a href="{{ path('admin_server_integrations', {serverName: server.name, filter: 'active'}) }}"
                    class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors {% if filter == 'active' %}border-emerald-700 bg-emerald-950/40 text-emerald-200{% else %}border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700{% endif %}">
-                    With accounts <span class="font-mono text-xs opacity-70">{{ activeCount }}</span>
+                    With profiles <span class="font-mono text-xs opacity-70">{{ activeCount }}</span>
                 </a>
                 <a href="{{ path('admin_server_integrations', {serverName: server.name, filter: 'unused'}) }}"
                    class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors {% if filter == 'unused' %}border-slate-600 bg-slate-800/60 text-slate-200{% else %}border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700{% endif %}">
@@ -42,7 +42,7 @@
                         {% if item.active %}
                         <span class="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-900/60 px-2.5 py-1 rounded-lg">
                             <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-                            {{ item.accountCount }} account{{ item.accountCount != 1 ? 's' : '' }}
+                            {{ item.profileCount }} profile{{ item.profileCount != 1 ? 's' : '' }}
                         </span>
                         {% else %}
                         <span class="shrink-0 text-[11px] font-mono text-slate-500 bg-slate-800/80 px-2.5 py-1 rounded-lg">unused</span>
@@ -56,10 +56,10 @@
             {% else %}
             <div class="mb-10 rounded-2xl border border-slate-800 bg-slate-900 px-6 py-10 text-center text-slate-400 text-sm">
                 {% if filter == 'active' %}
-                    No integrations have accounts on this server yet.
-                    <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="text-cyan-400 hover:text-cyan-300">Add accounts</a>.
+                    No integrations have profiles on this server yet.
+                    <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'profiles'}) }}" class="text-cyan-400 hover:text-cyan-300">Add profiles</a>.
                 {% elseif filter == 'unused' %}
-                    Every registered integration has at least one account on this server.
+                    Every registered integration has at least one profile on this server.
                 {% else %}
                     No integrations registered.
                 {% endif %}
@@ -70,7 +70,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white">Utility tools</h2>
-                        <p class="text-sm text-slate-400">Always available on this server (no account type)</p>
+                        <p class="text-sm text-slate-400">Always available on this server (no profile type)</p>
                     </div>
                     <span class="text-xs font-mono text-slate-500">{{ utilityTools|length }} tools</span>
                 </div>

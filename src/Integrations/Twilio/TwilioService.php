@@ -6,7 +6,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class TwilioService
 {
-    private const BASE_URL = 'https://api.twilio.com/2010-04-01/Accounts';
+    private const BASE_URL = 'https://api.twilio.com/2010-04-01/Profiles';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -17,9 +17,9 @@ class TwilioService
     /**
      * @return array{calls: list<array<string, mixed>>, page_info: array<string, mixed>}
      */
-    public function listCalls(string $accountKey, array $filters = []): array
+    public function listCalls(string $profileKey, array $filters = []): array
     {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
         $query = ['PageSize' => $filters['limit'] ?? 20];
         if (isset($filters['status'])) {
@@ -41,7 +41,7 @@ class TwilioService
             $query['PageToken'] = $filters['page_token'];
         }
 
-        $data = $this->request('GET', "/{$account->accountSid}/Calls.json", $account, [
+        $data = $this->request('GET', "/{$profile->accountSid}/Calls.json", $profile, [
             'query' => $query,
         ]);
 
@@ -59,46 +59,46 @@ class TwilioService
     /**
      * @return array<string, mixed>
      */
-    public function getCall(string $accountKey, string $callSid): array
+    public function getCall(string $profileKey, string $callSid): array
     {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        return $this->request('GET', "/{$account->accountSid}/Calls/{$callSid}.json", $account);
+        return $this->request('GET', "/{$profile->accountSid}/Calls/{$callSid}.json", $profile);
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function listRecordings(string $accountKey, string $callSid): array
+    public function listRecordings(string $profileKey, string $callSid): array
     {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
         $data = $this->request(
             'GET',
-            "/{$account->accountSid}/Calls/{$callSid}/Recordings.json",
-            $account,
+            "/{$profile->accountSid}/Calls/{$callSid}/Recordings.json",
+            $profile,
         );
 
         return $data['recordings'] ?? [];
     }
 
-    public function getRecordingMediaUrl(string $accountKey, string $recordingSid): string
+    public function getRecordingMediaUrl(string $profileKey, string $recordingSid): string
     {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        return self::BASE_URL . "/{$account->accountSid}/Recordings/{$recordingSid}.mp3";
+        return self::BASE_URL . "/{$profile->accountSid}/Recordings/{$recordingSid}.mp3";
     }
 
     /**
      * Download a recording's audio to the local filesystem.
      */
-    public function downloadRecording(string $accountKey, string $recordingSid, string $targetPath): void
+    public function downloadRecording(string $profileKey, string $recordingSid, string $targetPath): void
     {
-        $account = $this->configLoader->getAccount($accountKey);
-        $url = self::BASE_URL . "/{$account->accountSid}/Recordings/{$recordingSid}.mp3";
+        $profile = $this->configLoader->getProfile($profileKey);
+        $url = self::BASE_URL . "/{$profile->accountSid}/Recordings/{$recordingSid}.mp3";
 
         $response = $this->httpClient->request('GET', $url, [
-            'auth_basic' => [$account->accountSid, $account->authToken],
+            'auth_basic' => [$profile->accountSid, $profile->authToken],
         ]);
 
         $dir = dirname($targetPath);
@@ -112,15 +112,15 @@ class TwilioService
     /**
      * @return list<array{key: string, label: string, account_sid: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
         $result = [];
 
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
             $result[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'account_sid' => $account->accountSid,
+                'label' => $profile->label,
+                'account_sid' => $profile->accountSid,
             ];
         }
 
@@ -130,10 +130,10 @@ class TwilioService
     /**
      * @return array<string, mixed>
      */
-    private function request(string $method, string $path, TwilioAccountConfig $account, array $options = []): array
+    private function request(string $method, string $path, TwilioProfileConfig $profile, array $options = []): array
     {
         $response = $this->httpClient->request($method, self::BASE_URL . $path, array_merge([
-            'auth_basic' => [$account->accountSid, $account->authToken],
+            'auth_basic' => [$profile->accountSid, $profile->authToken],
         ], $options));
 
         $statusCode = $response->getStatusCode();

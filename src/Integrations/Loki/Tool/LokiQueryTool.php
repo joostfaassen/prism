@@ -30,9 +30,9 @@ class LokiQueryTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Loki account key. Optional if only one account is configured.',
+                    'description' => 'Loki profile key. Optional if only one profile is configured.',
                 ],
                 'query' => [
                     'type' => 'string',
@@ -56,7 +56,7 @@ class LokiQueryTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'loki';
     }
@@ -73,7 +73,7 @@ class LokiQueryTool implements ToolInterface
 
         try {
             $result = $this->lokiService->query(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 query: $query,
                 time: isset($arguments['time']) ? (string) $arguments['time'] : null,
                 limit: isset($arguments['limit']) ? max(1, (int) $arguments['limit']) : 100,

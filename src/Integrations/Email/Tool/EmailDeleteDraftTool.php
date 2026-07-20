@@ -21,7 +21,7 @@ class EmailDeleteDraftTool implements ToolInterface
     public function getDescription(): string
     {
         return <<<TXT
-            Permanently delete a draft from the account's IMAP Drafts folder (expunge — no trash).
+            Permanently delete a draft from the profile's IMAP Drafts folder (expunge — no trash).
 
             Only messages with the \\Draft flag are deleted; regular mail in the drafts folder is refused. Optionally pass `expected_message_id` (from email_create_draft) to guard against UID mix-ups between agent turns.
 
@@ -34,9 +34,9 @@ class EmailDeleteDraftTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID (see email_list_accounts).',
+                    'description' => 'Email profile ID (see email_list_profiles).',
                 ],
                 'uid' => [
                     'type' => 'integer',
@@ -44,29 +44,29 @@ class EmailDeleteDraftTool implements ToolInterface
                 ],
                 'drafts_folder' => [
                     'type' => 'string',
-                    'description' => 'Override the IMAP Drafts folder. Defaults to the account\'s configured drafts_folder (usually "Drafts").',
+                    'description' => 'Override the IMAP Drafts folder. Defaults to the profile\'s configured drafts_folder (usually "Drafts").',
                 ],
                 'expected_message_id' => [
                     'type' => 'string',
                     'description' => 'Optional safety guard: refuse if the message\'s Message-ID does not match (use the message_id from email_create_draft).',
                 ],
             ],
-            'required' => ['account', 'uid'],
+            'required' => ['profile', 'uid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $uid = $arguments['uid'] ?? null;
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if (!is_int($uid) || $uid <= 0) {
@@ -75,7 +75,7 @@ class EmailDeleteDraftTool implements ToolInterface
 
         try {
             $result = $this->emailService->deleteDraft(
-                accountId: $account,
+                profileId: $profile,
                 uid: $uid,
                 draftsFolderOverride: isset($arguments['drafts_folder']) ? (string) $arguments['drafts_folder'] : null,
                 expectedMessageId: isset($arguments['expected_message_id']) ? (string) $arguments['expected_message_id'] : null,

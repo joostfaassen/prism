@@ -16,11 +16,11 @@ De consumer is Joost's entertainment-library in `xa-atlas`
 
 ## Lees eerst
 
-- `AGENTS.md` in deze repo (4-staps integration pattern, ToolInterface, account types)
+- `AGENTS.md` in deze repo (4-staps integration pattern, ToolInterface, profile types)
 - Template-integraties: **Matomo** en **SendGrid** (read-only HTTP + JSON)
   - `src/Matomo/` + `src/Mcp/Tool/Matomo*Tool.php`
   - `src/SendGrid/` + `src/Mcp/Tool/SendGrid*Tool.php`
-- Scrubbed account YAML: `prism.config.yaml.example`
+- Scrubbed profile YAML: `prism.config.yaml.example`
 - Referentie-HTTP-logica (al werkend in xa-atlas — porten, niet reinventen):
   - `/home/jfaassen/git/joostfaassen/xa-atlas/src/Entertainment/TmdbClient.php`
   - `/home/jfaassen/git/joostfaassen/xa-atlas/src/Entertainment/IgdbClient.php`
@@ -34,10 +34,10 @@ De consumer is Joost's entertainment-library in `xa-atlas`
 
 Wikipedia is géén Prism-tool (keyless, blijft fallback in xa-atlas).
 
-## Account types & YAML
+## Profile types & YAML
 
 Voeg toe aan `prism.config.yaml.example` (scrubbed) en aan de live
-`prism.kiko.yaml` (of equivalent kiko-server accounts block) — **niet committen**.
+`prism.kiko.yaml` (of equivalent kiko-server profiles block) — **niet committen**.
 
 ```yaml
 # TMDb — https://www.themoviedb.org/settings/api (v3 API key)
@@ -64,10 +64,10 @@ Credentials blijven in Prism YAML. Geen Symfony env vars voor deze keys
 ### TMDb
 
 ```
-src/Tmdb/TmdbAccountConfig.php
+src/Tmdb/TmdbProfileConfig.php
 src/Tmdb/TmdbConfigLoader.php
 src/Tmdb/TmdbService.php
-src/Mcp/Tool/TmdbListAccountsTool.php
+src/Mcp/Tool/TmdbListProfilesTool.php
 src/Mcp/Tool/TmdbFindByImdbTool.php
 src/Mcp/Tool/TmdbSearchTool.php
 src/Mcp/Tool/TmdbGetMovieTool.php
@@ -77,10 +77,10 @@ src/Mcp/Tool/TmdbGetTvTool.php
 ### IGDB
 
 ```
-src/Igdb/IgdbAccountConfig.php
+src/Igdb/IgdbProfileConfig.php
 src/Igdb/IgdbConfigLoader.php
 src/Igdb/IgdbService.php
-src/Mcp/Tool/IgdbListAccountsTool.php
+src/Mcp/Tool/IgdbListProfilesTool.php
 src/Mcp/Tool/IgdbFindTool.php
 src/Mcp/Tool/IgdbSearchTool.php
 ```
@@ -89,20 +89,20 @@ Tools auto-registreren via `ToolInterface` + DI tag (geen handmatige services.ya
 entry nodig, tenzij de repo dat voor vergelijkbare services wél doet — check
 Matomo).
 
-## Tool contract (namen = snake_case, prefix = account type)
+## Tool contract (namen = snake_case, prefix = profile type)
 
-Alle tools: **read-only**. `getAccountType()` → `'tmdb'` of `'igdb'`.
+Alle tools: **read-only**. `getProfileType()` → `'tmdb'` of `'igdb'`.
 `execute()` returnt `['content' => [['type' => 'text', 'text' => json_encode(...)]]]`.
 
 ### TMDb tools
 
 | Tool | Input | Output (JSON) |
 |---|---|---|
-| `tmdb_list_accounts` | (geen / optional) | `[{key, label}]` |
-| `tmdb_find_by_imdb` | `imdb_id` (required, `tt…`), optional `account` | Normalized record (zie hieronder). Detecteert movie vs tv. |
-| `tmdb_search` | `query` (required), optional `year`, `kind` (`movie`\|`tv`, default movie), `account` | Top result as normalized record, plus `results` array of light hits if useful |
-| `tmdb_get_movie` | `tmdb_id` (required int), optional `account` | Normalized movie record |
-| `tmdb_get_tv` | `tmdb_id` (required int), optional `account` | Normalized TV record |
+| `tmdb_list_profiles` | (geen / optional) | `[{key, label}]` |
+| `tmdb_find_by_imdb` | `imdb_id` (required, `tt…`), optional `profile` | Normalized record (zie hieronder). Detecteert movie vs tv. |
+| `tmdb_search` | `query` (required), optional `year`, `kind` (`movie`\|`tv`, default movie), `profile` | Top result as normalized record, plus `results` array of light hits if useful |
+| `tmdb_get_movie` | `tmdb_id` (required int), optional `profile` | Normalized movie record |
+| `tmdb_get_tv` | `tmdb_id` (required int), optional `profile` | Normalized TV record |
 
 TMDb HTTP (port from xa-atlas `TmdbClient`):
 - Base: `https://api.themoviedb.org/3`
@@ -117,13 +117,13 @@ TMDb HTTP (port from xa-atlas `TmdbClient`):
 
 | Tool | Input | Output (JSON) |
 |---|---|---|
-| `igdb_list_accounts` | (geen) | `[{key, label}]` |
-| `igdb_find` | `id` (required: numeric IGDB id **or** slug string), optional `account` | Normalized game record |
-| `igdb_search` | `query` (required), optional `account` | Top result normalized + optional light `results` |
+| `igdb_list_profiles` | (geen) | `[{key, label}]` |
+| `igdb_find` | `id` (required: numeric IGDB id **or** slug string), optional `profile` | Normalized game record |
+| `igdb_search` | `query` (required), optional `profile` | Top result normalized + optional light `results` |
 
 IGDB HTTP (port from xa-atlas `IgdbClient`):
 - Token: `POST https://id.twitch.tv/oauth2/token` with `client_id`, `client_secret`, `grant_type=client_credentials`
-- Cache token under something like `var/igdb-token-{accountKey}.json` (expires_in) — don't hit Twitch every call
+- Cache token under something like `var/igdb-token-{profileKey}.json` (expires_in) — don't hit Twitch every call
 - API: `POST https://api.igdb.com/v4/games` with headers `Client-ID`, `Authorization: Bearer {token}`, body = apicalypse query
 - Cover URL: `https://images.igdb.com/igdb/image/upload/t_1080p/{image_id}.jpg`
 
@@ -169,7 +169,7 @@ Rules:
 - Prefer w780 (TMDb) / t_1080p (IGDB) — consumer scales down
 - Never invent personal fields (`rating`, `verdict`, `why`, `moods`, …)
 - On miss / HTTP error: return `isError: true` with a clear message
-- Optional `account` arg: if omitted, use the first account of that type on the server
+- Optional `profile` arg: if omitted, use the first profile of that type on the server
 
 ## Scope / non-goals
 
@@ -181,7 +181,7 @@ Rules:
 
 ## Deploy / enable checklist (na implementatie)
 
-1. Account YAML op de kiko-server zetten met echte keys
+1. Profile YAML op de kiko-server zetten met echte keys
 2. Prism deployen / herstarten zodat tools zichtbaar zijn op `/mcp/kiko`
 3. In **Toolbar** admin: upstream `kiko-prism` → **Pull Tools**
 4. Nieuwe tools access policy op **allow** zetten (default na sync is vaak disabled)
@@ -193,7 +193,7 @@ Rules:
 - [ ] `tmdb_find_by_imdb` met `tt2798920` (Annihilation) → title + coverUrl + tmdb/imdb ids
 - [ ] `tmdb_search` query `Perfect Blue` year 1997 → anime/film hit met poster
 - [ ] `igdb_find` id/slug `nier-automata` of search `Disco Elysium` → coverUrl + platforms
-- [ ] Zonder account van dat type op een server: tools niet zichtbaar in `tools/list`
+- [ ] Zonder profile van dat type op een server: tools niet zichtbaar in `tools/list`
 - [ ] Keys alleen in gitignored YAML; example file heeft placeholders
 - [ ] Response shape matcht het normalized contract hierboven
 

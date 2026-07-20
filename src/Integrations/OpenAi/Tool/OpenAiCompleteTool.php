@@ -31,9 +31,9 @@ class OpenAiCompleteTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'OpenAI account key. Omit to use the only configured account.',
+                    'description' => 'OpenAI profile key. Omit to use the only configured profile.',
                 ],
                 'prompt' => [
                     'type' => 'string',
@@ -62,7 +62,7 @@ class OpenAiCompleteTool implements ToolInterface
                 ],
                 'model' => [
                     'type' => 'string',
-                    'description' => 'Model to use. Defaults to the account\'s default_model.',
+                    'description' => 'Model to use. Defaults to the profile\'s default_model.',
                 ],
                 'temperature' => [
                     'type' => 'number',
@@ -77,14 +77,14 @@ class OpenAiCompleteTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'openai';
     }
 
     public function execute(array $arguments): array
     {
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
         $model = $arguments['model'] ?? null;
         $temperature = isset($arguments['temperature']) ? (float) $arguments['temperature'] : null;
         $maxTokens = isset($arguments['max_tokens']) ? (int) $arguments['max_tokens'] : null;
@@ -100,7 +100,7 @@ class OpenAiCompleteTool implements ToolInterface
 
         try {
             $result = $this->openAiService->complete(
-                accountKey: $account,
+                profileKey: $profile,
                 messages: $messages,
                 model: $model,
                 temperature: $temperature,

@@ -28,32 +28,32 @@ class FreescoutListUsersTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Freescout account key',
+                    'description' => 'Freescout profile key',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'freescout';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $users = $this->freescoutService->listUsers($accountKey);
+            $users = $this->freescoutService->listUsers($profileKey);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

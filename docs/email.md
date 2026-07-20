@@ -1,23 +1,23 @@
 # Email Integration
 
-Prism's `email` account type bridges a regular mailbox over the Model Context Protocol — letting an AI client list folders, search messages, read content, **stage drafts** in the Drafts folder, and **send replies** that are correctly threaded and saved to the Sent folder, exactly like a normal email client (Thunderbird, Apple Mail, …) would do.
+Prism's `email` profile type bridges a regular mailbox over the Model Context Protocol — letting an AI client list folders, search messages, read content, **stage drafts** in the Drafts folder, and **send replies** that are correctly threaded and saved to the Sent folder, exactly like a normal email client (Thunderbird, Apple Mail, …) would do.
 
-Each `email` account combines:
+Each `email` profile combines:
 
 - **IMAP** for reading mail and writing the Sent copy
-- **SMTP** for outbound delivery (optional — accounts without SMTP are read-only)
+- **SMTP** for outbound delivery (optional — profiles without SMTP are read-only)
 - An **identity** (From address + display name) used when composing
 
-## 1. Configure an account
+## 1. Configure a profile
 
-Add an `email` account to any server in `prism.config.yaml`:
+Add an `email` profile to any server in `prism.config.yaml`:
 
 ```yaml
 servers:
   my-server:
     label: "My Server"
     bearer_token: "your-prism-bearer-token"
-    accounts:
+    profiles:
       personal-mail:
         type: email
         label: "Personal mailbox"
@@ -48,7 +48,7 @@ servers:
 | Block      | Required | Notes |
 |------------|----------|-------|
 | `imap`     | Yes      | Always required — used for reading and for saving the Sent copy. |
-| `smtp`     | No (but required by `email_send`) | Without it, the account can still read mail and stage drafts; only sending is disabled. |
+| `smtp`     | No (but required by `email_send`) | Without it, the profile can still read mail and stage drafts; only sending is disabled. |
 | `identity` | No       | Defaults to `imap.username`. Set it explicitly when the SMTP login differs from your "From" address (common for shared mailboxes or aliases). |
 
 ### Encryption modes
@@ -62,11 +62,11 @@ If a server presents a self-signed or otherwise unverifiable certificate, set `v
 
 ## 2. Available tools
 
-Once an account is configured, the server exposes these tools:
+Once a profile is configured, the server exposes these tools:
 
 | Tool | Purpose |
 |------|---------|
-| `email_list_accounts` | List configured accounts and whether each can send mail. |
+| `email_list_profiles` | List configured profiles and whether each can send mail. |
 | `email_list_folders`  | List IMAP folders with total/unread counts. |
 | `email_create_folder` | Create a new IMAP folder (errors if it already exists). |
 | `email_list_labels`   | List folders, standard flags, and custom IMAP keyword tags found in a folder. |
@@ -100,7 +100,7 @@ The `email_send` tool is intentionally close to "what a human in Thunderbird wou
 
 ```json
 {
-  "account": "personal-mail",
+  "profile": "personal-mail",
   "to": "alice@example.com",
   "cc": ["bob@example.com"],
   "subject": "Lunch tomorrow?",
@@ -114,7 +114,7 @@ First find the message you want to reply to (`email_search` → `email_get_messa
 
 ```json
 {
-  "account": "personal-mail",
+  "profile": "personal-mail",
   "body_markdown": "Sounds great — see you at the cafe at 12:30!",
   "reply_to": {
     "folder": "INBOX",
@@ -137,7 +137,7 @@ You can always override by passing explicit `to`/`cc`/`bcc`.
 | `from_name` | Override the From display name for this single message. |
 | `reply_to_address` | Add a `Reply-To` header so replies go elsewhere. |
 | `save_to_sent` | Default `true`. Set `false` for fire-and-forget sends. |
-| `sent_folder` | Override the IMAP folder used for the saved copy (default = account's `sent_folder`, falling back to `"Sent"`). |
+| `sent_folder` | Override the IMAP folder used for the saved copy (default = profile's `sent_folder`, falling back to `"Sent"`). |
 
 ### What you get back
 
@@ -149,11 +149,11 @@ Use drafts when a human should review (and send) from their own mail client — 
 
 ### Create a draft
 
-`email_create_draft` composes the same multipart message as `email_send` (markdown → text + HTML) and `APPEND`s it to the account's Drafts folder with flags `\Seen \Draft`. Optional `reply_to: { folder, uid }` threads and quotes the original exactly like a real reply draft. Bcc is preserved in the draft so the client can restore it when the user opens the composer.
+`email_create_draft` composes the same multipart message as `email_send` (markdown → text + HTML) and `APPEND`s it to the profile's Drafts folder with flags `\Seen \Draft`. Optional `reply_to: { folder, uid }` threads and quotes the original exactly like a real reply draft. Bcc is preserved in the draft so the client can restore it when the user opens the composer.
 
 ```json
 {
-  "account": "personal-mail",
+  "profile": "personal-mail",
   "body_markdown": "Thanks — I'll follow up tomorrow.",
   "reply_to": {
     "folder": "INBOX",
@@ -172,7 +172,7 @@ There is no upsert. To replace: `email_delete_draft` (by `uid`, optionally with 
 
 ### Reading drafts
 
-Drafts are ordinary IMAP messages. Use `email_search` / `email_get_messages` on the Drafts folder (see `drafts_folder` from `email_list_accounts`, or override with `drafts_folder` on the draft tools). Confirm the folder name with `email_list_folders` if needed (`Drafts`, `INBOX.Drafts`, `[Gmail]/Drafts`, …).
+Drafts are ordinary IMAP messages. Use `email_search` / `email_get_messages` on the Drafts folder (see `drafts_folder` from `email_list_profiles`, or override with `drafts_folder` on the draft tools). Confirm the folder name with `email_list_folders` if needed (`Drafts`, `INBOX.Drafts`, `[Gmail]/Drafts`, …).
 
 ### Soft-deleted messages (`\\Deleted`) vs mail-client UI
 
@@ -193,7 +193,7 @@ Staging a draft (`email_create_draft`) is intentionally lower risk — nothing i
 
 ## 6. Typical workflow
 
-1. `email_list_accounts` → find the account key.
+1. `email_list_profiles` → find the profile key.
 2. `email_search` → locate the conversation you want to act on.
 3. `email_get_messages` → read the full message (set `include_html: true` if you want both versions; pass one UID if you only need one message).
 4. Either:
@@ -212,18 +212,18 @@ These are the most common settings; check your provider's docs to be sure.
 | Outlook 365 (basic auth where allowed) | `outlook.office365.com` | 993 / ssl | `smtp.office365.com` | 587 / starttls |
 | Fastmail | `imap.fastmail.com` | 993 / ssl | `smtp.fastmail.com` | 465 / ssl |
 
-> **Use app-specific passwords.** Most providers require an app-specific password (or modern OAuth) when a third-party client logs in. Generate one in your provider's account settings and put it in the config.
+> **Use app-specific passwords.** Most providers require an app-specific password (or modern OAuth) when a third-party client logs in. Generate one in your provider's profile settings and put it in the config.
 
 ## 8. Troubleshooting
 
-**"Failed to connect to email account … (IMAP)"** — Check host/port/encryption. For self-signed certs in dev, set `validate_cert: false`.
+**"Failed to connect to email profile … (IMAP)"** — Check host/port/encryption. For self-signed certs in dev, set `validate_cert: false`.
 
-**"Email account … has no SMTP configured"** — `email_send` requires a `smtp:` block on the account.
+**"Email profile … has no SMTP configured"** — `email_send` requires a `smtp:` block on the profile.
 
 **Sent message has no copy in Sent folder** — Confirm the folder name. Some providers use `Sent`, others use `Sent Items`, `Sent Messages`, or `INBOX.Sent`. Use `email_list_folders` to find the exact name and set `imap.sent_folder` (or pass `sent_folder` per-call). If the folder doesn't exist, Prism will try to create it once.
 
 **Reply isn't threading correctly in the recipient's client** — Mail clients group threads by `Message-ID`/`In-Reply-To`/`References`. Make sure the `reply_to.uid` you pass is the original message's UID in the folder you specify, not a derived value.
 
-**Draft still listed after sending from Thunderbird** — TB usually soft-deletes (`\\Deleted`) the draft and hides it; EXPUNGE may wait until compact/restart. Prism search excludes soft-deleted messages by default. Pass `include_deleted: true` only when diagnosing leftovers. Confirm the sent copy in the account's Sent folder (`Sent` vs `Sent Items`).
+**Draft still listed after sending from Thunderbird** — TB usually soft-deletes (`\\Deleted`) the draft and hides it; EXPUNGE may wait until compact/restart. Prism search excludes soft-deleted messages by default. Pass `include_deleted: true` only when diagnosing leftovers. Confirm the sent copy in the profile's Sent folder (`Sent` vs `Sent Items`).
 
-**"Authentication failed"** — Some providers reject normal passwords on SMTP/IMAP and require an app-specific password (or OAuth). Generate one in your provider's account security settings.
+**"Authentication failed"** — Some providers reject normal passwords on SMTP/IMAP and require an app-specific password (or OAuth). Generate one in your provider's profile security settings.

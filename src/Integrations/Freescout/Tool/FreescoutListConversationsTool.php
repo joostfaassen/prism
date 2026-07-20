@@ -28,9 +28,9 @@ class FreescoutListConversationsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Freescout account key',
+                    'description' => 'Freescout profile key',
                 ],
                 'mailbox_id' => [
                     'type' => 'integer',
@@ -58,21 +58,21 @@ class FreescoutListConversationsTool implements ToolInterface
                     'description' => 'Results per page (default 50, max 100)',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'freescout';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
@@ -86,7 +86,7 @@ class FreescoutListConversationsTool implements ToolInterface
 
         try {
             $result = $this->freescoutService->listConversations(
-                $accountKey,
+                $profileKey,
                 $mailboxId,
                 $folderId,
                 $status,

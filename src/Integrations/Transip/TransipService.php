@@ -8,7 +8,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * Thin client for the TransIP REST API v6.
  *
  * Authentication works by POSTing a JSON body to /auth that is signed with the
- * account's RSA private key (SHA512). The resulting JWT is then sent as a
+ * profile's RSA private key (SHA512). The resulting JWT is then sent as a
  * Bearer token on every subsequent request. Tokens are cached in-memory for
  * the lifetime of the request to avoid re-authenticating per API call.
  *
@@ -20,7 +20,7 @@ class TransipService
 
     public const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SRV', 'SSHFP', 'TLSA', 'CAA', 'NAPTR'];
 
-    /** @var array<string, string> cached JWTs keyed by account key */
+    /** @var array<string, string> cached JWTs keyed by profile key */
     private array $tokenCache = [];
 
     public function __construct(
@@ -32,27 +32,27 @@ class TransipService
     /**
      * @return list<array{key: string, label: string, login: string, read_only: bool}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'login' => $account->login,
-                'read_only' => $account->readOnly,
+                'label' => $profile->label,
+                'login' => $profile->login,
+                'read_only' => $profile->readOnly,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function listDomains(?string $accountKey = null): array
+    public function listDomains(?string $profileKey = null): array
     {
-        $data = $this->request($accountKey, 'GET', '/domains');
+        $data = $this->request($profileKey, 'GET', '/domains');
 
         return array_values($data['domains'] ?? []);
     }
@@ -60,10 +60,10 @@ class TransipService
     /**
      * @return array<string, mixed>
      */
-    public function getDomain(string $domainName, ?string $accountKey = null): array
+    public function getDomain(string $domainName, ?string $profileKey = null): array
     {
         $domainName = $this->normalizeDomain($domainName);
-        $data = $this->request($accountKey, 'GET', sprintf('/domains/%s?include=nameservers,contacts', rawurlencode($domainName)));
+        $data = $this->request($profileKey, 'GET', sprintf('/domains/%s?include=nameservers,contacts', rawurlencode($domainName)));
 
         return $data['domain'] ?? [];
     }
@@ -71,10 +71,10 @@ class TransipService
     /**
      * @return list<array{name: string, expire: int, type: string, content: string}>
      */
-    public function getDnsEntries(string $domainName, ?string $accountKey = null): array
+    public function getDnsEntries(string $domainName, ?string $profileKey = null): array
     {
         $domainName = $this->normalizeDomain($domainName);
-        $data = $this->request($accountKey, 'GET', sprintf('/domains/%s/dns', rawurlencode($domainName)));
+        $data = $this->request($profileKey, 'GET', sprintf('/domains/%s/dns', rawurlencode($domainName)));
 
         return array_values($data['dnsEntries'] ?? []);
     }
@@ -82,10 +82,10 @@ class TransipService
     /**
      * @return list<array<string, mixed>>
      */
-    public function getNameservers(string $domainName, ?string $accountKey = null): array
+    public function getNameservers(string $domainName, ?string $profileKey = null): array
     {
         $domainName = $this->normalizeDomain($domainName);
-        $data = $this->request($accountKey, 'GET', sprintf('/domains/%s/nameservers', rawurlencode($domainName)));
+        $data = $this->request($profileKey, 'GET', sprintf('/domains/%s/nameservers', rawurlencode($domainName)));
 
         return array_values($data['nameservers'] ?? []);
     }
@@ -109,7 +109,7 @@ class TransipService
         string $content,
         int $expire = 3600,
         ?string $replaceContent = null,
-        ?string $accountKey = null,
+        ?string $profileKey = null,
     ): array {
         $domainName = $this->normalizeDomain($domainName);
         $type = strtoupper($type);
@@ -117,7 +117,7 @@ class TransipService
 
         $desired = ['name' => $name, 'expire' => $expire, 'type' => $type, 'content' => $content];
 
-        $entries = $this->getDnsEntries($domainName, $accountKey);
+        $entries = $this->getDnsEntries($domainName, $profileKey);
 
         // Already present exactly as desired → idempotent no-op.
         foreach ($entries as $entry) {
@@ -139,7 +139,7 @@ class TransipService
         }
 
         if (count($sameNameType) === 0) {
-            $this->request($accountKey, 'POST', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
+            $this->request($profileKey, 'POST', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
                 'dnsEntry' => $desired,
             ]);
 
@@ -160,7 +160,7 @@ class TransipService
 
         // Content-only change with the same TTL can use PATCH (atomic).
         if ((int) ($existing['expire'] ?? 0) === $expire) {
-            $this->request($accountKey, 'PATCH', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
+            $this->request($profileKey, 'PATCH', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
                 'dnsEntry' => $desired,
             ]);
 
@@ -168,7 +168,7 @@ class TransipService
         }
 
         // TTL change: delete the old entry, then add the new one.
-        $this->request($accountKey, 'DELETE', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
+        $this->request($profileKey, 'DELETE', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
             'dnsEntry' => [
                 'name' => $existing['name'],
                 'expire' => (int) $existing['expire'],
@@ -176,7 +176,7 @@ class TransipService
                 'content' => (string) $existing['content'],
             ],
         ]);
-        $this->request($accountKey, 'POST', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
+        $this->request($profileKey, 'POST', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
             'dnsEntry' => $desired,
         ]);
 
@@ -196,13 +196,13 @@ class TransipService
         string $type,
         ?string $content = null,
         ?int $expire = null,
-        ?string $accountKey = null,
+        ?string $profileKey = null,
     ): array {
         $domainName = $this->normalizeDomain($domainName);
         $type = strtoupper($type);
         $this->assertValidType($type);
 
-        $entries = $this->getDnsEntries($domainName, $accountKey);
+        $entries = $this->getDnsEntries($domainName, $profileKey);
 
         $matches = array_values(array_filter($entries, function (array $e) use ($name, $type, $content, $expire): bool {
             if (($e['name'] ?? null) !== $name) {
@@ -251,7 +251,7 @@ class TransipService
             'content' => (string) $entry['content'],
         ];
 
-        $this->request($accountKey, 'DELETE', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
+        $this->request($profileKey, 'DELETE', sprintf('/domains/%s/dns', rawurlencode($domainName)), [
             'dnsEntry' => $deleted,
         ]);
 
@@ -261,9 +261,9 @@ class TransipService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listInvoices(?string $accountKey = null): array
+    public function listInvoices(?string $profileKey = null): array
     {
-        $data = $this->request($accountKey, 'GET', '/invoices');
+        $data = $this->request($profileKey, 'GET', '/invoices');
 
         return array_values($data['invoices'] ?? []);
     }
@@ -271,13 +271,13 @@ class TransipService
     /**
      * @return array<string, mixed>
      */
-    public function getInvoice(string $invoiceNumber, bool $withItems = false, ?string $accountKey = null): array
+    public function getInvoice(string $invoiceNumber, bool $withItems = false, ?string $profileKey = null): array
     {
-        $invoice = $this->request($accountKey, 'GET', sprintf('/invoices/%s', rawurlencode($invoiceNumber)));
+        $invoice = $this->request($profileKey, 'GET', sprintf('/invoices/%s', rawurlencode($invoiceNumber)));
         $result = $invoice['invoice'] ?? [];
 
         if ($withItems) {
-            $items = $this->request($accountKey, 'GET', sprintf('/invoices/%s/invoice-items', rawurlencode($invoiceNumber)));
+            $items = $this->request($profileKey, 'GET', sprintf('/invoices/%s/invoice-items', rawurlencode($invoiceNumber)));
             $result['invoiceItems'] = array_values($items['invoiceItems'] ?? []);
         }
 
@@ -317,49 +317,49 @@ class TransipService
         return rtrim($domainName, '.');
     }
 
-    private function resolveAccount(?string $accountKey): TransipAccountConfig
+    private function resolveProfile(?string $profileKey): TransipProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No TransIP accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No TransIP profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
-    private function getToken(TransipAccountConfig $account): string
+    private function getToken(TransipProfileConfig $profile): string
     {
-        if (isset($this->tokenCache[$account->key])) {
-            return $this->tokenCache[$account->key];
+        if (isset($this->tokenCache[$profile->key])) {
+            return $this->tokenCache[$profile->key];
         }
 
-        if ($account->login === '' || trim($account->privateKey) === '') {
+        if ($profile->login === '' || trim($profile->privateKey) === '') {
             throw new \RuntimeException(sprintf(
-                'TransIP account "%s" is missing login or private_key',
-                $account->key,
+                'TransIP profile "%s" is missing login or private_key',
+                $profile->key,
             ));
         }
 
-        $privateKey = openssl_pkey_get_private($account->privateKey);
+        $privateKey = openssl_pkey_get_private($profile->privateKey);
         if ($privateKey === false) {
             throw new \RuntimeException(sprintf(
-                'TransIP account "%s" has an invalid RSA private key (%s)',
-                $account->key,
+                'TransIP profile "%s" has an invalid RSA private key (%s)',
+                $profile->key,
                 openssl_error_string() ?: 'unknown error',
             ));
         }
 
         $payload = [
-            'login' => $account->login,
+            'login' => $profile->login,
             'nonce' => bin2hex(random_bytes(12)),
-            'read_only' => $account->readOnly,
+            'read_only' => $profile->readOnly,
             'expiration_time' => '30 minutes',
             'label' => 'prism-' . gmdate('Y-m-d\TH:i:s\Z'),
-            'global_key' => $account->globalKey,
+            'global_key' => $profile->globalKey,
         ];
 
         // The signature must cover the exact byte string we transmit, so we
@@ -394,7 +394,7 @@ class TransipService
             throw new \RuntimeException('TransIP authentication did not return a token');
         }
 
-        return $this->tokenCache[$account->key] = $token;
+        return $this->tokenCache[$profile->key] = $token;
     }
 
     /**
@@ -402,10 +402,10 @@ class TransipService
      *
      * @return array<string, mixed>
      */
-    private function request(?string $accountKey, string $method, string $path, array $json = []): array
+    private function request(?string $profileKey, string $method, string $path, array $json = []): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $token = $this->getToken($account);
+        $profile = $this->resolveProfile($profileKey);
+        $token = $this->getToken($profile);
 
         $options = [
             'headers' => [

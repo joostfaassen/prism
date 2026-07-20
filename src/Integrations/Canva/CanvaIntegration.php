@@ -18,6 +18,6 @@ class CanvaIntegration implements IntegrationInterface
 
     public function getDescription(): string
     {
-        return 'Canva designs — list designs and read design pages via OAuth-connected accounts.';
+        return 'Canva designs — list designs and read design pages via OAuth-connected profiles.';
     }
 }

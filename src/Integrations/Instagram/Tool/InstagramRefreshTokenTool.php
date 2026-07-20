@@ -20,8 +20,8 @@ class InstagramRefreshTokenTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Refresh the account\'s long-lived access token (extends it ~60 days) and persist it back to the Prism '
-            . 'config so automations keep working. Requires app_id and app_secret to be configured for the account. '
+        return 'Refresh the profile\'s long-lived access token (extends it ~60 days) and persist it back to the Prism '
+            . 'config so automations keep working. Requires app_id and app_secret to be configured for the profile. '
             . 'Run periodically (e.g. weekly) well before the token expires.';
     }
 
@@ -30,13 +30,13 @@ class InstagramRefreshTokenTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -44,7 +44,7 @@ class InstagramRefreshTokenTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->instagramService->refreshToken($arguments['account'] ?? null);
+            $result = $this->instagramService->refreshToken($arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

@@ -15,18 +15,18 @@ class N8nService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -36,7 +36,7 @@ class N8nService
      * @return array{data: list<array<string, mixed>>, nextCursor: string|null}
      */
     public function listWorkflows(
-        ?string $accountKey = null,
+        ?string $profileKey = null,
         ?bool $active = null,
         ?string $name = null,
         ?string $tags = null,
@@ -61,7 +61,7 @@ class N8nService
             $query['cursor'] = $cursor;
         }
 
-        $data = $this->request($accountKey, 'GET', '/workflows', $query);
+        $data = $this->request($profileKey, 'GET', '/workflows', $query);
 
         $workflows = [];
         foreach ($data['data'] ?? [] as $workflow) {
@@ -84,9 +84,9 @@ class N8nService
      *
      * @return array<string, mixed>
      */
-    public function getWorkflow(?string $accountKey, string $id): array
+    public function getWorkflow(?string $profileKey, string $id): array
     {
-        $data = $this->request($accountKey, 'GET', '/workflows/' . rawurlencode($id));
+        $data = $this->request($profileKey, 'GET', '/workflows/' . rawurlencode($id));
 
         return [
             'summary' => $this->summarizeWorkflow($data),
@@ -100,7 +100,7 @@ class N8nService
      * @return array{data: list<array<string, mixed>>, nextCursor: string|null}
      */
     public function listExecutions(
-        ?string $accountKey = null,
+        ?string $profileKey = null,
         ?string $workflowId = null,
         ?string $status = null,
         bool $includeData = false,
@@ -122,7 +122,7 @@ class N8nService
             $query['cursor'] = $cursor;
         }
 
-        $data = $this->request($accountKey, 'GET', '/executions', $query);
+        $data = $this->request($profileKey, 'GET', '/executions', $query);
 
         $executions = [];
         foreach ($data['data'] ?? [] as $execution) {
@@ -144,9 +144,9 @@ class N8nService
      *
      * @return array<string, mixed>
      */
-    public function getExecution(?string $accountKey, string $id, bool $includeData = false): array
+    public function getExecution(?string $profileKey, string $id, bool $includeData = false): array
     {
-        $data = $this->request($accountKey, 'GET', '/executions/' . rawurlencode($id), [
+        $data = $this->request($profileKey, 'GET', '/executions/' . rawurlencode($id), [
             'includeData' => $includeData ? 'true' : 'false',
         ]);
 
@@ -204,18 +204,18 @@ class N8nService
         ];
     }
 
-    private function resolveAccount(?string $accountKey): N8nAccountConfig
+    private function resolveProfile(?string $profileKey): N8nProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No n8n accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No n8n profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -223,14 +223,14 @@ class N8nService
      *
      * @return array<string, mixed>
      */
-    private function request(?string $accountKey, string $method, string $path, array $query = []): array
+    private function request(?string $profileKey, string $method, string $path, array $query = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '' || $account->apiKey === '') {
+        if ($profile->baseUrl === '' || $profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'n8n account "%s" is missing base_url or api_key',
-                $account->key,
+                'n8n profile "%s" is missing base_url or api_key',
+                $profile->key,
             ));
         }
 
@@ -242,9 +242,9 @@ class N8nService
             $filteredQuery[$name] = $value;
         }
 
-        $response = $this->httpClient->request($method, $account->baseUrl . '/api/v1' . $path, [
+        $response = $this->httpClient->request($method, $profile->baseUrl . '/api/v1' . $path, [
             'headers' => [
-                'X-N8N-API-KEY' => $account->apiKey,
+                'X-N8N-API-KEY' => $profile->apiKey,
                 'Accept' => 'application/json',
             ],
             'query' => $filteredQuery,

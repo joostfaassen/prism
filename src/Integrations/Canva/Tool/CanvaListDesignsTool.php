@@ -28,9 +28,9 @@ class CanvaListDesignsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Canva account key (optional if only one account is configured).',
+                    'description' => 'Canva profile key (optional if only one profile is configured).',
                 ],
                 'query' => [
                     'type' => 'string',
@@ -59,7 +59,7 @@ class CanvaListDesignsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'canva';
     }
@@ -68,7 +68,7 @@ class CanvaListDesignsTool implements ToolInterface
     {
         try {
             $result = $this->canvaService->listDesigns(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 query: isset($arguments['query']) ? (string) $arguments['query'] : null,
                 continuation: isset($arguments['continuation']) ? (string) $arguments['continuation'] : null,
                 ownership: isset($arguments['ownership']) ? (string) $arguments['ownership'] : null,

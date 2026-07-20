@@ -20,7 +20,7 @@ class EmailCreateFolderTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Create a new IMAP folder on an email account. Returns an error if the folder already exists.';
+        return 'Create a new IMAP folder on an email profile. Returns an error if the folder already exists.';
     }
 
     public function getInputSchema(): array
@@ -28,31 +28,31 @@ class EmailCreateFolderTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID (see email_list_accounts).',
+                    'description' => 'Email profile ID (see email_list_profiles).',
                 ],
                 'folder' => [
                     'type' => 'string',
                     'description' => 'Folder name to create, e.g. Archive or INBOX.Projects. Must not already exist.',
                 ],
             ],
-            'required' => ['account', 'folder'],
+            'required' => ['profile', 'folder'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $folder = (string) ($arguments['folder'] ?? '');
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if (trim($folder) === '') {
@@ -60,7 +60,7 @@ class EmailCreateFolderTool implements ToolInterface
         }
 
         try {
-            $result = $this->emailService->createFolder($account, $folder);
+            $result = $this->emailService->createFolder($profile, $folder);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode($result, JSON_THROW_ON_ERROR)]],

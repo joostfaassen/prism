@@ -36,9 +36,9 @@ class EmailSendTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID to send from (see email_list_accounts).',
+                    'description' => 'Email profile ID to send from (see email_list_profiles).',
                 ],
                 'to' => [
                     'oneOf' => [
@@ -71,7 +71,7 @@ class EmailSendTool implements ToolInterface
                 ],
                 'from_name' => [
                     'type' => 'string',
-                    'description' => 'Optional override of the From display name (the address always comes from the account config).',
+                    'description' => 'Optional override of the From display name (the address always comes from the profile config).',
                 ],
                 'reply_to_address' => [
                     'type' => 'string',
@@ -102,25 +102,25 @@ class EmailSendTool implements ToolInterface
                 ],
                 'sent_folder' => [
                     'type' => 'string',
-                    'description' => 'Override the IMAP folder used for the saved copy. Defaults to the account\'s configured sent_folder (or "Sent").',
+                    'description' => 'Override the IMAP folder used for the saved copy. Defaults to the profile\'s configured sent_folder (or "Sent").',
                 ],
             ],
-            'required' => ['account', 'body_markdown'],
+            'required' => ['profile', 'body_markdown'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $bodyMarkdown = (string) ($arguments['body_markdown'] ?? '');
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($bodyMarkdown === '') {
@@ -158,7 +158,7 @@ class EmailSendTool implements ToolInterface
 
         try {
             $result = $this->emailService->sendMessage(
-                accountId: $account,
+                profileId: $profile,
                 to: $to,
                 cc: $cc,
                 bcc: $bcc,

@@ -32,16 +32,16 @@ class PicnicSaveRecipeTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Recipe id (selling_group_id) or picnic.app recipe URL',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['recipe_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -49,7 +49,7 @@ class PicnicSaveRecipeTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $recipeId = trim((string) ($arguments['recipe_id'] ?? ''));
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($recipeId === '') {
             return [
@@ -59,7 +59,7 @@ class PicnicSaveRecipeTool implements ToolInterface
         }
 
         try {
-            $result = $this->picnicService->saveRecipe($recipeId, true, $account);
+            $result = $this->picnicService->saveRecipe($recipeId, true, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

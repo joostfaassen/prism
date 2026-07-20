@@ -9,7 +9,7 @@ class InstagramConfigLoader
 {
     /**
      * Default Meta Graph API version. Meta ships a new version each quarter and
-     * supports each for roughly two years; override per-account with api_version.
+     * supports each for roughly two years; override per-profile with api_version.
      */
     public const DEFAULT_API_VERSION = 'v22.0';
 
@@ -20,12 +20,12 @@ class InstagramConfigLoader
     }
 
     /**
-     * @return array<string, InstagramAccountConfig>
+     * @return array<string, InstagramProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('instagram', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('instagram', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $version = trim((string) ($cfg['api_version'] ?? self::DEFAULT_API_VERSION));
@@ -36,7 +36,7 @@ class InstagramConfigLoader
                 $version = 'v' . $version;
             }
 
-            $accounts[$key] = new InstagramAccountConfig(
+            $profiles[$key] = new InstagramProfileConfig(
                 key: $key,
                 label: (string) ($cfg['label'] ?? $key),
                 igUserId: trim((string) ($cfg['ig_user_id'] ?? '')),
@@ -49,21 +49,21 @@ class InstagramConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): InstagramAccountConfig
+    public function getProfile(string $key): InstagramProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Instagram account: "%s". Available: %s',
+                'Unknown Instagram profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)) ?: '(none)',
+                implode(', ', array_keys($profiles)) ?: '(none)',
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

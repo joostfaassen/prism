@@ -28,9 +28,9 @@ class SlackBulkGetThreadsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'threads' => [
                     'type' => 'array',
@@ -49,21 +49,21 @@ class SlackBulkGetThreadsTool implements ToolInterface
                     'description' => 'Max messages per thread (default 50, max 200)',
                 ],
             ],
-            'required' => ['account', 'threads'],
+            'required' => ['profile', 'threads'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = trim((string) ($arguments['account'] ?? ''));
+        $profileKey = trim((string) ($arguments['profile'] ?? ''));
         $threads = $arguments['threads'] ?? null;
-        if ($accountKey === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profileKey === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if (!is_array($threads) || $threads === []) {
@@ -93,7 +93,7 @@ class SlackBulkGetThreadsTool implements ToolInterface
         $limit = max(1, min((int) ($arguments['limit'] ?? 50), 200));
 
         try {
-            $result = $this->slackService->bulkGetThreads($accountKey, $normalizedThreads, $limit);
+            $result = $this->slackService->bulkGetThreads($profileKey, $normalizedThreads, $limit);
 
             return [
                 'content' => [[

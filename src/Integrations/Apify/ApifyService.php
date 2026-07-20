@@ -10,7 +10,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
  *
  * Apify has no official PHP SDK, so this wraps the documented REST endpoints
  * with Symfony's HttpClient (consistent with the other Prism integrations).
- * Authentication uses the account's API token as a Bearer header, so the
+ * Authentication uses the profile's API token as a Bearer header, so the
  * token never ends up in the URL/query string.
  *
  * @see https://docs.apify.com/api/v2
@@ -26,18 +26,18 @@ class ApifyService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -54,17 +54,17 @@ class ApifyService
      * @return list<array<string, mixed>> Dataset items
      */
     public function runActorSync(
-        ?string $accountKey,
+        ?string $profileKey,
         string $actorId,
         array $input = [],
         array $options = [],
     ): array {
-        $account = $this->resolveAccount($accountKey);
-        $this->assertConfigured($account);
+        $profile = $this->resolveProfile($profileKey);
+        $this->assertConfigured($profile);
 
         $url = sprintf(
             '%s/acts/%s/run-sync-get-dataset-items',
-            $account->baseUrl,
+            $profile->baseUrl,
             $this->normalizeActorId($actorId),
         );
 
@@ -78,7 +78,7 @@ class ApifyService
 
         $response = $this->httpClient->request('POST', $url, [
             'headers' => [
-                'Authorization' => 'Bearer ' . $account->apiToken,
+                'Authorization' => 'Bearer ' . $profile->apiToken,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ],
@@ -113,13 +113,13 @@ class ApifyService
      *
      * @return array<string, mixed>
      */
-    public function getActor(?string $accountKey, string $actorId): array
+    public function getActor(?string $profileKey, string $actorId): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $this->assertConfigured($account);
+        $profile = $this->resolveProfile($profileKey);
+        $this->assertConfigured($profile);
 
         $normalized = $this->normalizeActorId($actorId);
-        $actor = $this->request($account, 'GET', '/acts/' . $normalized);
+        $actor = $this->request($profile, 'GET', '/acts/' . $normalized);
         $data = $actor['data'] ?? $actor;
 
         $summary = [
@@ -138,7 +138,7 @@ class ApifyService
 
         $inputSchema = null;
         try {
-            $build = $this->request($account, 'GET', '/acts/' . $normalized . '/builds/default');
+            $build = $this->request($profile, 'GET', '/acts/' . $normalized . '/builds/default');
             $buildData = $build['data'] ?? $build;
             $rawSchema = $buildData['inputSchema'] ?? null;
             if (is_string($rawSchema) && $rawSchema !== '') {
@@ -157,26 +157,26 @@ class ApifyService
         ];
     }
 
-    private function resolveAccount(?string $accountKey): ApifyAccountConfig
+    private function resolveProfile(?string $profileKey): ApifyProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No Apify accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No Apify profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
-    private function assertConfigured(ApifyAccountConfig $account): void
+    private function assertConfigured(ApifyProfileConfig $profile): void
     {
-        if ($account->baseUrl === '' || $account->apiToken === '') {
+        if ($profile->baseUrl === '' || $profile->apiToken === '') {
             throw new \RuntimeException(sprintf(
-                'Apify account "%s" is missing base_url or api_token',
-                $account->key,
+                'Apify profile "%s" is missing base_url or api_token',
+                $profile->key,
             ));
         }
     }
@@ -201,11 +201,11 @@ class ApifyService
      *
      * @return array<string, mixed>
      */
-    private function request(ApifyAccountConfig $account, string $method, string $path, array $query = []): array
+    private function request(ApifyProfileConfig $profile, string $method, string $path, array $query = []): array
     {
-        $response = $this->httpClient->request($method, $account->baseUrl . $path, [
+        $response = $this->httpClient->request($method, $profile->baseUrl . $path, [
             'headers' => [
-                'Authorization' => 'Bearer ' . $account->apiToken,
+                'Authorization' => 'Bearer ' . $profile->apiToken,
                 'Accept' => 'application/json',
             ],
             'query' => array_filter($query, static fn ($v) => $v !== null && $v !== ''),

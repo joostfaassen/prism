@@ -28,9 +28,9 @@ class EmailGetMessagesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID',
+                    'description' => 'Email profile ID',
                 ],
                 'folder' => [
                     'type' => 'string',
@@ -50,22 +50,22 @@ class EmailGetMessagesTool implements ToolInterface
                     'description' => 'Truncate body at N chars. Default: 8000',
                 ],
             ],
-            'required' => ['account', 'folder', 'uids'],
+            'required' => ['profile', 'folder', 'uids'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $folder = (string) ($arguments['folder'] ?? '');
         $uids = $arguments['uids'] ?? null;
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($folder === '') {
@@ -86,7 +86,7 @@ class EmailGetMessagesTool implements ToolInterface
 
         try {
             $messages = $this->emailService->getMessages(
-                accountId: $account,
+                profileId: $profile,
                 folder: $folder,
                 uids: $normalizedUids,
                 includeHtml: (bool) ($arguments['include_html'] ?? false),

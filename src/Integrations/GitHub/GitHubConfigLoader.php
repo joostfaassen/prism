@@ -14,17 +14,17 @@ class GitHubConfigLoader
     }
 
     /**
-     * @return array<string, GitHubAccountConfig>
+     * @return array<string, GitHubProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('github', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('github', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $defaultLogin = $cfg['default_login'] ?? $cfg['login'] ?? null;
 
-            $accounts[$key] = new GitHubAccountConfig(
+            $profiles[$key] = new GitHubProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 token: $cfg['token'] ?? '',
@@ -33,21 +33,21 @@ class GitHubConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): GitHubAccountConfig
+    public function getProfile(string $key): GitHubProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown GitHub account: "%s". Available: %s',
+                'Unknown GitHub profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

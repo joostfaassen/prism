@@ -14,15 +14,15 @@ class CyansConfigLoader
     }
 
     /**
-     * @return array<string, CyansAccountConfig>
+     * @return array<string, CyansProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('cyans', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('cyans', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new CyansAccountConfig(
+            $profiles[$key] = new CyansProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 dsn: $cfg['dsn'] ?? '',
@@ -30,22 +30,22 @@ class CyansConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): CyansAccountConfig
+    public function getProfile(string $key): CyansProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
-            $available = implode(', ', array_keys($accounts));
+        if (!isset($profiles[$key])) {
+            $available = implode(', ', array_keys($profiles));
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Cyans account: "%s". Available: %s',
+                'Unknown Cyans profile: "%s". Available: %s',
                 $key,
                 $available,
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

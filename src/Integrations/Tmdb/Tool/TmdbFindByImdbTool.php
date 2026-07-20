@@ -32,20 +32,20 @@ class TmdbFindByImdbTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'IMDb title id, e.g. tt2798920',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key (from tmdb_list_accounts). Optional if only one account is configured.',
+                    'description' => 'TMDb profile key (from tmdb_list_profiles). Optional if only one profile is configured.',
                 ],
                 'language' => [
                     'type' => 'string',
-                    'description' => 'Optional TMDb language override (e.g. en-US, nl-NL). Defaults to the account language.',
+                    'description' => 'Optional TMDb language override (e.g. en-US, nl-NL). Defaults to the profile language.',
                 ],
             ],
             'required' => ['imdb_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -62,7 +62,7 @@ class TmdbFindByImdbTool implements ToolInterface
 
             $record = $this->tmdbService->findByImdb(
                 imdbId: (string) $arguments['imdb_id'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 language: $arguments['language'] ?? null,
             );
 

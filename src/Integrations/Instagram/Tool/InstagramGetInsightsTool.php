@@ -20,7 +20,7 @@ class InstagramGetInsightsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Get account-level Instagram insights for growth and engagement analysis. Supply one or more '
+        return 'Get profile-level Instagram insights for growth and engagement analysis. Supply one or more '
             . 'metrics (comma-separated). Common metrics: reach, profile_views, accounts_engaged, total_interactions, '
             . 'likes, comments, shares, saves, replies, follows_and_unfollows, profile_links_taps, views, '
             . 'reached_audience_demographics, engaged_audience_demographics, follower_demographics. '
@@ -34,7 +34,7 @@ class InstagramGetInsightsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'metric' => ['type' => 'string', 'description' => 'Comma-separated metric names, e.g. "reach,profile_views,total_interactions".'],
                 'period' => ['type' => 'string', 'description' => 'Aggregation period: day, week, days_28, month, lifetime. Defaults to day.'],
                 'metric_type' => ['type' => 'string', 'description' => 'Set to "total_value" for newer aggregated metrics (most engagement/demographic metrics).'],
@@ -47,7 +47,7 @@ class InstagramGetInsightsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -64,7 +64,7 @@ class InstagramGetInsightsTool implements ToolInterface
 
         try {
             $result = $this->instagramService->getInsights(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 metric: $metric,
                 period: isset($arguments['period']) ? (string) $arguments['period'] : 'day',
                 metricType: isset($arguments['metric_type']) ? (string) $arguments['metric_type'] : null,

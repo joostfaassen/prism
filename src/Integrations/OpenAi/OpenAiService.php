@@ -15,19 +15,19 @@ class OpenAiService
     /**
      * @return list<array{key: string, label: string, base_url: string, default_model: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
-                'default_model' => $account->defaultModel,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
+                'default_model' => $profile->defaultModel,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -38,25 +38,25 @@ class OpenAiService
      * @return array{text: string, model: string, finish_reason: string|null, usage: array<string, mixed>|null}
      */
     public function complete(
-        ?string $accountKey,
+        ?string $profileKey,
         array $messages,
         ?string $model = null,
         ?float $temperature = null,
         ?int $maxTokens = null,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '' || $account->apiKey === '') {
+        if ($profile->baseUrl === '' || $profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'OpenAI account "%s" is missing base_url or api_key',
-                $account->key,
+                'OpenAI profile "%s" is missing base_url or api_key',
+                $profile->key,
             ));
         }
 
-        $resolvedModel = $model ?? $account->defaultModel;
+        $resolvedModel = $model ?? $profile->defaultModel;
         if ($resolvedModel === '') {
             throw new \InvalidArgumentException(
-                'No model provided and no default_model configured for this OpenAI account.',
+                'No model provided and no default_model configured for this OpenAI profile.',
             );
         }
 
@@ -76,7 +76,7 @@ class OpenAiService
             $body['max_tokens'] = $maxTokens;
         }
 
-        $data = $this->request($account, 'POST', '/chat/completions', ['json' => $body]);
+        $data = $this->request($profile, 'POST', '/chat/completions', ['json' => $body]);
 
         $choice = $data['choices'][0] ?? null;
         $text = $choice['message']['content'] ?? '';
@@ -94,18 +94,18 @@ class OpenAiService
      *
      * @return list<array<string, mixed>>
      */
-    public function listModels(?string $accountKey = null): array
+    public function listModels(?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '' || $account->apiKey === '') {
+        if ($profile->baseUrl === '' || $profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'OpenAI account "%s" is missing base_url or api_key',
-                $account->key,
+                'OpenAI profile "%s" is missing base_url or api_key',
+                $profile->key,
             ));
         }
 
-        $data = $this->request($account, 'GET', '/models');
+        $data = $this->request($profile, 'GET', '/models');
 
         $models = $data['data'] ?? [];
         if (!is_array($models)) {
@@ -115,18 +115,18 @@ class OpenAiService
         return array_values($models);
     }
 
-    private function resolveAccount(?string $accountKey): OpenAiAccountConfig
+    private function resolveProfile(?string $profileKey): OpenAiProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No OpenAI accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No OpenAI profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -134,11 +134,11 @@ class OpenAiService
      *
      * @return array<string, mixed>
      */
-    private function request(OpenAiAccountConfig $account, string $method, string $path, array $options = []): array
+    private function request(OpenAiProfileConfig $profile, string $method, string $path, array $options = []): array
     {
-        $response = $this->httpClient->request($method, $account->baseUrl . $path, array_merge([
-            'auth_bearer' => $account->apiKey,
-            'timeout' => $account->timeout,
+        $response = $this->httpClient->request($method, $profile->baseUrl . $path, array_merge([
+            'auth_bearer' => $profile->apiKey,
+            'timeout' => $profile->timeout,
         ], $options));
 
         $statusCode = $response->getStatusCode();

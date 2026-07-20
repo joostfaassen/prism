@@ -6,7 +6,7 @@ namespace App\Integrations\Apify\Tool;
  * Wraps the "harvestapi/linkedin-profile-posts" actor.
  *
  * Extracts posts from LinkedIn profiles (or company pages): content, media,
- * engagement, and optionally reactions and comments. No cookies/account
+ * engagement, and optionally reactions and comments. No cookies/profile
  * required.
  *
  * @see https://apify.com/harvestapi/linkedin-profile-posts
@@ -25,7 +25,7 @@ class ApifyLinkedinProfilePostsTool extends AbstractApifyActorTool
 
     public function getDescription(): string
     {
-        return 'Extract posts from LinkedIn profiles or company pages: content, media, engagement, and optionally reactions and comments. No LinkedIn cookies/account required. Via the Apify harvestapi/linkedin-profile-posts actor.';
+        return 'Extract posts from LinkedIn profiles or company pages: content, media, engagement, and optionally reactions and comments. No LinkedIn cookies/profile required. Via the Apify harvestapi/linkedin-profile-posts actor.';
     }
 
     protected function getProperties(): array

@@ -30,9 +30,9 @@ class AlertmanagerListAlertsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Alertmanager account key. Optional if only one account is configured.',
+                    'description' => 'Alertmanager profile key. Optional if only one profile is configured.',
                 ],
                 'active' => [
                     'type' => 'boolean',
@@ -56,7 +56,7 @@ class AlertmanagerListAlertsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'alertmanager';
     }
@@ -74,7 +74,7 @@ class AlertmanagerListAlertsTool implements ToolInterface
 
         try {
             $alerts = $this->alertmanagerService->listAlerts(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 active: $arguments['active'] ?? true,
                 silenced: $arguments['silenced'] ?? false,
                 inhibited: $arguments['inhibited'] ?? false,

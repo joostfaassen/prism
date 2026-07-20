@@ -9,25 +9,25 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 
 /**
- * Sends a Symfony Mime Email via the per-account SMTP transport. We build a
- * fresh transport per send because each account has its own credentials and
+ * Sends a Symfony Mime Email via the per-profile SMTP transport. We build a
+ * fresh transport per send because each profile has its own credentials and
  * there's no benefit to keeping connections warm in this multi-tenant bridge.
  */
 class SmtpMailer
 {
-    public function send(EmailAccountConfig $account, Email $email): SentMessage
+    public function send(EmailProfileConfig $profile, Email $email): SentMessage
     {
-        if ($account->smtp === null) {
+        if ($profile->smtp === null) {
             throw new \RuntimeException(sprintf(
-                'Email account "%s" has no SMTP configured — cannot send mail.',
-                $account->id,
+                'Email profile "%s" has no SMTP configured — cannot send mail.',
+                $profile->id,
             ));
         }
 
-        $transport = Transport::fromDsn($account->smtp->buildDsn());
+        $transport = Transport::fromDsn($profile->smtp->buildDsn());
 
         $envelope = new Envelope(
-            new Address($account->getFromAddress()),
+            new Address($profile->getFromAddress()),
             $this->collectRecipientAddresses($email),
         );
 
@@ -35,8 +35,8 @@ class SmtpMailer
 
         if ($sent === null) {
             throw new \RuntimeException(sprintf(
-                'SMTP transport returned no SentMessage for account "%s"',
-                $account->id,
+                'SMTP transport returned no SentMessage for profile "%s"',
+                $profile->id,
             ));
         }
 

@@ -38,16 +38,16 @@ class PicnicAddRecipeToCartTool implements ToolInterface
                     'description' => 'Optional number of servings',
                     'minimum' => 1,
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['recipe_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -55,7 +55,7 @@ class PicnicAddRecipeToCartTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $recipeId = trim((string) ($arguments['recipe_id'] ?? ''));
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
         $portions = isset($arguments['portions']) ? (int) $arguments['portions'] : null;
 
         if ($recipeId === '') {
@@ -73,7 +73,7 @@ class PicnicAddRecipeToCartTool implements ToolInterface
         }
 
         try {
-            $cart = $this->picnicService->addRecipeToCart($recipeId, $portions, $account);
+            $cart = $this->picnicService->addRecipeToCart($recipeId, $portions, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

@@ -28,26 +28,26 @@ class OpenAiListModelsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'OpenAI account key. Omit to use the only configured account.',
+                    'description' => 'OpenAI profile key. Omit to use the only configured profile.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'openai';
     }
 
     public function execute(array $arguments): array
     {
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         try {
-            $models = $this->openAiService->listModels($account);
+            $models = $this->openAiService->listModels($profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

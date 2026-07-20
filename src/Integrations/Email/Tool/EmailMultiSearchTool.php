@@ -28,9 +28,9 @@ class EmailMultiSearchTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID',
+                    'description' => 'Email profile ID',
                 ],
                 'folders' => [
                     'type' => 'array',
@@ -55,20 +55,20 @@ class EmailMultiSearchTool implements ToolInterface
                 ],
                 'offset' => ['type' => 'integer', 'description' => 'Pagination offset. Default: 0'],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        $profile = (string) ($arguments['profile'] ?? '');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         $folders = $arguments['folders'] ?? ['INBOX'];
@@ -92,7 +92,7 @@ class EmailMultiSearchTool implements ToolInterface
 
         try {
             $result = $this->emailService->multiSearch(
-                accountId: $account,
+                profileId: $profile,
                 folders: $normalizedFolders,
                 from: $arguments['from'] ?? null,
                 to: $arguments['to'] ?? null,

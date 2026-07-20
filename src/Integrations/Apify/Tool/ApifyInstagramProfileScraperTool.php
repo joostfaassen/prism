@@ -38,7 +38,7 @@ class ApifyInstagramProfileScraperTool extends AbstractApifyActorTool
             ],
             'include_about_section' => [
                 'type' => 'boolean',
-                'description' => 'Also extract the "About this account" section (former usernames, country, date joined). Default false.',
+                'description' => 'Also extract the "About this profile" section (former usernames, country, date joined). Default false.',
             ],
         ];
     }

@@ -30,7 +30,7 @@ class AtlasGrepTool implements ToolInterface
             'properties' => [
                 'atlas' => [
                     'type' => 'string',
-                    'description' => 'Atlas account name, for example "engineering" or "hr".',
+                    'description' => 'Atlas profile name, for example "engineering" or "hr".',
                 ],
                 'q' => [
                     'type' => 'string',
@@ -61,7 +61,7 @@ class AtlasGrepTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'atlas';
     }

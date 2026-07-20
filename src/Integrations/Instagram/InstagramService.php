@@ -7,15 +7,15 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Thin client over the Meta Graph API for Instagram professional (Business /
- * Creator) accounts. Covers profile + audience reads, media + insights, comment
- * management, hashtag search, business discovery of other public accounts, and
+ * Creator) profiles. Covers profile + audience reads, media + insights, comment
+ * management, hashtag search, business discovery of other public profiles, and
  * content publishing (photos, videos, reels, stories, carousels).
  */
 class InstagramService
 {
     private const GRAPH_BASE = 'https://graph.facebook.com';
 
-    /** Default fields returned for the authenticated account's profile. */
+    /** Default fields returned for the authenticated profile's profile. */
     private const ACCOUNT_FIELDS = 'id,username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count';
 
     /** Default fields returned per media object. */
@@ -32,23 +32,23 @@ class InstagramService
     /**
      * @return list<array{key: string, label: string, username: string, ig_user_id: string, configured: bool, can_refresh_token: bool, token_days_left: int|null, api_version: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'username' => $account->username,
-                'ig_user_id' => $account->igUserId,
-                'configured' => $account->hasCredentials(),
-                'can_refresh_token' => $account->canRefreshToken(),
-                'token_days_left' => $account->daysUntilExpiry(),
-                'api_version' => $account->apiVersion,
+                'label' => $profile->label,
+                'username' => $profile->username,
+                'ig_user_id' => $profile->igUserId,
+                'configured' => $profile->hasCredentials(),
+                'can_refresh_token' => $profile->canRefreshToken(),
+                'token_days_left' => $profile->daysUntilExpiry(),
+                'api_version' => $profile->apiVersion,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -56,28 +56,28 @@ class InstagramService
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * The authenticated account's own profile (followers, media count, bio, ...).
+     * The authenticated profile's own profile (followers, media count, bio, ...).
      *
      * @return array<string, mixed>
      */
-    public function getAccount(?string $accountKey, ?string $fields = null): array
+    public function getProfile(?string $profileKey, ?string $fields = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', $account->igUserId, [
+        return $this->request($profile, 'GET', $profile->igUserId, [
             'fields' => $fields ?? self::ACCOUNT_FIELDS,
         ]);
     }
 
     /**
-     * Account-level insights (reach, profile views, follower growth, audience
+     * Profile-level insights (reach, profile views, follower growth, audience
      * demographics, ...). Metrics, period and modifiers are passed through to the
      * Graph API so new metrics work without code changes.
      *
      * @return array<string, mixed>
      */
     public function getInsights(
-        ?string $accountKey,
+        ?string $profileKey,
         string $metric,
         string $period = 'day',
         ?string $metricType = null,
@@ -86,9 +86,9 @@ class InstagramService
         ?int $since = null,
         ?int $until = null,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', $account->igUserId . '/insights', [
+        return $this->request($profile, 'GET', $profile->igUserId . '/insights', [
             'metric' => $metric,
             'period' => $period,
             'metric_type' => $metricType,
@@ -104,19 +104,19 @@ class InstagramService
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * List the account's published media with cursor pagination.
+     * List the profile's published media with cursor pagination.
      *
      * @return array<string, mixed>
      */
     public function listMedia(
-        ?string $accountKey,
+        ?string $profileKey,
         ?string $fields = null,
         int $limit = 25,
         ?string $after = null,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', $account->igUserId . '/media', [
+        return $this->request($profile, 'GET', $profile->igUserId . '/media', [
             'fields' => $fields ?? self::MEDIA_FIELDS,
             'limit' => $limit,
             'after' => $after,
@@ -128,12 +128,12 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function getMedia(?string $accountKey, string $mediaId, ?string $fields = null): array
+    public function getMedia(?string $profileKey, string $mediaId, ?string $fields = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $fields ??= self::MEDIA_FIELDS . ',children{id,media_type,media_url,thumbnail_url,permalink}';
 
-        return $this->request($account, 'GET', $mediaId, ['fields' => $fields]);
+        return $this->request($profile, 'GET', $mediaId, ['fields' => $fields]);
     }
 
     /**
@@ -141,11 +141,11 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function getMediaInsights(?string $accountKey, string $mediaId, string $metric, ?string $breakdown = null): array
+    public function getMediaInsights(?string $profileKey, string $mediaId, string $metric, ?string $breakdown = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', $mediaId . '/insights', [
+        return $this->request($profile, 'GET', $mediaId . '/insights', [
             'metric' => $metric,
             'breakdown' => $breakdown,
         ]);
@@ -160,11 +160,11 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function listComments(?string $accountKey, string $mediaId, int $limit = 25, ?string $after = null): array
+    public function listComments(?string $profileKey, string $mediaId, int $limit = 25, ?string $after = null): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', $mediaId . '/comments', [
+        return $this->request($profile, 'GET', $mediaId . '/comments', [
             'fields' => 'id,text,username,timestamp,like_count,hidden,replies{id,text,username,timestamp,like_count}',
             'limit' => $limit,
             'after' => $after,
@@ -176,11 +176,11 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function replyToComment(?string $accountKey, string $commentId, string $message): array
+    public function replyToComment(?string $profileKey, string $commentId, string $message): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'POST', $commentId . '/replies', ['message' => $message]);
+        return $this->request($profile, 'POST', $commentId . '/replies', ['message' => $message]);
     }
 
     /**
@@ -188,11 +188,11 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function commentOnMedia(?string $accountKey, string $mediaId, string $message): array
+    public function commentOnMedia(?string $profileKey, string $mediaId, string $message): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'POST', $mediaId . '/comments', ['message' => $message]);
+        return $this->request($profile, 'POST', $mediaId . '/comments', ['message' => $message]);
     }
 
     /**
@@ -200,11 +200,11 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function setCommentHidden(?string $accountKey, string $commentId, bool $hide): array
+    public function setCommentHidden(?string $profileKey, string $commentId, bool $hide): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'POST', $commentId, ['hide' => $hide]);
+        return $this->request($profile, 'POST', $commentId, ['hide' => $hide]);
     }
 
     /**
@@ -212,15 +212,15 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function deleteComment(?string $accountKey, string $commentId): array
+    public function deleteComment(?string $profileKey, string $commentId): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'DELETE', $commentId, []);
+        return $this->request($profile, 'DELETE', $commentId, []);
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Discovery (hashtags + other accounts)
+    // Discovery (hashtags + other profiles)
     // ──────────────────────────────────────────────────────────────────
 
     /**
@@ -232,13 +232,13 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function hashtagSearch(?string $accountKey, string $hashtag, string $media = 'top', int $limit = 25): array
+    public function hashtagSearch(?string $profileKey, string $hashtag, string $media = 'top', int $limit = 25): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $hashtag = ltrim(trim($hashtag), '#');
 
-        $search = $this->request($account, 'GET', 'ig_hashtag_search', [
-            'user_id' => $account->igUserId,
+        $search = $this->request($profile, 'GET', 'ig_hashtag_search', [
+            'user_id' => $profile->igUserId,
             'q' => $hashtag,
         ]);
 
@@ -254,8 +254,8 @@ class InstagramService
 
         $edge = $media === 'recent' ? 'recent_media' : 'top_media';
         $result['media_edge'] = $edge;
-        $result['media'] = $this->request($account, 'GET', $hashtagId . '/' . $edge, [
-            'user_id' => $account->igUserId,
+        $result['media'] = $this->request($profile, 'GET', $hashtagId . '/' . $edge, [
+            'user_id' => $profile->igUserId,
             'fields' => 'id,caption,media_type,permalink,like_count,comments_count,timestamp',
             'limit' => $limit,
         ]);
@@ -264,15 +264,15 @@ class InstagramService
     }
 
     /**
-     * Look up another public professional account by username (followers, media
+     * Look up another public professional profile by username (followers, media
      * counts, recent posts). Uses field expansion so a single call can return the
      * target's profile and recent media.
      *
      * @return array<string, mixed>
      */
-    public function businessDiscovery(?string $accountKey, string $username, ?string $fields = null, int $mediaLimit = 12): array
+    public function businessDiscovery(?string $profileKey, string $username, ?string $fields = null, int $mediaLimit = 12): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $username = ltrim(trim($username), '@');
 
         $fields ??= sprintf(
@@ -281,7 +281,7 @@ class InstagramService
             $mediaLimit,
         );
 
-        $data = $this->request($account, 'GET', $account->igUserId, [
+        $data = $this->request($profile, 'GET', $profile->igUserId, [
             'fields' => sprintf('business_discovery.username(%s){%s}', $username, $fields),
         ]);
 
@@ -303,9 +303,9 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function publish(?string $accountKey, array $opts): array
+    public function publish(?string $profileKey, array $opts): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
         $publish = (bool) ($opts['publish'] ?? true);
         $maxWaitSeconds = (int) ($opts['max_wait_seconds'] ?? 90);
@@ -319,9 +319,9 @@ class InstagramService
             $mediaType = strtoupper(trim((string) ($opts['media_type'] ?? 'IMAGE')));
 
             if ($mediaType === 'CAROUSEL') {
-                [$creationId, $needsProcessingWait] = $this->createCarouselContainer($account, $opts);
+                [$creationId, $needsProcessingWait] = $this->createCarouselContainer($profile, $opts);
             } else {
-                [$creationId, $needsProcessingWait] = $this->createSingleContainer($account, $mediaType, $opts);
+                [$creationId, $needsProcessingWait] = $this->createSingleContainer($profile, $mediaType, $opts);
             }
         }
 
@@ -331,16 +331,16 @@ class InstagramService
         ];
 
         if (!$publish) {
-            $result['status'] = $this->getContainerStatus($account, $creationId);
+            $result['status'] = $this->getContainerStatus($profile, $creationId);
 
             return $result;
         }
 
         if ($needsProcessingWait) {
-            $this->waitForContainer($account, $creationId, $maxWaitSeconds);
+            $this->waitForContainer($profile, $creationId, $maxWaitSeconds);
         }
 
-        $published = $this->request($account, 'POST', $account->igUserId . '/media_publish', [
+        $published = $this->request($profile, 'POST', $profile->igUserId . '/media_publish', [
             'creation_id' => $creationId,
         ]);
 
@@ -350,7 +350,7 @@ class InstagramService
         $mediaId = $published['id'] ?? null;
         if (is_string($mediaId) && $mediaId !== '') {
             try {
-                $result['media'] = $this->getMedia($accountKey, $mediaId, self::MEDIA_FIELDS);
+                $result['media'] = $this->getMedia($profileKey, $mediaId, self::MEDIA_FIELDS);
             } catch (\Throwable) {
                 // Publishing succeeded; enrichment is best-effort.
             }
@@ -364,11 +364,11 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function getPublishingLimit(?string $accountKey): array
+    public function getPublishingLimit(?string $profileKey): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', $account->igUserId . '/content_publishing_limit', [
+        return $this->request($profile, 'GET', $profile->igUserId . '/content_publishing_limit', [
             'fields' => 'config,quota_usage',
         ]);
     }
@@ -378,7 +378,7 @@ class InstagramService
      *
      * @return array{0: string, 1: bool} container id and whether it needs a processing wait
      */
-    private function createSingleContainer(InstagramAccountConfig $account, string $mediaType, array $opts): array
+    private function createSingleContainer(InstagramProfileConfig $profile, string $mediaType, array $opts): array
     {
         $params = [
             'caption' => $opts['caption'] ?? null,
@@ -416,7 +416,7 @@ class InstagramService
                 : json_encode($opts['collaborators'], JSON_THROW_ON_ERROR);
         }
 
-        $container = $this->request($account, 'POST', $account->igUserId . '/media', $params);
+        $container = $this->request($profile, 'POST', $profile->igUserId . '/media', $params);
         $id = (string) ($container['id'] ?? '');
         if ($id === '') {
             throw new \RuntimeException('Instagram did not return a media container id.');
@@ -430,7 +430,7 @@ class InstagramService
      *
      * @return array{0: string, 1: bool}
      */
-    private function createCarouselContainer(InstagramAccountConfig $account, array $opts): array
+    private function createCarouselContainer(InstagramProfileConfig $profile, array $opts): array
     {
         $items = $opts['children'] ?? [];
         if (!is_array($items) || $items === []) {
@@ -455,7 +455,7 @@ class InstagramService
                 $childParams['image_url'] = $item['image_url'] ?? null;
             }
 
-            $child = $this->request($account, 'POST', $account->igUserId . '/media', $childParams);
+            $child = $this->request($profile, 'POST', $profile->igUserId . '/media', $childParams);
             $childId = (string) ($child['id'] ?? '');
             if ($childId === '') {
                 throw new \RuntimeException('Instagram did not return a carousel child container id.');
@@ -463,7 +463,7 @@ class InstagramService
             $childIds[] = $childId;
         }
 
-        $parent = $this->request($account, 'POST', $account->igUserId . '/media', [
+        $parent = $this->request($profile, 'POST', $profile->igUserId . '/media', [
             'media_type' => 'CAROUSEL',
             'children' => implode(',', $childIds),
             'caption' => $opts['caption'] ?? null,
@@ -481,18 +481,18 @@ class InstagramService
     /**
      * @return array<string, mixed>
      */
-    private function getContainerStatus(InstagramAccountConfig $account, string $containerId): array
+    private function getContainerStatus(InstagramProfileConfig $profile, string $containerId): array
     {
-        return $this->request($account, 'GET', $containerId, ['fields' => 'status_code,status']);
+        return $this->request($profile, 'GET', $containerId, ['fields' => 'status_code,status']);
     }
 
-    private function waitForContainer(InstagramAccountConfig $account, string $containerId, int $maxWaitSeconds): void
+    private function waitForContainer(InstagramProfileConfig $profile, string $containerId, int $maxWaitSeconds): void
     {
         $deadline = time() + max(5, $maxWaitSeconds);
         $interval = 3;
 
         while (true) {
-            $status = $this->getContainerStatus($account, $containerId);
+            $status = $this->getContainerStatus($profile, $containerId);
             $code = (string) ($status['status_code'] ?? '');
 
             if ($code === 'FINISHED') {
@@ -531,22 +531,22 @@ class InstagramService
      *
      * @return array{token_expires_at: int, days_left: int|null}
      */
-    public function refreshToken(?string $accountKey): array
+    public function refreshToken(?string $profileKey): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if (!$account->canRefreshToken()) {
+        if (!$profile->canRefreshToken()) {
             throw new \RuntimeException(sprintf(
-                'Instagram account "%s" cannot refresh its token: configure app_id and app_secret.',
-                $account->key,
+                'Instagram profile "%s" cannot refresh its token: configure app_id and app_secret.',
+                $profile->key,
             ));
         }
 
-        $data = $this->request($account, 'GET', 'oauth/access_token', [
+        $data = $this->request($profile, 'GET', 'oauth/access_token', [
             'grant_type' => 'fb_exchange_token',
-            'client_id' => $account->appId,
-            'client_secret' => $account->appSecret,
-            'fb_exchange_token' => $account->accessToken,
+            'client_id' => $profile->appId,
+            'client_secret' => $profile->appSecret,
+            'fb_exchange_token' => $profile->accessToken,
         ], withAccessToken: false);
 
         $newToken = (string) ($data['access_token'] ?? '');
@@ -559,12 +559,12 @@ class InstagramService
 
         $this->tokenStore->persistToken(
             $this->serverContext->getServerName(),
-            $account->key,
+            $profile->key,
             $newToken,
             $expiresAt,
         );
 
-        $updated = $account->withToken($newToken, $expiresAt);
+        $updated = $profile->withToken($newToken, $expiresAt);
 
         return [
             'token_expires_at' => $expiresAt,
@@ -584,37 +584,37 @@ class InstagramService
      *
      * @return array<string, mixed>
      */
-    public function rawGet(?string $accountKey, string $path, array $params = []): array
+    public function rawGet(?string $profileKey, string $path, array $params = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->request($account, 'GET', ltrim($path, '/'), $params);
+        return $this->request($profile, 'GET', ltrim($path, '/'), $params);
     }
 
     // ──────────────────────────────────────────────────────────────────
     // Internals
     // ──────────────────────────────────────────────────────────────────
 
-    private function resolveAccount(?string $accountKey): InstagramAccountConfig
+    private function resolveProfile(?string $profileKey): InstagramProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            $account = $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            $profile = $this->configLoader->getProfile($profileKey);
         } else {
-            $accounts = $this->configLoader->getAccounts();
-            if ($accounts === []) {
-                throw new \RuntimeException('No Instagram accounts configured for this server.');
+            $profiles = $this->configLoader->getProfiles();
+            if ($profiles === []) {
+                throw new \RuntimeException('No Instagram profiles configured for this server.');
             }
-            $account = reset($accounts);
+            $profile = reset($profiles);
         }
 
-        if (!$account->hasCredentials()) {
+        if (!$profile->hasCredentials()) {
             throw new \RuntimeException(sprintf(
-                'Instagram account "%s" is missing ig_user_id and/or access_token in the config.',
-                $account->key,
+                'Instagram profile "%s" is missing ig_user_id and/or access_token in the config.',
+                $profile->key,
             ));
         }
 
-        return $account;
+        return $profile;
     }
 
     /**
@@ -623,13 +623,13 @@ class InstagramService
      * @return array<string, mixed>
      */
     private function request(
-        InstagramAccountConfig $account,
+        InstagramProfileConfig $profile,
         string $method,
         string $path,
         array $params,
         bool $withAccessToken = true,
     ): array {
-        $url = self::GRAPH_BASE . '/' . $account->apiVersion . '/' . $path;
+        $url = self::GRAPH_BASE . '/' . $profile->apiVersion . '/' . $path;
 
         $payload = [];
         foreach ($params as $name => $value) {
@@ -640,9 +640,9 @@ class InstagramService
         }
 
         if ($withAccessToken) {
-            $payload['access_token'] = $account->accessToken;
-            if ($account->appSecret !== '') {
-                $payload['appsecret_proof'] = hash_hmac('sha256', $account->accessToken, $account->appSecret);
+            $payload['access_token'] = $profile->accessToken;
+            if ($profile->appSecret !== '') {
+                $payload['appsecret_proof'] = hash_hmac('sha256', $profile->accessToken, $profile->appSecret);
             }
         }
 

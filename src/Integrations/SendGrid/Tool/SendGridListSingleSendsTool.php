@@ -28,9 +28,9 @@ class SendGridListSingleSendsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'SendGrid account key. Optional if only one account is configured.',
+                    'description' => 'SendGrid profile key. Optional if only one profile is configured.',
                 ],
                 'page_size' => [
                     'type' => 'integer',
@@ -41,7 +41,7 @@ class SendGridListSingleSendsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'sendgrid';
     }
@@ -50,7 +50,7 @@ class SendGridListSingleSendsTool implements ToolInterface
     {
         try {
             $result = $this->sendGridService->listSingleSends(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 pageSize: isset($arguments['page_size']) ? (int) $arguments['page_size'] : null,
             );
 

@@ -27,18 +27,18 @@ class BrowserlessService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -48,9 +48,9 @@ class BrowserlessService
      *
      * @return array{mime_type: string, bytes: int, base64: string}
      */
-    public function screenshot(?string $accountKey, string $url, array $options = []): array
+    public function screenshot(?string $profileKey, string $url, array $options = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $this->assertUrl($url);
 
         $type = isset($options['type']) ? strtolower((string) $options['type']) : 'png';
@@ -61,7 +61,7 @@ class BrowserlessService
             $body['options'] = $options;
         }
 
-        $response = $this->post($account, '/screenshot', $body);
+        $response = $this->post($profile, '/screenshot', $body);
         $this->assertOk($response, 'capture screenshot');
 
         $bytes = $response->getContent();
@@ -80,12 +80,12 @@ class BrowserlessService
      *
      * @return array{url: string, bytes: int, html: string}
      */
-    public function content(?string $accountKey, string $url, array $extra = []): array
+    public function content(?string $profileKey, string $url, array $extra = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $this->assertUrl($url);
 
-        $response = $this->post($account, '/content', array_merge($extra, ['url' => $url]));
+        $response = $this->post($profile, '/content', array_merge($extra, ['url' => $url]));
         $this->assertOk($response, 'fetch content');
 
         $html = $response->getContent();
@@ -104,9 +104,9 @@ class BrowserlessService
      *
      * @return array{mime_type: string, bytes: int, base64: string}
      */
-    public function pdf(?string $accountKey, string $url, array $options = []): array
+    public function pdf(?string $profileKey, string $url, array $options = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $this->assertUrl($url);
 
         $body = ['url' => $url];
@@ -114,7 +114,7 @@ class BrowserlessService
             $body['options'] = $options;
         }
 
-        $response = $this->post($account, '/pdf', $body);
+        $response = $this->post($profile, '/pdf', $body);
         $this->assertOk($response, 'render PDF');
 
         $bytes = $response->getContent();
@@ -133,9 +133,9 @@ class BrowserlessService
      *
      * @return array<string, mixed> Trimmed summary, or the full Lighthouse report when $full is true.
      */
-    public function performance(?string $accountKey, string $url, array $config = [], bool $full = false): array
+    public function performance(?string $profileKey, string $url, array $config = [], bool $full = false): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $this->assertUrl($url);
 
         $body = ['url' => $url];
@@ -143,7 +143,7 @@ class BrowserlessService
             $body['config'] = $config;
         }
 
-        $response = $this->post($account, '/performance', $body);
+        $response = $this->post($profile, '/performance', $body);
         $this->assertOk($response, 'run performance audit');
 
         $raw = $response->getContent();
@@ -215,26 +215,26 @@ class BrowserlessService
         ];
     }
 
-    private function resolveAccount(?string $accountKey): BrowserlessAccountConfig
+    private function resolveProfile(?string $profileKey): BrowserlessProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            $account = $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            $profile = $this->configLoader->getProfile($profileKey);
         } else {
-            $accounts = $this->configLoader->getAccounts();
-            if ($accounts === []) {
-                throw new \RuntimeException('No Browserless accounts configured for this server');
+            $profiles = $this->configLoader->getProfiles();
+            if ($profiles === []) {
+                throw new \RuntimeException('No Browserless profiles configured for this server');
             }
-            $account = reset($accounts);
+            $profile = reset($profiles);
         }
 
-        if (!$account->hasCredentials()) {
+        if (!$profile->hasCredentials()) {
             throw new \RuntimeException(sprintf(
-                'Browserless account "%s" is missing base_url or token',
-                $account->key,
+                'Browserless profile "%s" is missing base_url or token',
+                $profile->key,
             ));
         }
 
-        return $account;
+        return $profile;
     }
 
     private function assertUrl(string $url): void
@@ -247,16 +247,16 @@ class BrowserlessService
     /**
      * @param array<string, mixed> $body
      */
-    private function post(BrowserlessAccountConfig $account, string $path, array $body): ResponseInterface
+    private function post(BrowserlessProfileConfig $profile, string $path, array $body): ResponseInterface
     {
-        return $this->httpClient->request('POST', $account->baseUrl . $path, [
+        return $this->httpClient->request('POST', $profile->baseUrl . $path, [
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
-            'query' => ['token' => $account->token],
+            'query' => ['token' => $profile->token],
             'json' => $body,
             // Rendering/Lighthouse can take a while; allow generous headroom.
-            'timeout' => $account->timeout,
+            'timeout' => $profile->timeout,
         ]);
     }
 

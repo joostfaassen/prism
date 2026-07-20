@@ -18,6 +18,6 @@ class BunqIntegration implements IntegrationInterface
 
     public function getDescription(): string
     {
-        return 'bunq online banking — list accounts and transactions, read transaction details and notes.';
+        return 'bunq online banking — list profiles and transactions, read transaction details and notes.';
     }
 }

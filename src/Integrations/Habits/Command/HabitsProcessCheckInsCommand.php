@@ -27,7 +27,7 @@ class HabitsProcessCheckInsCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $total = 0;
         foreach ($this->prismConfigLoader->getServers() as $server) {
-            if (!$server->hasAccountType('habits')) {
+            if (!$server->hasProfileType('habits')) {
                 continue;
             }
             $this->serverContext->setServer($server);

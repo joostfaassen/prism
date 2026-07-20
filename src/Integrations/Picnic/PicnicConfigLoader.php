@@ -15,16 +15,16 @@ class PicnicConfigLoader
     }
 
     /**
-     * @return array<string, PicnicAccountConfig>
+     * @return array<string, PicnicProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('picnic', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('picnic', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $authKey = $cfg['auth_key'] ?? null;
-            $accounts[$key] = new PicnicAccountConfig(
+            $profiles[$key] = new PicnicProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 username: $cfg['username'] ?? '',
@@ -35,22 +35,22 @@ class PicnicConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): PicnicAccountConfig
+    public function getProfile(string $key): PicnicProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Picnic account: "%s". Available: %s',
+                'Unknown Picnic profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 
     /**

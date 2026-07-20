@@ -14,36 +14,36 @@ class SlackConfigLoader
     }
 
     /**
-     * @return array<string, SlackAccountConfig>
+     * @return array<string, SlackProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('slack', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('slack', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new SlackAccountConfig(
+            $profiles[$key] = new SlackProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 token: $cfg['token'] ?? '',
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): SlackAccountConfig
+    public function getProfile(string $key): SlackProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Slack account: "%s". Available: %s',
+                'Unknown Slack profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

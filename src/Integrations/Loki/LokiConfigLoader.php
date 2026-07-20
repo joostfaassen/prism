@@ -14,15 +14,15 @@ class LokiConfigLoader
     }
 
     /**
-     * @return array<string, LokiAccountConfig>
+     * @return array<string, LokiProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('loki', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('loki', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new LokiAccountConfig(
+            $profiles[$key] = new LokiProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: rtrim($cfg['base_url'] ?? '', '/'),
@@ -33,21 +33,21 @@ class LokiConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): LokiAccountConfig
+    public function getProfile(string $key): LokiProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Loki account: "%s". Available: %s',
+                'Unknown Loki profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

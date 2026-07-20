@@ -32,16 +32,16 @@ class PicnicRemoveRecipeFromCartTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Recipe id (selling_group_id) or picnic.app recipe URL',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['recipe_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -49,7 +49,7 @@ class PicnicRemoveRecipeFromCartTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $recipeId = trim((string) ($arguments['recipe_id'] ?? ''));
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($recipeId === '') {
             return [
@@ -59,7 +59,7 @@ class PicnicRemoveRecipeFromCartTool implements ToolInterface
         }
 
         try {
-            $cart = $this->picnicService->removeRecipeFromCart($recipeId, $account);
+            $cart = $this->picnicService->removeRecipeFromCart($recipeId, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

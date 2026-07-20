@@ -14,15 +14,15 @@ class IgdbConfigLoader
     }
 
     /**
-     * @return array<string, IgdbAccountConfig>
+     * @return array<string, IgdbProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('igdb', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('igdb', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new IgdbAccountConfig(
+            $profiles[$key] = new IgdbProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 clientId: $cfg['client_id'] ?? '',
@@ -30,21 +30,21 @@ class IgdbConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): IgdbAccountConfig
+    public function getProfile(string $key): IgdbProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown IGDB account: "%s". Available: %s',
+                'Unknown IGDB profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

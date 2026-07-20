@@ -28,9 +28,9 @@ class SlackPostMessageTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'channel' => [
                     'type' => 'string',
@@ -45,31 +45,31 @@ class SlackPostMessageTool implements ToolInterface
                     'description' => 'Optional thread parent timestamp to reply in a thread instead of posting a new message',
                 ],
             ],
-            'required' => ['account', 'channel', 'text'],
+            'required' => ['profile', 'channel', 'text'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $channelId = $arguments['channel'] ?? '';
         $text = trim($arguments['text'] ?? '');
         $threadTs = $arguments['thread_ts'] ?? null;
 
-        if ($accountKey === '' || $channelId === '' || $text === '') {
+        if ($profileKey === '' || $channelId === '' || $text === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "channel", and "text" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "channel", and "text" are required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->slackService->postMessage($accountKey, $channelId, $text, $threadTs);
+            $result = $this->slackService->postMessage($profileKey, $channelId, $text, $threadTs);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

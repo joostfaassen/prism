@@ -24,7 +24,7 @@ class TrackingGetTraceDayTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Return GPS sample points for one calendar day (timezone from the first tracking account on this server). Optionally filter by device xuids.';
+        return 'Return GPS sample points for one calendar day (timezone from the first tracking profile on this server). Optionally filter by device xuids.';
     }
 
     public function getInputSchema(): array
@@ -46,7 +46,7 @@ class TrackingGetTraceDayTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tracking';
     }

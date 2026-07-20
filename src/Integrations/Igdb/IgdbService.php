@@ -30,17 +30,17 @@ class IgdbService
     /**
      * @return list<array{key: string, label: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
+                'label' => $profile->label,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -48,7 +48,7 @@ class IgdbService
      *
      * @return array<string, mixed>
      */
-    public function find(string $idOrSlug, ?string $accountKey = null): array
+    public function find(string $idOrSlug, ?string $profileKey = null): array
     {
         $idOrSlug = trim($idOrSlug);
         if ($idOrSlug === '') {
@@ -59,7 +59,7 @@ class IgdbService
             ? 'where id = ' . $idOrSlug . ';'
             : 'where slug = "' . addslashes($idOrSlug) . '";';
 
-        $rows = $this->query($accountKey, 'fields ' . self::FIELDS . '; ' . $where . ' limit 1;');
+        $rows = $this->query($profileKey, 'fields ' . self::FIELDS . '; ' . $where . ' limit 1;');
         if ($rows === []) {
             throw new \RuntimeException(sprintf('No IGDB match for "%s"', $idOrSlug));
         }
@@ -72,7 +72,7 @@ class IgdbService
      *
      * @return array{result: array<string, mixed>, results: list<array<string, mixed>>}
      */
-    public function search(string $query, ?string $accountKey = null): array
+    public function search(string $query, ?string $profileKey = null): array
     {
         $query = trim($query);
         if ($query === '') {
@@ -80,7 +80,7 @@ class IgdbService
         }
 
         $rows = $this->query(
-            $accountKey,
+            $profileKey,
             'search "' . addslashes($query) . '"; fields ' . self::FIELDS . '; limit 10;',
         );
         if ($rows === []) {
@@ -202,38 +202,38 @@ class IgdbService
         ];
     }
 
-    private function resolveAccount(?string $accountKey): IgdbAccountConfig
+    private function resolveProfile(?string $profileKey): IgdbProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if ($accounts === []) {
-            throw new \RuntimeException('No IGDB accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if ($profiles === []) {
+            throw new \RuntimeException('No IGDB profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    private function query(?string $accountKey, string $apicalypse): array
+    private function query(?string $profileKey, string $apicalypse): array
     {
-        $account = $this->resolveAccount($accountKey);
-        if ($account->clientId === '' || $account->clientSecret === '') {
+        $profile = $this->resolveProfile($profileKey);
+        if ($profile->clientId === '' || $profile->clientSecret === '') {
             throw new \RuntimeException(sprintf(
-                'IGDB account "%s" is missing client_id or client_secret',
-                $account->key,
+                'IGDB profile "%s" is missing client_id or client_secret',
+                $profile->key,
             ));
         }
 
-        $token = $this->accessToken($account);
+        $token = $this->accessToken($profile);
 
         $response = $this->httpClient->request('POST', self::API . '/games', [
             'headers' => [
-                'Client-ID' => $account->clientId,
+                'Client-ID' => $profile->clientId,
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
             ],
@@ -259,9 +259,9 @@ class IgdbService
         return $data;
     }
 
-    private function accessToken(IgdbAccountConfig $account): string
+    private function accessToken(IgdbProfileConfig $profile): string
     {
-        $cacheFile = $this->projectDir . '/var/igdb-token-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $account->key) . '.json';
+        $cacheFile = $this->projectDir . '/var/igdb-token-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $profile->key) . '.json';
         if (is_file($cacheFile)) {
             $cached = json_decode((string) file_get_contents($cacheFile), true);
             if (
@@ -275,8 +275,8 @@ class IgdbService
 
         $response = $this->httpClient->request('POST', self::TOKEN_URL, [
             'query' => [
-                'client_id' => $account->clientId,
-                'client_secret' => $account->clientSecret,
+                'client_id' => $profile->clientId,
+                'client_secret' => $profile->clientSecret,
                 'grant_type' => 'client_credentials',
             ],
             'timeout' => 20,
@@ -285,8 +285,8 @@ class IgdbService
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 400) {
             throw new \RuntimeException(sprintf(
-                'Twitch OAuth error for IGDB account "%s" (HTTP %d): %s',
-                $account->key,
+                'Twitch OAuth error for IGDB profile "%s" (HTTP %d): %s',
+                $profile->key,
                 $statusCode,
                 $response->getContent(false),
             ));
@@ -295,8 +295,8 @@ class IgdbService
         $data = $response->toArray(false);
         if (!is_array($data) || empty($data['access_token'])) {
             throw new \RuntimeException(sprintf(
-                'Twitch OAuth did not return an access_token for IGDB account "%s"',
-                $account->key,
+                'Twitch OAuth did not return an access_token for IGDB profile "%s"',
+                $profile->key,
             ));
         }
 

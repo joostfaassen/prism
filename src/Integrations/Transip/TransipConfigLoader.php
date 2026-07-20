@@ -15,15 +15,15 @@ class TransipConfigLoader
     }
 
     /**
-     * @return array<string, TransipAccountConfig>
+     * @return array<string, TransipProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('transip', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('transip', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new TransipAccountConfig(
+            $profiles[$key] = new TransipProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 login: $cfg['login'] ?? '',
@@ -33,22 +33,22 @@ class TransipConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): TransipAccountConfig
+    public function getProfile(string $key): TransipProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown TransIP account: "%s". Available: %s',
+                'Unknown TransIP profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 
     /**

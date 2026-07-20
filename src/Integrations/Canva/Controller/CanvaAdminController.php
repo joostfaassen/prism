@@ -35,19 +35,19 @@ class CanvaAdminController extends AbstractController
     {
         $serverConfig = $this->resolveServer($serverName);
 
-        $accounts = [];
-        if ($serverConfig->hasAccountType('canva')) {
+        $profiles = [];
+        if ($serverConfig->hasProfileType('canva')) {
             $this->serverContext->setServer($serverConfig);
             try {
-                foreach ($this->canvaConfigLoader->getAccounts() as $key => $account) {
-                    $accounts[] = [
+                foreach ($this->canvaConfigLoader->getProfiles() as $key => $profile) {
+                    $profiles[] = [
                         'key' => $key,
-                        'label' => $account->label,
-                        'hasCredentials' => $account->hasCredentials(),
-                        'connected' => $account->isConnected(),
-                        'tokenValid' => $account->isAccessTokenValid(),
-                        'expiresAt' => $account->tokenExpiresAt,
-                        'scopes' => $account->scopes,
+                        'label' => $profile->label,
+                        'hasCredentials' => $profile->hasCredentials(),
+                        'connected' => $profile->isConnected(),
+                        'tokenValid' => $profile->isAccessTokenValid(),
+                        'expiresAt' => $profile->tokenExpiresAt,
+                        'scopes' => $profile->scopes,
                     ];
                 }
             } finally {
@@ -58,15 +58,15 @@ class CanvaAdminController extends AbstractController
         return $this->render('admin/canva/hub.html.twig', [
             ...$this->nav($request, $serverName, $serverConfig),
             'activeSection' => 'canva',
-            'serverHasCanva' => $serverConfig->hasAccountType('canva'),
-            'canvaAccounts' => $accounts,
+            'serverHasCanva' => $serverConfig->hasProfileType('canva'),
+            'canvaProfiles' => $profiles,
             'redirectUri' => $this->callbackUrl(),
             'configFile' => basename($this->tokenStore->getTargetFile($serverName)),
         ]);
     }
 
-    #[Route('/admin/server/{serverName}/canva/connect/{accountKey}', name: 'admin_server_canva_connect', methods: ['POST'])]
-    public function connect(Request $request, string $serverName, string $accountKey): Response
+    #[Route('/admin/server/{serverName}/canva/connect/{profileKey}', name: 'admin_server_canva_connect', methods: ['POST'])]
+    public function connect(Request $request, string $serverName, string $profileKey): Response
     {
         $serverConfig = $this->resolveServer($serverName);
 
@@ -78,10 +78,10 @@ class CanvaAdminController extends AbstractController
 
         $this->serverContext->setServer($serverConfig);
         try {
-            $account = $this->canvaConfigLoader->getAccount($accountKey);
+            $profile = $this->canvaConfigLoader->getProfile($profileKey);
 
-            if (!$account->hasCredentials()) {
-                $this->addFlash('error', sprintf('Account "%s" is missing client_id / client_secret in the config file.', $accountKey));
+            if (!$profile->hasCredentials()) {
+                $this->addFlash('error', sprintf('Profile "%s" is missing client_id / client_secret in the config file.', $profileKey));
 
                 return $this->redirectToRoute('admin_server_canva', ['serverName' => $serverName]);
             }
@@ -92,16 +92,16 @@ class CanvaAdminController extends AbstractController
             $redirectUri = $this->callbackUrl();
 
             $authUrl = $this->canvaService->buildAuthorizationUrl(
-                accountKey: $accountKey,
+                profileKey: $profileKey,
                 redirectUri: $redirectUri,
                 codeChallenge: $codeChallenge,
                 state: $state,
-                scopes: $account->scopes,
+                scopes: $profile->scopes,
             );
 
             $request->getSession()->set(self::SESSION_KEY, [
                 'server' => $serverName,
-                'account' => $accountKey,
+                'profile' => $profileKey,
                 'verifier' => $codeVerifier,
                 'state' => $state,
                 'redirect_uri' => $redirectUri,
@@ -124,14 +124,14 @@ class CanvaAdminController extends AbstractController
         $pending = $session->get(self::SESSION_KEY);
         $session->remove(self::SESSION_KEY);
 
-        if (!is_array($pending) || empty($pending['server']) || empty($pending['account'])) {
+        if (!is_array($pending) || empty($pending['server']) || empty($pending['profile'])) {
             $this->addFlash('error', 'No pending Canva authorization was found. Please start the connection again.');
 
             return $this->redirectToRoute('admin_dashboard');
         }
 
         $serverName = (string) $pending['server'];
-        $accountKey = (string) $pending['account'];
+        $profileKey = (string) $pending['profile'];
 
         $error = $request->query->get('error');
         if ($error !== null) {
@@ -154,15 +154,15 @@ class CanvaAdminController extends AbstractController
         $this->serverContext->setServer($serverConfig);
         try {
             $result = $this->canvaService->exchangeAuthorizationCode(
-                accountKey: $accountKey,
+                profileKey: $profileKey,
                 code: $code,
                 codeVerifier: (string) ($pending['verifier'] ?? ''),
                 redirectUri: (string) ($pending['redirect_uri'] ?? $this->callbackUrl()),
             );
 
             $this->addFlash('success', sprintf(
-                'Canva account "%s" connected. Tokens saved to the config file. Scopes: %s',
-                $accountKey,
+                'Canva profile "%s" connected. Tokens saved to the config file. Scopes: %s',
+                $profileKey,
                 $result['scope'] !== '' ? $result['scope'] : '(default)',
             ));
         } catch (\Throwable $e) {
@@ -174,8 +174,8 @@ class CanvaAdminController extends AbstractController
         return $this->redirectToRoute('admin_server_canva', ['serverName' => $serverName]);
     }
 
-    #[Route('/admin/server/{serverName}/canva/disconnect/{accountKey}', name: 'admin_server_canva_disconnect', methods: ['POST'])]
-    public function disconnect(Request $request, string $serverName, string $accountKey): Response
+    #[Route('/admin/server/{serverName}/canva/disconnect/{profileKey}', name: 'admin_server_canva_disconnect', methods: ['POST'])]
+    public function disconnect(Request $request, string $serverName, string $profileKey): Response
     {
         $serverConfig = $this->resolveServer($serverName);
 
@@ -187,8 +187,8 @@ class CanvaAdminController extends AbstractController
 
         $this->serverContext->setServer($serverConfig);
         try {
-            $this->canvaService->disconnect($accountKey);
-            $this->addFlash('success', sprintf('Canva account "%s" disconnected. Tokens removed from the config file.', $accountKey));
+            $this->canvaService->disconnect($profileKey);
+            $this->addFlash('success', sprintf('Canva profile "%s" disconnected. Tokens removed from the config file.', $profileKey));
         } catch (\Throwable $e) {
             $this->addFlash('error', 'Could not disconnect: ' . $e->getMessage());
         } finally {
@@ -224,15 +224,15 @@ class CanvaAdminController extends AbstractController
     }
 
     /**
-     * @return array{server: array{name: string, label: string, mcpUrl: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     * @return array{server: array{name: string, label: string, mcpUrl: string, profileCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
      */
     private function nav(Request $request, string $serverName, ServerConfig $serverConfig): array
     {
         $tools = $this->mcpHandler->getTools();
         $visible = array_values(array_filter(
             $tools,
-            static fn (ToolInterface $tool) => $tool->getAccountType() === null
-                || $serverConfig->hasAccountType($tool->getAccountType()),
+            static fn (ToolInterface $tool) => $tool->getProfileType() === null
+                || $serverConfig->hasProfileType($tool->getProfileType()),
         ));
         $baseUrl = $request->getSchemeAndHttpHost();
 
@@ -241,11 +241,11 @@ class CanvaAdminController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $baseUrl . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($visible),
             ],
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ];
     }
 }

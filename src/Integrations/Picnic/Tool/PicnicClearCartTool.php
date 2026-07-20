@@ -33,16 +33,16 @@ class PicnicClearCartTool implements ToolInterface
                     'type' => 'boolean',
                     'description' => 'Must be true to clear the cart',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['confirm'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -56,10 +56,10 @@ class PicnicClearCartTool implements ToolInterface
             ];
         }
 
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         try {
-            $cart = $this->picnicService->clearCart($account);
+            $cart = $this->picnicService->clearCart($profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

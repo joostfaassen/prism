@@ -15,17 +15,17 @@ class LibredeskService
     /**
      * @return list<array{key: string, label: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
+                'label' => $profile->label,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -36,7 +36,7 @@ class LibredeskService
      * @return array<string, mixed>
      */
     public function listConversations(
-        string $accountKey,
+        string $profileKey,
         string $view = 'all',
         int $page = 1,
         int $pageSize = 30,
@@ -90,7 +90,7 @@ class LibredeskService
             }
         }
 
-        $data = $this->request($accountKey, 'GET', $endpoint, $query);
+        $data = $this->request($profileKey, 'GET', $endpoint, $query);
 
         $payload = $data['data'] ?? [];
         $conversations = [];
@@ -112,9 +112,9 @@ class LibredeskService
      *
      * @return list<array<string, mixed>>
      */
-    public function searchConversations(string $accountKey, string $query): array
+    public function searchConversations(string $profileKey, string $query): array
     {
-        $data = $this->request($accountKey, 'GET', 'conversations/search', ['query' => $query]);
+        $data = $this->request($profileKey, 'GET', 'conversations/search', ['query' => $query]);
 
         $results = [];
         foreach ($data['data'] ?? [] as $conv) {
@@ -134,9 +134,9 @@ class LibredeskService
      *
      * @return array<string, mixed>
      */
-    public function getConversationRaw(string $accountKey, string $uuid): array
+    public function getConversationRaw(string $profileKey, string $uuid): array
     {
-        $data = $this->request($accountKey, 'GET', "conversations/{$uuid}");
+        $data = $this->request($profileKey, 'GET', "conversations/{$uuid}");
 
         return $data['data'] ?? [];
     }
@@ -146,14 +146,14 @@ class LibredeskService
      *
      * @return list<array<string, mixed>>
      */
-    public function getMessages(string $accountKey, string $uuid, bool $includeNotes = true): array
+    public function getMessages(string $profileKey, string $uuid, bool $includeNotes = true): array
     {
         $allMessages = [];
         $page = 1;
 
         do {
             $query = ['page' => $page, 'page_size' => 100];
-            $data = $this->request($accountKey, 'GET', "conversations/{$uuid}/messages", $query);
+            $data = $this->request($profileKey, 'GET', "conversations/{$uuid}/messages", $query);
             $payload = $data['data'] ?? [];
 
             foreach ($payload['results'] ?? [] as $message) {
@@ -175,10 +175,10 @@ class LibredeskService
      *
      * @return array<string, mixed>
      */
-    public function getConversationSimple(string $accountKey, string $uuid, bool $includeNotes = false): array
+    public function getConversationSimple(string $profileKey, string $uuid, bool $includeNotes = false): array
     {
-        $conv = $this->getConversationRaw($accountKey, $uuid);
-        $messages = $this->getMessages($accountKey, $uuid, $includeNotes);
+        $conv = $this->getConversationRaw($profileKey, $uuid);
+        $messages = $this->getMessages($profileKey, $uuid, $includeNotes);
 
         $simplified = [
             'uuid' => $conv['uuid'] ?? $uuid,
@@ -219,10 +219,10 @@ class LibredeskService
     /**
      * Get conversation as plain text optimized for AI consumption.
      */
-    public function getConversationText(string $accountKey, string $uuid, bool $includeNotes = false): string
+    public function getConversationText(string $profileKey, string $uuid, bool $includeNotes = false): string
     {
-        $conv = $this->getConversationRaw($accountKey, $uuid);
-        $messages = $this->getMessages($accountKey, $uuid, $includeNotes);
+        $conv = $this->getConversationRaw($profileKey, $uuid);
+        $messages = $this->getMessages($profileKey, $uuid, $includeNotes);
 
         $ref = $conv['reference_number'] ?? ($conv['uuid'] ?? $uuid);
 
@@ -272,10 +272,10 @@ class LibredeskService
      *
      * @return array<string, mixed>
      */
-    public function getConversationConvo(string $accountKey, string $uuid, bool $includeNotes = false): array
+    public function getConversationConvo(string $profileKey, string $uuid, bool $includeNotes = false): array
     {
-        $conv = $this->getConversationRaw($accountKey, $uuid);
-        $messages = $this->getMessages($accountKey, $uuid, $includeNotes);
+        $conv = $this->getConversationRaw($profileKey, $uuid);
+        $messages = $this->getMessages($profileKey, $uuid, $includeNotes);
 
         $statusMap = [
             'Open' => 'open',
@@ -359,9 +359,9 @@ class LibredeskService
     /**
      * @return array<string, mixed>
      */
-    public function listAgents(string $accountKey): array
+    public function listAgents(string $profileKey): array
     {
-        $data = $this->request($accountKey, 'GET', 'agents');
+        $data = $this->request($profileKey, 'GET', 'agents');
 
         $agents = [];
         foreach ($this->flattenData($data) as $agent) {
@@ -380,9 +380,9 @@ class LibredeskService
     /**
      * @return array<string, mixed>
      */
-    public function listTeams(string $accountKey): array
+    public function listTeams(string $profileKey): array
     {
-        $data = $this->request($accountKey, 'GET', 'teams');
+        $data = $this->request($profileKey, 'GET', 'teams');
 
         $teams = [];
         foreach ($this->flattenData($data) as $team) {
@@ -405,9 +405,9 @@ class LibredeskService
      *
      * @return array<string, mixed>
      */
-    public function listMacros(string $accountKey): array
+    public function listMacros(string $profileKey): array
     {
-        $data = $this->request($accountKey, 'GET', 'macros');
+        $data = $this->request($profileKey, 'GET', 'macros');
 
         $macros = [];
         foreach ($this->flattenData($data) as $macro) {
@@ -437,7 +437,7 @@ class LibredeskService
      * @return array<string, mixed>
      */
     public function sendMessage(
-        string $accountKey,
+        string $profileKey,
         string $uuid,
         string $message,
         bool $private = false,
@@ -462,7 +462,7 @@ class LibredeskService
             $body['bcc'] = $bcc;
         }
 
-        $data = $this->request($accountKey, 'POST', "conversations/{$uuid}/messages", [], $body);
+        $data = $this->request($profileKey, 'POST', "conversations/{$uuid}/messages", [], $body);
 
         return $data['data'] ?? $data;
     }
@@ -479,7 +479,7 @@ class LibredeskService
      * @return array<string, mixed>
      */
     public function upsertDraft(
-        string $accountKey,
+        string $profileKey,
         string $uuid,
         string $content,
         ?array $meta = null,
@@ -492,7 +492,7 @@ class LibredeskService
             'meta' => $meta ?? (object) [],
         ];
 
-        $data = $this->request($accountKey, 'POST', "conversations/{$uuid}/draft", [], $body);
+        $data = $this->request($profileKey, 'POST', "conversations/{$uuid}/draft", [], $body);
 
         return $data['data'] ?? $data;
     }
@@ -502,12 +502,12 @@ class LibredeskService
      *
      * @return array<string, mixed>
      */
-    public function getDraft(string $accountKey, string $uuid): array
+    public function getDraft(string $profileKey, string $uuid): array
     {
         // Libredesk has no per-conversation GET draft route; it only exposes
         // GET /api/v1/drafts (all drafts for the API key's agent). We fetch
         // those and filter by conversation UUID.
-        $data = $this->request($accountKey, 'GET', 'drafts');
+        $data = $this->request($profileKey, 'GET', 'drafts');
         $drafts = $data['data'] ?? $data;
 
         if (!is_array($drafts)) {
@@ -528,9 +528,9 @@ class LibredeskService
      *
      * @return array<string, mixed>
      */
-    public function deleteDraft(string $accountKey, string $uuid): array
+    public function deleteDraft(string $profileKey, string $uuid): array
     {
-        return $this->request($accountKey, 'DELETE', "conversations/{$uuid}/draft");
+        return $this->request($profileKey, 'DELETE', "conversations/{$uuid}/draft");
     }
 
     /**
@@ -539,7 +539,7 @@ class LibredeskService
      * @return array<string, mixed>
      */
     public function updateStatus(
-        string $accountKey,
+        string $profileKey,
         string $uuid,
         string $status,
         ?string $snoozedUntil = null,
@@ -550,7 +550,7 @@ class LibredeskService
             $body['snoozed_until'] = $snoozedUntil;
         }
 
-        return $this->request($accountKey, 'PUT', "conversations/{$uuid}/status", [], $body);
+        return $this->request($profileKey, 'PUT', "conversations/{$uuid}/status", [], $body);
     }
 
     /**
@@ -652,26 +652,26 @@ class LibredeskService
      * @return array<string, mixed>
      */
     private function request(
-        string $accountKey,
+        string $profileKey,
         string $method,
         string $endpoint,
         array $query = [],
         ?array $json = null,
     ): array {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        if ($account->baseUrl === '' || $account->apiKey === '' || $account->apiSecret === '') {
+        if ($profile->baseUrl === '' || $profile->apiKey === '' || $profile->apiSecret === '') {
             throw new \RuntimeException(sprintf(
-                'Libredesk account "%s" is missing base_url, api_key, or api_secret',
-                $accountKey,
+                'Libredesk profile "%s" is missing base_url, api_key, or api_secret',
+                $profileKey,
             ));
         }
 
-        $url = $account->baseUrl . '/api/v1/' . ltrim($endpoint, '/');
+        $url = $profile->baseUrl . '/api/v1/' . ltrim($endpoint, '/');
 
         $options = [
             'headers' => [
-                'Authorization' => sprintf('token %s:%s', $account->apiKey, $account->apiSecret),
+                'Authorization' => sprintf('token %s:%s', $profile->apiKey, $profile->apiSecret),
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ],

@@ -14,10 +14,10 @@
                     {% if active %}
                     <span class="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-900/60 px-2.5 py-1 rounded-lg">
                         <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-                        {{ accounts|length }} account{{ accounts|length != 1 ? 's' : '' }} on this server
+                        {{ profiles|length }} profile{{ profiles|length != 1 ? 's' : '' }} on this server
                     </span>
                     {% else %}
-                    <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-2.5 py-1 rounded-lg">no accounts on this server</span>
+                    <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-2.5 py-1 rounded-lg">no profiles on this server</span>
                     {% endif %}
                 </div>
                 <p class="text-slate-400 max-w-3xl">{{ integration.description }}</p>
@@ -28,25 +28,25 @@
             <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                     <div>
-                        <h2 class="text-lg font-bold text-white">Accounts on {{ server.label }}</h2>
+                        <h2 class="text-lg font-bold text-white">Profiles on {{ server.label }}</h2>
                         <p class="text-sm text-slate-400">Configured for type <code class="font-mono text-cyan-300">{{ integration.type }}</code></p>
                     </div>
-                    <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Manage accounts →</a>
+                    <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'profiles'}) }}" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Manage profiles →</a>
                 </div>
 
-                {% if accounts is not empty %}
+                {% if profiles is not empty %}
                 <ul class="space-y-2.5">
-                    {% for account in accounts %}
+                    {% for profile in profiles %}
                     <li class="flex items-baseline gap-3 text-sm rounded-lg bg-slate-950/40 border border-slate-800 px-4 py-3">
-                        <code class="font-mono text-cyan-300 shrink-0">{{ account.key }}</code>
-                        <span class="text-slate-400 truncate">{{ account.label }}</span>
+                        <code class="font-mono text-cyan-300 shrink-0">{{ profile.key }}</code>
+                        <span class="text-slate-400 truncate">{{ profile.label }}</span>
                     </li>
                     {% endfor %}
                 </ul>
                 {% else %}
                 <div class="rounded-xl border border-dashed border-slate-700 bg-slate-950/30 px-6 py-8 text-center">
-                    <p class="text-sm text-slate-400 mb-2">No accounts of this type on this server.</p>
-                    <p class="text-xs text-slate-500">Add one under Accounts in this server’s YAML config to enable these tools here.</p>
+                    <p class="text-sm text-slate-400 mb-2">No profiles of this type on this server.</p>
+                    <p class="text-xs text-slate-500">Add one under Profiles in this server’s YAML config to enable these tools here.</p>
                 </div>
                 {% endif %}
             </section>
@@ -55,7 +55,7 @@
                 <div class="flex items-baseline justify-between gap-3 mb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white">MCP tools</h2>
-                        <p class="text-sm text-slate-400">{% if active %}Exposed on this server’s MCP endpoint{% else %}Would be exposed once an account of this type is added{% endif %}</p>
+                        <p class="text-sm text-slate-400">{% if active %}Exposed on this server’s MCP endpoint{% else %}Would be exposed once a profile of this type is added{% endif %}</p>
                     </div>
                     <span class="text-xs font-mono text-slate-500">{{ tools|length }}</span>
                 </div>

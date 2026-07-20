@@ -30,9 +30,9 @@ class PrometheusQueryRangeTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
                 'query' => [
                     'type' => 'string',
@@ -55,7 +55,7 @@ class PrometheusQueryRangeTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -76,7 +76,7 @@ class PrometheusQueryRangeTool implements ToolInterface
 
         try {
             $result = $this->prometheusService->queryRange(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 query: $query,
                 start: $start,
                 end: $end,

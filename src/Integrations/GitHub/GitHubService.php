@@ -9,7 +9,7 @@ class GitHubService
     private const API_VERSION = '2022-11-28';
     private const USER_AGENT = 'prism-mcp';
 
-    /** @var array<string, string> cache of accountKey => resolved authenticated login */
+    /** @var array<string, string> cache of profileKey => resolved authenticated login */
     private array $loginCache = [];
 
     public function __construct(
@@ -21,40 +21,40 @@ class GitHubService
     /**
      * @return list<array{key: string, label: string, base_url: string, default_login: string|null}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
-                'default_login' => $account->defaultLogin,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
+                'default_login' => $profile->defaultLogin,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
-     * Resolve the login of the token owner (GET /user), cached per account.
+     * Resolve the login of the token owner (GET /user), cached per profile.
      */
-    public function getAuthenticatedLogin(?string $accountKey): string
+    public function getAuthenticatedLogin(?string $profileKey): string
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if (isset($this->loginCache[$account->key])) {
-            return $this->loginCache[$account->key];
+        if (isset($this->loginCache[$profile->key])) {
+            return $this->loginCache[$profile->key];
         }
 
-        $data = $this->request($account, 'GET', '/user');
+        $data = $this->request($profile, 'GET', '/user');
         $login = is_array($data) ? (string) ($data['login'] ?? '') : '';
 
         if ($login === '') {
-            throw new \RuntimeException('Could not resolve authenticated GitHub user for account ' . $account->key);
+            throw new \RuntimeException('Could not resolve authenticated GitHub user for profile ' . $profile->key);
         }
 
-        return $this->loginCache[$account->key] = $login;
+        return $this->loginCache[$profile->key] = $login;
     }
 
     /**
@@ -67,39 +67,39 @@ class GitHubService
      * @return array<string, mixed>
      */
     public function getActivity(
-        ?string $accountKey,
+        ?string $profileKey,
         ?string $login,
         string $from,
         string $to,
         int $limit = 100,
     ): array {
-        $account = $this->resolveAccount($accountKey);
-        $login = $this->resolveLogin($account, $login);
+        $profile = $this->resolveProfile($profileKey);
+        $login = $this->resolveLogin($profile, $login);
         $range = $from . '..' . $to;
         $limit = max(1, min(100, $limit));
 
         $commits = $this->searchCommits(
-            $account,
+            $profile,
             sprintf('author:%s author-date:%s', $login, $range),
             $limit,
         );
         $prsCreated = $this->searchIssuesRaw(
-            $account,
+            $profile,
             sprintf('is:pr author:%s created:%s', $login, $range),
             $limit,
         );
         $prsMerged = $this->searchIssuesRaw(
-            $account,
+            $profile,
             sprintf('is:pr author:%s merged:%s', $login, $range),
             $limit,
         );
         $prsReviewed = $this->searchIssuesRaw(
-            $account,
+            $profile,
             sprintf('is:pr reviewed-by:%s -author:%s updated:%s', $login, $login, $range),
             $limit,
         );
         $issuesCreated = $this->searchIssuesRaw(
-            $account,
+            $profile,
             sprintf('is:issue author:%s created:%s', $login, $range),
             $limit,
         );
@@ -126,16 +126,16 @@ class GitHubService
      * @return array<string, mixed>
      */
     public function searchIssues(
-        ?string $accountKey,
+        ?string $profileKey,
         string $query,
         string $sort = 'updated',
         string $order = 'desc',
         int $limit = 30,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
         $limit = max(1, min(100, $limit));
 
-        $data = $this->request($account, 'GET', '/search/issues', [
+        $data = $this->request($profile, 'GET', '/search/issues', [
             'q' => $query,
             'sort' => $sort,
             'order' => $order,
@@ -161,9 +161,9 @@ class GitHubService
     /**
      * @return list<array<string, mixed>>
      */
-    private function searchCommits(GitHubAccountConfig $account, string $query, int $limit): array
+    private function searchCommits(GitHubProfileConfig $profile, string $query, int $limit): array
     {
-        $data = $this->request($account, 'GET', '/search/commits', [
+        $data = $this->request($profile, 'GET', '/search/commits', [
             'q' => $query,
             'sort' => 'author-date',
             'order' => 'asc',
@@ -197,9 +197,9 @@ class GitHubService
     /**
      * @return list<array<string, mixed>>
      */
-    private function searchIssuesRaw(GitHubAccountConfig $account, string $query, int $limit): array
+    private function searchIssuesRaw(GitHubProfileConfig $profile, string $query, int $limit): array
     {
-        $data = $this->request($account, 'GET', '/search/issues', [
+        $data = $this->request($profile, 'GET', '/search/issues', [
             'q' => $query,
             'sort' => 'updated',
             'order' => 'asc',
@@ -268,31 +268,31 @@ class GitHubService
         return $line === false ? '' : trim($line);
     }
 
-    private function resolveLogin(GitHubAccountConfig $account, ?string $login): string
+    private function resolveLogin(GitHubProfileConfig $profile, ?string $login): string
     {
         if ($login !== null && trim($login) !== '') {
             return trim($login);
         }
 
-        if ($account->defaultLogin !== null && $account->defaultLogin !== '') {
-            return $account->defaultLogin;
+        if ($profile->defaultLogin !== null && $profile->defaultLogin !== '') {
+            return $profile->defaultLogin;
         }
 
-        return $this->getAuthenticatedLogin($account->key);
+        return $this->getAuthenticatedLogin($profile->key);
     }
 
-    private function resolveAccount(?string $accountKey): GitHubAccountConfig
+    private function resolveProfile(?string $profileKey): GitHubProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No GitHub accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No GitHub profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -300,15 +300,15 @@ class GitHubService
      *
      * @return mixed decoded JSON
      */
-    private function request(GitHubAccountConfig $account, string $method, string $path, array $query = []): mixed
+    private function request(GitHubProfileConfig $profile, string $method, string $path, array $query = []): mixed
     {
-        if ($account->token === '') {
-            throw new \RuntimeException(sprintf('GitHub account "%s" is missing a token', $account->key));
+        if ($profile->token === '') {
+            throw new \RuntimeException(sprintf('GitHub profile "%s" is missing a token', $profile->key));
         }
 
         $options = [
             'headers' => [
-                'Authorization' => 'Bearer ' . $account->token,
+                'Authorization' => 'Bearer ' . $profile->token,
                 'Accept' => 'application/vnd.github+json',
                 'X-GitHub-Api-Version' => self::API_VERSION,
                 'User-Agent' => self::USER_AGENT,
@@ -323,7 +323,7 @@ class GitHubService
             );
         }
 
-        $response = $this->httpClient->request($method, $account->baseUrl . $path, $options);
+        $response = $this->httpClient->request($method, $profile->baseUrl . $path, $options);
 
         $statusCode = $response->getStatusCode();
         if ($statusCode >= 400) {

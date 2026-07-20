@@ -30,9 +30,9 @@ class AlertmanagerListSilencesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Alertmanager account key. Optional if only one account is configured.',
+                    'description' => 'Alertmanager profile key. Optional if only one profile is configured.',
                 ],
                 'filters' => [
                     'type' => 'array',
@@ -44,7 +44,7 @@ class AlertmanagerListSilencesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'alertmanager';
     }
@@ -62,7 +62,7 @@ class AlertmanagerListSilencesTool implements ToolInterface
 
         try {
             $silences = $this->alertmanagerService->listSilences(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 filters: $filters,
             );
 

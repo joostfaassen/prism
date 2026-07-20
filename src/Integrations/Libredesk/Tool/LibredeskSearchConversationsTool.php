@@ -28,32 +28,32 @@ class LibredeskSearchConversationsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key',
+                    'description' => 'Libredesk profile key',
                 ],
                 'query' => [
                     'type' => 'string',
                     'description' => 'Search query (minimum 3 characters)',
                 ],
             ],
-            'required' => ['account', 'query'],
+            'required' => ['profile', 'query'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $query = $arguments['query'] ?? '';
 
-        if ($accountKey === '' || $query === '') {
+        if ($profileKey === '' || $query === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "query" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile" and "query" are required']],
                 'isError' => true,
             ];
         }
@@ -66,7 +66,7 @@ class LibredeskSearchConversationsTool implements ToolInterface
         }
 
         try {
-            $results = $this->libredeskService->searchConversations($accountKey, $query);
+            $results = $this->libredeskService->searchConversations($profileKey, $query);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

@@ -61,11 +61,11 @@ class AdminController extends AbstractController
                 'name' => $name,
                 'label' => $server->label,
                 'mcpUrl' => $baseUrl . '/mcp/' . $name,
-                'accountCount' => count($server->accounts),
+                'profileCount' => count($server->profiles),
                 'typeCounts' => $typeCounts,
                 'toolCount' => $toolCount,
-                'hasHabits' => $server->hasAccountType('habits'),
-                'hasTracking' => $server->hasAccountType('tracking'),
+                'hasHabits' => $server->hasProfileType('habits'),
+                'hasTracking' => $server->hasProfileType('tracking'),
             ];
         }
 
@@ -113,19 +113,19 @@ class AdminController extends AbstractController
         return new JsonResponse($result->toArray());
     }
 
-    #[Route('/admin/server/{serverName}/{tab}', name: 'admin_server_tab', methods: ['GET'], requirements: ['tab' => 'configuration|accounts|tools|audit|agents'])]
+    #[Route('/admin/server/{serverName}/{tab}', name: 'admin_server_tab', methods: ['GET'], requirements: ['tab' => 'configuration|profiles|tools|audit|agents'])]
     public function serverTab(Request $request, string $serverName, string $tab): Response
     {
         $serverConfig = $this->resolveServer($serverName);
         $tools = $this->mcpHandler->getTools();
         $baseUrl = $request->getSchemeAndHttpHost();
 
-        $accountsByType = [];
-        foreach ($serverConfig->accounts as $accountName => $accountCfg) {
-            $type = $accountCfg['type'] ?? 'unknown';
-            $label = $accountCfg['label'] ?? $accountName;
-            $accountsByType[$type][] = [
-                'name' => $accountName,
+        $profilesByType = [];
+        foreach ($serverConfig->profiles as $profileName => $profileCfg) {
+            $type = $profileCfg['type'] ?? 'unknown';
+            $label = $profileCfg['label'] ?? $profileName;
+            $profilesByType[$type][] = [
+                'name' => $profileName,
                 'label' => $label,
             ];
         }
@@ -137,7 +137,7 @@ class AdminController extends AbstractController
             $toolsData[] = [
                 'name' => $tool->getName(),
                 'description' => $tool->getDescription(),
-                'accountType' => $tool->getAccountType(),
+                'profileType' => $tool->getProfileType(),
             ];
         }
 
@@ -151,18 +151,18 @@ class AdminController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $baseUrl . '/mcp/' . $serverName,
-                'accountsByType' => $accountsByType,
+                'profilesByType' => $profilesByType,
                 'tools' => $toolsData,
                 'toolCount' => count($toolsData),
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'agentNotifyConfigured' => $serverConfig->hasAgentNotify(),
                 'agentNotifyType' => $agentNotifyType,
                 'agentNotifyEndpointHint' => $agentNotifyEndpointHint,
                 'agentNotifyTriggerUrl' => $this->generateUrl('admin_agent_notify_trigger', ['serverName' => $serverName]),
             ],
             'activeSection' => $tab,
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ]);
     }
 
@@ -193,7 +193,7 @@ class AdminController extends AbstractController
             throw $this->createNotFoundException('Tool not found: ' . $toolName);
         }
 
-        if ($tool->getAccountType() !== null && !$serverConfig->hasAccountType($tool->getAccountType())) {
+        if ($tool->getProfileType() !== null && !$serverConfig->hasProfileType($tool->getProfileType())) {
             throw $this->createNotFoundException('Tool not available on this server: ' . $toolName);
         }
 
@@ -207,16 +207,16 @@ class AdminController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $request->getSchemeAndHttpHost() . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($serverTools),
             ],
             'activeSection' => 'tools',
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
             'tool' => [
                 'name' => $tool->getName(),
                 'description' => $tool->getDescription(),
-                'accountType' => $tool->getAccountType(),
+                'profileType' => $tool->getProfileType(),
                 'inputSchema' => $schema,
                 'inputSchemaYaml' => Yaml::dump($schema, 10, 2),
                 'sampleArgs' => $this->buildSampleArgs($schema),
@@ -273,7 +273,7 @@ class AdminController extends AbstractController
     }
 
     /**
-     * @return array{server: array{name: string, label: string, mcpUrl: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     * @return array{server: array{name: string, label: string, mcpUrl: string, profileCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
      */
     private function buildServerAdminShell(Request $request, string $serverName, ServerConfig $serverConfig): array
     {
@@ -286,11 +286,11 @@ class AdminController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $baseUrl . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($serverTools),
             ],
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ];
     }
 
@@ -301,8 +301,8 @@ class AdminController extends AbstractController
     {
         return array_values(array_filter(
             $tools,
-            fn($tool) => $tool->getAccountType() === null
-                || $server->hasAccountType($tool->getAccountType()),
+            fn($tool) => $tool->getProfileType() === null
+                || $server->hasProfileType($tool->getProfileType()),
         ));
     }
 
@@ -378,8 +378,8 @@ class AdminController extends AbstractController
     private function getTypeCounts(ServerConfig $server): array
     {
         $typeCounts = [];
-        foreach ($server->accounts as $account) {
-            $type = $account['type'] ?? 'unknown';
+        foreach ($server->profiles as $profile) {
+            $type = $profile['type'] ?? 'unknown';
             $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
         }
 
@@ -393,8 +393,8 @@ class AdminController extends AbstractController
     {
         return count(array_filter(
             $tools,
-            fn($tool) => $tool->getAccountType() === null
-                || $server->hasAccountType($tool->getAccountType()),
+            fn($tool) => $tool->getProfileType() === null
+                || $server->hasProfileType($tool->getProfileType()),
         ));
     }
 }

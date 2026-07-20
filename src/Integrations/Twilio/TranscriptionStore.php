@@ -14,9 +14,9 @@ class TranscriptionStore
     /**
      * @param array<string, mixed> $metadata
      */
-    public function save(string $serverName, string $accountKey, string $callSid, array $metadata): void
+    public function save(string $serverName, string $profileKey, string $callSid, array $metadata): void
     {
-        $dir = $this->getDir($serverName, $accountKey);
+        $dir = $this->getDir($serverName, $profileKey);
         if (!is_dir($dir)) {
             mkdir($dir, 0o755, true);
         }
@@ -28,9 +28,9 @@ class TranscriptionStore
     /**
      * @return array<string, mixed>|null
      */
-    public function get(string $serverName, string $accountKey, string $callSid): ?array
+    public function get(string $serverName, string $profileKey, string $callSid): ?array
     {
-        $path = $this->getDir($serverName, $accountKey) . '/' . $callSid . '.json';
+        $path = $this->getDir($serverName, $profileKey) . '/' . $callSid . '.json';
 
         if (!file_exists($path)) {
             return null;
@@ -39,17 +39,17 @@ class TranscriptionStore
         return json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
     }
 
-    public function exists(string $serverName, string $accountKey, string $callSid): bool
+    public function exists(string $serverName, string $profileKey, string $callSid): bool
     {
-        return file_exists($this->getDir($serverName, $accountKey) . '/' . $callSid . '.json');
+        return file_exists($this->getDir($serverName, $profileKey) . '/' . $callSid . '.json');
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function list(string $serverName, string $accountKey, ?string $search = null, int $limit = 50): array
+    public function list(string $serverName, string $profileKey, ?string $search = null, int $limit = 50): array
     {
-        $dir = $this->getDir($serverName, $accountKey);
+        $dir = $this->getDir($serverName, $profileKey);
 
         if (!is_dir($dir)) {
             return [];
@@ -89,8 +89,8 @@ class TranscriptionStore
         return $results;
     }
 
-    private function getDir(string $serverName, string $accountKey): string
+    private function getDir(string $serverName, string $profileKey): string
     {
-        return $this->basePath . '/' . $serverName . '/' . $accountKey;
+        return $this->basePath . '/' . $serverName . '/' . $profileKey;
     }
 }

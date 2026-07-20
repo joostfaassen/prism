@@ -34,13 +34,13 @@ class GitHubActivityTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'GitHub account key. Optional if only one account is configured.',
+                    'description' => 'GitHub profile key. Optional if only one profile is configured.',
                 ],
                 'login' => [
                     'type' => 'string',
-                    'description' => 'GitHub username to report on. Optional; defaults to the account default_login or the token owner.',
+                    'description' => 'GitHub username to report on. Optional; defaults to the profile default_login or the token owner.',
                 ],
                 'date' => [
                     'type' => 'string',
@@ -63,7 +63,7 @@ class GitHubActivityTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'github';
     }
@@ -81,7 +81,7 @@ class GitHubActivityTool implements ToolInterface
 
         try {
             $result = $this->gitHubService->getActivity(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 login: $arguments['login'] ?? null,
                 from: $from,
                 to: $to,

@@ -11,7 +11,7 @@
                     </a>
                 </div>
                 <h1 class="text-2xl font-bold text-white">Canva</h1>
-                <p class="text-slate-400 text-sm mt-1">Connect Canva accounts via OAuth and browse designs through MCP tools for <span class="font-mono text-slate-300">{{ server.name }}</span></p>
+                <p class="text-slate-400 text-sm mt-1">Connect Canva profiles via OAuth and browse designs through MCP tools for <span class="font-mono text-slate-300">{{ server.name }}</span></p>
             </div>
 {% endblock %}
 
@@ -25,8 +25,8 @@
 
             {% if not serverHasCanva %}
             <div class="rounded-2xl border border-amber-800/50 bg-amber-950/20 px-6 py-8 text-center">
-                <p class="text-slate-300 text-sm mb-4">Add a <span class="font-mono text-amber-200/90">canva</span> account under this server in your <code class="text-xs bg-slate-800 px-2 py-1 rounded">{{ configFile }}</code> file (with a <span class="font-mono">client_id</span> and <span class="font-mono">client_secret</span>) to enable the Canva OAuth flow and MCP tools.</p>
-                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View accounts →</a>
+                <p class="text-slate-300 text-sm mb-4">Add a <span class="font-mono text-amber-200/90">canva</span> profile under this server in your <code class="text-xs bg-slate-800 px-2 py-1 rounded">{{ configFile }}</code> file (with a <span class="font-mono">client_id</span> and <span class="font-mono">client_secret</span>) to enable the Canva OAuth flow and MCP tools.</p>
+                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'profiles'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300">View profiles →</a>
             </div>
             {% else %}
 
@@ -38,39 +38,39 @@
             </div>
 
             <div class="space-y-4">
-                {% for account in canvaAccounts %}
+                {% for profile in canvaProfiles %}
                 <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
                     <div class="flex items-start justify-between gap-4 flex-wrap">
                         <div class="min-w-0">
                             <div class="flex items-center gap-3 mb-1">
-                                <h3 class="text-lg font-semibold text-white truncate">{{ account.label }}</h3>
-                                {% if not account.hasCredentials %}
+                                <h3 class="text-lg font-semibold text-white truncate">{{ profile.label }}</h3>
+                                {% if not profile.hasCredentials %}
                                     <span class="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-300 border border-amber-800/60">no credentials</span>
-                                {% elseif account.tokenValid %}
+                                {% elseif profile.tokenValid %}
                                     <span class="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">connected</span>
-                                {% elseif account.connected %}
+                                {% elseif profile.connected %}
                                     <span class="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded-md bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">token expired · auto-refresh</span>
                                 {% else %}
                                     <span class="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700">not connected</span>
                                 {% endif %}
                             </div>
-                            <p class="text-xs text-slate-500 font-mono">{{ account.key }}</p>
-                            <p class="text-xs text-slate-500 mt-2">Scopes: <span class="font-mono text-slate-400">{{ account.scopes|join(' ') }}</span></p>
-                            {% if account.connected and account.expiresAt > 0 %}
-                            <p class="text-xs text-slate-600 mt-1">Access token expires {{ account.expiresAt|date('Y-m-d H:i') }}</p>
+                            <p class="text-xs text-slate-500 font-mono">{{ profile.key }}</p>
+                            <p class="text-xs text-slate-500 mt-2">Scopes: <span class="font-mono text-slate-400">{{ profile.scopes|join(' ') }}</span></p>
+                            {% if profile.connected and profile.expiresAt > 0 %}
+                            <p class="text-xs text-slate-600 mt-1">Access token expires {{ profile.expiresAt|date('Y-m-d H:i') }}</p>
                             {% endif %}
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <form method="post" action="{{ path('admin_server_canva_connect', {serverName: server.name, accountKey: account.key}) }}">
+                            <form method="post" action="{{ path('admin_server_canva_connect', {serverName: server.name, profileKey: profile.key}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('canva_connect') }}">
-                                <button type="submit" {% if not account.hasCredentials %}disabled{% endif %}
+                                <button type="submit" {% if not profile.hasCredentials %}disabled{% endif %}
                                     class="inline-flex items-center gap-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                                    {{ account.connected ? 'Reconnect' : 'Connect' }}
+                                    {{ profile.connected ? 'Reconnect' : 'Connect' }}
                                 </button>
                             </form>
-                            {% if account.connected %}
-                            <form method="post" action="{{ path('admin_server_canva_disconnect', {serverName: server.name, accountKey: account.key}) }}"
-                                  onsubmit="return confirm('Remove the saved Canva tokens for this account?');">
+                            {% if profile.connected %}
+                            <form method="post" action="{{ path('admin_server_canva_disconnect', {serverName: server.name, profileKey: profile.key}) }}"
+                                  onsubmit="return confirm('Remove the saved Canva tokens for this profile?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('canva_disconnect') }}">
                                 <button type="submit" class="inline-flex items-center text-sm font-medium text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-800/60 px-4 py-2 rounded-lg transition-colors">
                                     Disconnect

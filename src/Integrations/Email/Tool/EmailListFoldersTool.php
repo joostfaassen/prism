@@ -20,7 +20,7 @@ class EmailListFoldersTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List IMAP folders for an email account with total/unread message counts.';
+        return 'List IMAP folders for an email profile with total/unread message counts.';
     }
 
     public function getInputSchema(): array
@@ -28,38 +28,38 @@ class EmailListFoldersTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID (see email_list_accounts).',
+                    'description' => 'Email profile ID (see email_list_profiles).',
                 ],
                 'pattern' => [
                     'type' => 'string',
                     'description' => 'Glob pattern, e.g. * or INBOX.*. Default: *',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $pattern = (string) ($arguments['pattern'] ?? '*');
 
-        if ($account === '') {
+        if ($profile === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $folders = $this->emailService->listFolders($account, $pattern);
+            $folders = $this->emailService->listFolders($profile, $pattern);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(['folders' => $folders], JSON_THROW_ON_ERROR)]],

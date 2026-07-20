@@ -24,7 +24,7 @@ class MessageComposer
      * @param list<string>           $bcc
      */
     public function compose(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         array $to,
         array $cc,
         array $bcc,
@@ -47,16 +47,16 @@ class MessageComposer
         $email = new Email();
 
         $fromAddress = new Address(
-            $account->getFromAddress(),
-            $fromNameOverride ?? $account->getFromName() ?? '',
+            $profile->getFromAddress(),
+            $fromNameOverride ?? $profile->getFromName() ?? '',
         );
         $email->from($fromAddress);
 
-        $sender = $account->identity?->replyTo ?? $replyToOverride;
+        $sender = $profile->identity?->replyTo ?? $replyToOverride;
         if ($sender !== null && $sender !== '') {
             $email->replyTo(new Address($sender));
-        } elseif ($account->identity?->replyTo !== null && $account->identity->replyTo !== '') {
-            $email->replyTo(new Address($account->identity->replyTo));
+        } elseif ($profile->identity?->replyTo !== null && $profile->identity->replyTo !== '') {
+            $email->replyTo(new Address($profile->identity->replyTo));
         }
 
         if ($to !== []) {
@@ -76,7 +76,7 @@ class MessageComposer
         $headers = $email->getHeaders();
         $headers->addTextHeader('X-Mailer', 'Prism MCP Bridge');
 
-        $headers->addIdHeader('Message-ID', $this->generateMessageId($account));
+        $headers->addIdHeader('Message-ID', $this->generateMessageId($profile));
         $headers->addDateHeader('Date', new \DateTimeImmutable('now'));
 
         if ($reply !== null && $reply->messageId !== null) {
@@ -114,11 +114,11 @@ class MessageComposer
      * @return array{to: list<string>, cc: list<string>}
      */
     public function buildReplyAllRecipients(
-        EmailAccountConfig $account,
+        EmailProfileConfig $profile,
         ReplyContext $reply,
         array $extraReplyTo,
     ): array {
-        $self = strtolower($account->getFromAddress());
+        $self = strtolower($profile->getFromAddress());
 
         $primary = $extraReplyTo !== [] ? $extraReplyTo : [$reply->originalFrom];
         $to = [];
@@ -150,9 +150,9 @@ class MessageComposer
      * domain = the From address's domain (preferred by spam filters that
      * verify Message-ID alignment).
      */
-    private function generateMessageId(EmailAccountConfig $account): string
+    private function generateMessageId(EmailProfileConfig $profile): string
     {
-        $from = $account->getFromAddress();
+        $from = $profile->getFromAddress();
         $domain = 'prism.local';
 
         $atPos = strrpos($from, '@');

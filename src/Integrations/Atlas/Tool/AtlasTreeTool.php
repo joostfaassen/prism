@@ -30,7 +30,7 @@ class AtlasTreeTool implements ToolInterface
             'properties' => [
                 'atlas' => [
                     'type' => 'string',
-                    'description' => 'Atlas account name, for example "engineering" or "hr".',
+                    'description' => 'Atlas profile name, for example "engineering" or "hr".',
                 ],
                 'path' => [
                     'type' => 'string',
@@ -45,7 +45,7 @@ class AtlasTreeTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'atlas';
     }

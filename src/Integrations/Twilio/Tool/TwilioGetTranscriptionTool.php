@@ -30,39 +30,39 @@ class TwilioGetTranscriptionTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Twilio account key from configuration',
+                    'description' => 'Twilio profile key from configuration',
                 ],
                 'call_sid' => [
                     'type' => 'string',
                     'description' => 'The Call SID to get the transcription for',
                 ],
             ],
-            'required' => ['account', 'call_sid'],
+            'required' => ['profile', 'call_sid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'twilio';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $callSid = $arguments['call_sid'] ?? '';
 
-        if ($accountKey === '' || $callSid === '') {
+        if ($profileKey === '' || $callSid === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Missing required parameters: account and call_sid']],
+                'content' => [['type' => 'text', 'text' => 'Missing required parameters: profile and call_sid']],
                 'isError' => true,
             ];
         }
 
         try {
             $serverName = $this->serverContext->getServerName();
-            $transcription = $this->transcriptionStore->get($serverName, $accountKey, $callSid);
+            $transcription = $this->transcriptionStore->get($serverName, $profileKey, $callSid);
 
             if ($transcription === null) {
                 return [

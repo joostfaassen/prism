@@ -1,15 +1,15 @@
 # Instagram Integration
 
-Prism's Instagram integration turns an AI client into a full **marketing-automation cockpit** for Instagram *professional* (Business / Creator) accounts. It can read your page info and audience, analyse engagement, research competitors and niches by hashtag, moderate and reply to comments, and publish photos, videos, reels, stories and carousels — all over the official [Meta Graph API](https://developers.facebook.com/docs/instagram-platform).
+Prism's Instagram integration turns an AI client into a full **marketing-automation cockpit** for Instagram *professional* (Business / Creator) profiles. It can read your page info and audience, analyse engagement, research competitors and niches by hashtag, moderate and reply to comments, and publish photos, videos, reels, stories and carousels — all over the official [Meta Graph API](https://developers.facebook.com/docs/instagram-platform).
 
-> **Professional accounts only.** The Instagram API does not work with personal accounts. You need a Business or Creator account linked to a Facebook Page. Personal-account read access (the old Basic Display API) was deprecated by Meta in December 2024.
+> **Professional profiles only.** The Instagram API does not work with personal profiles. You need a Business or Creator profile linked to a Facebook Page. Personal-profile read access (the old Basic Display API) was deprecated by Meta in December 2024.
 
 ## What you can build with it
 
 - **Grow followers** — discover creators and trending posts in your niche (`instagram_hashtag_search`), profile competitors (`instagram_business_discovery`), then engage authentically.
 - **Increase engagement** — triage incoming comments (`instagram_list_comments`), reply in‑thread or start conversations (`instagram_reply_comment`), and keep the section clean (`instagram_manage_comment`).
 - **Publish at scale** — push reels, posts, stories and carousels (`instagram_publish`), with deferred/scheduled publishing via container IDs and a 24h rate‑limit guard (`instagram_get_publishing_limit`).
-- **Measure & optimise** — pull account growth and audience demographics (`instagram_get_insights`) and per‑post performance (`instagram_get_media_insights`).
+- **Measure & optimise** — pull profile growth and audience demographics (`instagram_get_insights`) and per‑post performance (`instagram_get_media_insights`).
 
 Combine these with Prism's other integrations (e.g. Canva to generate creatives, Matomo/SendGrid for cross‑channel analytics) for end‑to‑end marketing automation.
 
@@ -17,8 +17,8 @@ Combine these with Prism's other integrations (e.g. Canva to generate creatives,
 
 | Requirement | Notes |
 |---|---|
-| Instagram **Business** or **Creator** account | Convert in the Instagram app: Settings → Account type and tools |
-| A **Facebook Page** linked to the IG account | Required by the Graph API authentication model |
+| Instagram **Business** or **Creator** profile | Convert in the Instagram app: Settings → Profile type and tools |
+| A **Facebook Page** linked to the IG profile | Required by the Graph API authentication model |
 | A **Meta app** | Create at <https://developers.facebook.com/apps> |
 
 In the Meta app, add the **Instagram** product (Instagram API with Facebook Login / Facebook Login for Business).
@@ -30,7 +30,7 @@ When you generate a token, request these permissions:
 | Scope | Enables |
 |---|---|
 | `instagram_basic` | Profile + media reads |
-| `instagram_manage_insights` | Account + media insights, business discovery, hashtag search |
+| `instagram_manage_insights` | Profile + media insights, business discovery, hashtag search |
 | `instagram_manage_comments` | List / reply / hide / delete comments |
 | `instagram_content_publish` | Publish posts, reels, stories, carousels |
 | `pages_show_list` | Find the linked Page / IG user id |
@@ -65,14 +65,14 @@ The fastest route is the **Graph API Explorer** (<https://developers.facebook.co
 
 ## 4. Configure in `prism.config.yaml`
 
-Add an `instagram` account to any server:
+Add an `instagram` profile to any server:
 
 ```yaml
 servers:
   marketing-server:
     label: "Marketing"
     bearer_token: "your-prism-bearer-token"
-    accounts:
+    profiles:
       brand-instagram:
         type: instagram
         label: "Brand IG"
@@ -89,10 +89,10 @@ servers:
 
 ### Multiple brands
 
-Add one `instagram` account per brand. Every tool takes an `account` parameter so the AI client can target the right one:
+Add one `instagram` profile per brand. Every tool takes an `profile` parameter so the AI client can target the right one:
 
 ```yaml
-accounts:
+profiles:
   brand-a-instagram:
     type: instagram
     label: "Brand A"
@@ -111,15 +111,15 @@ accounts:
 
 ## 5. Keep the token alive
 
-Long-lived tokens expire after ~60 days. Run **`instagram_refresh_token`** periodically (e.g. weekly) — it exchanges the current token for a fresh one and writes it (and `token_expires_at`) back into the config file. `instagram_list_accounts` shows `token_days_left` so you can monitor it. This requires `app_id` / `app_secret`.
+Long-lived tokens expire after ~60 days. Run **`instagram_refresh_token`** periodically (e.g. weekly) — it exchanges the current token for a fresh one and writes it (and `token_expires_at`) back into the config file. `instagram_list_profiles` shows `token_days_left` so you can monitor it. This requires `app_id` / `app_secret`.
 
 ## Available Tools
 
 | Tool | Description |
 |---|---|
-| `instagram_list_accounts` | List configured IG accounts, token status, days until expiry |
+| `instagram_list_profiles` | List configured IG profiles, token status, days until expiry |
 | `instagram_get_account` | Your profile: followers, follows, media count, bio, website |
-| `instagram_get_insights` | Account analytics: reach, profile views, follower growth, demographics |
+| `instagram_get_insights` | Profile analytics: reach, profile views, follower growth, demographics |
 | `instagram_list_media` | List your posts / reels / carousels (paginated) |
 | `instagram_get_media` | One media object incl. carousel children |
 | `instagram_get_media_insights` | Per-post metrics: reach, saves, shares, reel plays / watch time |
@@ -127,7 +127,7 @@ Long-lived tokens expire after ~60 days. Run **`instagram_refresh_token`** perio
 | `instagram_reply_comment` | Reply to a comment, or post a new top-level comment |
 | `instagram_manage_comment` | Hide / unhide / delete a comment |
 | `instagram_hashtag_search` | Find content & creators by hashtag (id + top/recent media) |
-| `instagram_business_discovery` | Profile another public business/creator account by username |
+| `instagram_business_discovery` | Profile another public business/creator profile by username |
 | `instagram_publish` | Publish image / video / reel / story / carousel |
 | `instagram_get_publishing_limit` | Posts remaining in the 24h window (max 100) |
 | `instagram_refresh_token` | Extend the long-lived token (writes back to config) |
@@ -226,9 +226,9 @@ Metric names evolve with each Graph API version; `instagram_get_insights` passes
 
 **"Application does not have permission for this action"** — A required scope is missing. Regenerate the token with all scopes from section 2.
 
-**Hashtag search returns nothing / "limit" errors** — Instagram caps each account to ~30 unique hashtag lookups per rolling 7 days, and only returns public *business/creator* media. Re-using already-searched hashtags doesn't count against the limit.
+**Hashtag search returns nothing / "limit" errors** — Instagram caps each profile to ~30 unique hashtag lookups per rolling 7 days, and only returns public *business/creator* media. Re-using already-searched hashtags doesn't count against the limit.
 
-**Business discovery returns nothing** — The target must be a *public professional* account (not private/personal), and age-gated accounts are excluded.
+**Business discovery returns nothing** — The target must be a *public professional* profile (not private/personal), and age-gated profiles are excluded.
 
 **Publish fails to download media** — `image_url`/`video_url` must be publicly reachable over HTTPS with no auth. Test the URL in an incognito browser.
 

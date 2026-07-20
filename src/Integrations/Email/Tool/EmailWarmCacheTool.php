@@ -28,9 +28,9 @@ class EmailWarmCacheTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID',
+                    'description' => 'Email profile ID',
                 ],
                 'folder' => [
                     'type' => 'string',
@@ -45,25 +45,25 @@ class EmailWarmCacheTool implements ToolInterface
                     'description' => 'Maximum messages to warm. Default: 200',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        $profile = (string) ($arguments['profile'] ?? '');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         try {
             $result = $this->emailService->warmRecentCache(
-                accountId: $account,
+                profileId: $profile,
                 folder: (string) ($arguments['folder'] ?? 'INBOX'),
                 days: (int) ($arguments['days'] ?? 7),
                 limit: (int) ($arguments['limit'] ?? 200),

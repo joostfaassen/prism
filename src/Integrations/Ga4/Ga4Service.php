@@ -8,7 +8,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * Thin client for the Google Analytics 4 Data API (v1beta).
  *
  * Authentication uses a Google service account: we build a short-lived RS256
- * JWT signed with the account's private key, exchange it for an OAuth2 access
+ * JWT signed with the profile's private key, exchange it for an OAuth2 access
  * token, and send that as a Bearer token on every Data API request. Tokens are
  * cached in-memory for the lifetime of the request (same approach as
  * TransipService).
@@ -20,7 +20,7 @@ class Ga4Service
     private const DATA_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
     private const SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 
-    /** @var array<string, string> cached access tokens keyed by account key */
+    /** @var array<string, string> cached access tokens keyed by profile key */
     private array $tokenCache = [];
 
     public function __construct(
@@ -32,18 +32,18 @@ class Ga4Service
     /**
      * @return list<array{key: string, label: string, default_property_id: string|null}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'default_property_id' => $account->defaultPropertyId,
+                'label' => $profile->label,
+                'default_property_id' => $profile->defaultPropertyId,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -52,10 +52,10 @@ class Ga4Service
      *
      * @return array<string, mixed>
      */
-    public function getMetadata(?string $accountKey, ?string $propertyId): array
+    public function getMetadata(?string $profileKey, ?string $propertyId): array
     {
-        $property = $this->resolvePropertyId($accountKey, $propertyId);
-        $token = $this->getToken($this->resolveAccount($accountKey));
+        $property = $this->resolvePropertyId($profileKey, $propertyId);
+        $token = $this->getToken($this->resolveProfile($profileKey));
 
         return $this->request(
             'GET',
@@ -77,7 +77,7 @@ class Ga4Service
      * @return array<string, mixed>
      */
     public function runReport(
-        ?string $accountKey,
+        ?string $profileKey,
         ?string $propertyId,
         array $dimensions,
         array $metrics,
@@ -88,8 +88,8 @@ class Ga4Service
         ?int $limit = null,
         ?int $offset = null,
     ): array {
-        $property = $this->resolvePropertyId($accountKey, $propertyId);
-        $token = $this->getToken($this->resolveAccount($accountKey));
+        $property = $this->resolvePropertyId($profileKey, $propertyId);
+        $token = $this->getToken($this->resolveProfile($profileKey));
 
         $body = [
             'dimensions' => array_map(static fn(string $name): array => ['name' => $name], $dimensions),
@@ -121,19 +121,19 @@ class Ga4Service
         );
     }
 
-    private function resolvePropertyId(?string $accountKey, ?string $propertyId): string
+    private function resolvePropertyId(?string $profileKey, ?string $propertyId): string
     {
         if ($propertyId !== null && trim($propertyId) !== '') {
             return $this->normalizePropertyId($propertyId);
         }
 
-        $default = $this->resolveAccount($accountKey)->defaultPropertyId;
+        $default = $this->resolveProfile($profileKey)->defaultPropertyId;
         if ($default !== null && trim($default) !== '') {
             return $this->normalizePropertyId($default);
         }
 
         throw new \InvalidArgumentException(
-            'No property_id provided and no property_id configured for this GA4 account.',
+            'No property_id provided and no property_id configured for this GA4 profile.',
         );
     }
 
@@ -151,38 +151,38 @@ class Ga4Service
         return $propertyId;
     }
 
-    private function resolveAccount(?string $accountKey): Ga4AccountConfig
+    private function resolveProfile(?string $profileKey): Ga4ProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No GA4 accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No GA4 profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
-    private function getToken(Ga4AccountConfig $account): string
+    private function getToken(Ga4ProfileConfig $profile): string
     {
-        if (isset($this->tokenCache[$account->key])) {
-            return $this->tokenCache[$account->key];
+        if (isset($this->tokenCache[$profile->key])) {
+            return $this->tokenCache[$profile->key];
         }
 
-        if (trim($account->clientEmail) === '' || trim($account->privateKey) === '') {
+        if (trim($profile->clientEmail) === '' || trim($profile->privateKey) === '') {
             throw new \RuntimeException(sprintf(
-                'GA4 account "%s" is missing service-account credentials (client_email / private_key or credentials_file)',
-                $account->key,
+                'GA4 profile "%s" is missing service-account credentials (client_email / private_key or credentials_file)',
+                $profile->key,
             ));
         }
 
-        $privateKey = openssl_pkey_get_private($account->privateKey);
+        $privateKey = openssl_pkey_get_private($profile->privateKey);
         if ($privateKey === false) {
             throw new \RuntimeException(sprintf(
-                'GA4 account "%s" has an invalid service-account private key (%s)',
-                $account->key,
+                'GA4 profile "%s" has an invalid service-account private key (%s)',
+                $profile->key,
                 openssl_error_string() ?: 'unknown error',
             ));
         }
@@ -190,9 +190,9 @@ class Ga4Service
         $now = time();
         $header = ['alg' => 'RS256', 'typ' => 'JWT'];
         $claims = [
-            'iss' => $account->clientEmail,
+            'iss' => $profile->clientEmail,
             'scope' => self::SCOPE,
-            'aud' => $account->tokenUri,
+            'aud' => $profile->tokenUri,
             'iat' => $now,
             'exp' => $now + 3600,
         ];
@@ -210,7 +210,7 @@ class Ga4Service
 
         $assertion = $signingInput . '.' . $this->base64UrlEncode($signature);
 
-        $response = $this->httpClient->request('POST', $account->tokenUri, [
+        $response = $this->httpClient->request('POST', $profile->tokenUri, [
             'headers' => ['Content-Type' => 'application/x-www-form-urlencoded'],
             'body' => [
                 'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
@@ -234,7 +234,7 @@ class Ga4Service
             throw new \RuntimeException('GA4 token request did not return an access_token');
         }
 
-        return $this->tokenCache[$account->key] = $token;
+        return $this->tokenCache[$profile->key] = $token;
     }
 
     /**

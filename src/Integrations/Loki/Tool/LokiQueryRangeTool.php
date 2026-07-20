@@ -31,9 +31,9 @@ class LokiQueryRangeTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Loki account key. Optional if only one account is configured.',
+                    'description' => 'Loki profile key. Optional if only one profile is configured.',
                 ],
                 'query' => [
                     'type' => 'string',
@@ -65,7 +65,7 @@ class LokiQueryRangeTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'loki';
     }
@@ -82,7 +82,7 @@ class LokiQueryRangeTool implements ToolInterface
 
         try {
             $result = $this->lokiService->queryRange(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 query: $query,
                 start: isset($arguments['start']) ? (string) $arguments['start'] : null,
                 end: isset($arguments['end']) ? (string) $arguments['end'] : null,

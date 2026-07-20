@@ -32,20 +32,20 @@ class TmdbGetMovieTool implements ToolInterface
                     'type' => 'integer',
                     'description' => 'Numeric TMDb movie id',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key (from tmdb_list_accounts). Optional if only one account is configured.',
+                    'description' => 'TMDb profile key (from tmdb_list_profiles). Optional if only one profile is configured.',
                 ],
                 'language' => [
                     'type' => 'string',
-                    'description' => 'Optional TMDb language override (e.g. en-US, nl-NL). Defaults to the account language.',
+                    'description' => 'Optional TMDb language override (e.g. en-US, nl-NL). Defaults to the profile language.',
                 ],
             ],
             'required' => ['tmdb_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -62,7 +62,7 @@ class TmdbGetMovieTool implements ToolInterface
 
             $record = $this->tmdbService->getMovie(
                 tmdbId: (int) $arguments['tmdb_id'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 language: $arguments['language'] ?? null,
             );
 

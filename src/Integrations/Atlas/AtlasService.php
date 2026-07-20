@@ -16,18 +16,18 @@ class AtlasService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -173,22 +173,22 @@ class AtlasService
         string $accept = 'application/json',
     ): ResponseInterface
     {
-        $account = $this->configLoader->getAccount($atlas);
+        $profile = $this->configLoader->getProfile($atlas);
 
-        if ($account->baseUrl === '' || $account->apiKey === '') {
+        if ($profile->baseUrl === '' || $profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'Atlas account "%s" is missing base_url or api_key',
+                'Atlas profile "%s" is missing base_url or api_key',
                 $atlas,
             ));
         }
 
-        $url = $account->baseUrl . '/api';
+        $url = $profile->baseUrl . '/api';
         if ($endpoint !== '') {
             $url .= '/' . ltrim($endpoint, '/');
         }
 
         $options = [
-            'auth_basic' => ['ATLAS', $account->apiKey],
+            'auth_basic' => ['ATLAS', $profile->apiKey],
             'headers' => [
                 'Accept' => $accept,
             ],

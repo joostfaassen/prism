@@ -12,25 +12,25 @@ class CyansService
     ) {
     }
 
-    public function getDefaultUsername(?string $accountKey = null): string
+    public function getDefaultUsername(?string $profileKey = null): string
     {
-        return $this->resolveAccount($accountKey)->username;
+        return $this->resolveProfile($profileKey)->username;
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getUserState(string $username, ?string $accountKey = null): array
+    public function getUserState(string $username, ?string $profileKey = null): array
     {
-        return $this->request('GET', "/users/{$username}", accountKey: $accountKey);
+        return $this->request('GET', "/users/{$username}", profileKey: $profileKey);
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function getOpenTopics(string $username, ?string $accountKey = null): array
+    public function getOpenTopics(string $username, ?string $profileKey = null): array
     {
-        $state = $this->getUserState($username, $accountKey);
+        $state = $this->getUserState($username, $profileKey);
         $topics = $state['topics'] ?? [];
         $open = [];
 
@@ -52,17 +52,17 @@ class CyansService
     /**
      * @return array<string, mixed>
      */
-    public function getTopicDetails(string $topicId, ?string $accountKey = null): array
+    public function getTopicDetails(string $topicId, ?string $profileKey = null): array
     {
-        return $this->request('GET', "/topics/{$topicId}", accountKey: $accountKey);
+        return $this->request('GET', "/topics/{$topicId}", profileKey: $profileKey);
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function searchTopics(string $username, string $query, ?string $accountKey = null): array
+    public function searchTopics(string $username, string $query, ?string $profileKey = null): array
     {
-        $state = $this->getUserState($username, $accountKey);
+        $state = $this->getUserState($username, $profileKey);
         $topics = $state['topics'] ?? [];
         $queryLower = mb_strtolower($query);
         $results = [];
@@ -86,40 +86,40 @@ class CyansService
     /**
      * @return array{status: string, message: string}
      */
-    public function addPost(string $topicId, string $message, ?string $author = null, ?string $accountKey = null): array
+    public function addPost(string $topicId, string $message, ?string $author = null, ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $author ??= $account->username;
+        $profile = $this->resolveProfile($profileKey);
+        $author ??= $profile->username;
 
         return $this->request('POST', "/topics/{$topicId}/add-post", [
             'json' => [
                 'author' => $author,
                 'message' => $message,
             ],
-        ], $accountKey);
+        ], $profileKey);
     }
 
-    private function resolveAccount(?string $accountKey): CyansAccountConfig
+    private function resolveProfile(?string $profileKey): CyansProfileConfig
     {
-        if ($accountKey !== null) {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null) {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No Cyans accounts configured');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No Cyans profiles configured');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function request(string $method, string $path, array $options = [], ?string $accountKey = null): array
+    private function request(string $method, string $path, array $options = [], ?string $profileKey = null): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $parsed = parse_url($account->dsn);
+        $profile = $this->resolveProfile($profileKey);
+        $parsed = parse_url($profile->dsn);
 
         if ($parsed === false || !isset($parsed['host'])) {
             throw new \InvalidArgumentException('Invalid Cyans DSN: cannot parse URL');

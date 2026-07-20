@@ -28,9 +28,9 @@ class SlackGetMessagesWithThreadsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'channel' => [
                     'type' => 'string',
@@ -57,21 +57,21 @@ class SlackGetMessagesWithThreadsTool implements ToolInterface
                     'description' => 'Pagination cursor from previous call',
                 ],
             ],
-            'required' => ['account', 'channel'],
+            'required' => ['profile', 'channel'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = trim((string) ($arguments['account'] ?? ''));
+        $profileKey = trim((string) ($arguments['profile'] ?? ''));
         $channelId = trim((string) ($arguments['channel'] ?? ''));
-        if ($accountKey === '' || $channelId === '') {
-            return $this->error('Parameters "account" and "channel" are required');
+        if ($profileKey === '' || $channelId === '') {
+            return $this->error('Parameters "profile" and "channel" are required');
         }
 
         $messageLimit = max(1, min((int) ($arguments['message_limit'] ?? 20), 200));
@@ -82,7 +82,7 @@ class SlackGetMessagesWithThreadsTool implements ToolInterface
 
         try {
             $result = $this->slackService->getMessagesWithThreads(
-                accountKey: $accountKey,
+                profileKey: $profileKey,
                 channelId: $channelId,
                 messageLimit: $messageLimit,
                 threadLimit: $threadLimit,

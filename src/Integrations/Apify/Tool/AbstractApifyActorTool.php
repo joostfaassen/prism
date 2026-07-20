@@ -11,7 +11,7 @@ use App\Mcp\Tool\ToolInterface;
  * This is the easy on-ramp for exposing an Apify actor as an MCP tool: extend
  * this class, declare the actor id, the tool name/description and the input
  * properties, and (optionally) map the MCP arguments onto the actor's input
- * and reshape its output. All the plumbing — account resolution, the
+ * and reshape its output. All the plumbing — profile resolution, the
  * synchronous actor run, error handling and the MCP response envelope — is
  * handled here.
  *
@@ -68,7 +68,7 @@ use App\Mcp\Tool\ToolInterface;
  *        }
  *
  *   That's it — Symfony auto-discovers the tool via the ToolInterface tag and
- *   it becomes available on every server that has an `apify` account.
+ *   it becomes available on every server that has an `apify` profile.
  * ───────────────────────────────────────────────────────────────────────────
  */
 abstract class AbstractApifyActorTool implements ToolInterface
@@ -77,7 +77,7 @@ abstract class AbstractApifyActorTool implements ToolInterface
      * Argument keys that are handled by this base class and therefore never
      * forwarded as actor input by the default buildActorInput().
      */
-    private const RESERVED_ARGUMENTS = ['account', 'max_items', 'memory', 'timeout', 'build'];
+    private const RESERVED_ARGUMENTS = ['profile', 'max_items', 'memory', 'timeout', 'build'];
 
     public function __construct(
         protected readonly ApifyService $apifyService,
@@ -91,7 +91,7 @@ abstract class AbstractApifyActorTool implements ToolInterface
 
     /**
      * Tool-specific input properties (JSON Schema), excluding the shared
-     * `account` / run-option fields which are added automatically.
+     * `profile` / run-option fields which are added automatically.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -192,7 +192,7 @@ abstract class AbstractApifyActorTool implements ToolInterface
         return $items;
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'apify';
     }
@@ -200,9 +200,9 @@ abstract class AbstractApifyActorTool implements ToolInterface
     public function getInputSchema(): array
     {
         $properties = [
-            'account' => [
+            'profile' => [
                 'type' => 'string',
-                'description' => 'Apify account key (from apify_list_accounts). Optional if only one account is configured.',
+                'description' => 'Apify profile key (from apify_list_profiles). Optional if only one profile is configured.',
             ],
         ];
 
@@ -226,7 +226,7 @@ abstract class AbstractApifyActorTool implements ToolInterface
     {
         try {
             $items = $this->apifyService->runActorSync(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 actorId: $this->getActorId(),
                 input: $this->buildActorInput($arguments),
                 options: $this->getRunOptions($arguments),

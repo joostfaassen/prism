@@ -20,7 +20,7 @@ class TwilioListCallsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List calls for a Twilio account. Supports filtering by status, phone numbers, and date range. Returns call metadata including SID, direction, duration, and timestamps.';
+        return 'List calls for a Twilio profile. Supports filtering by status, phone numbers, and date range. Returns call metadata including SID, direction, duration, and timestamps.';
     }
 
     public function getInputSchema(): array
@@ -28,9 +28,9 @@ class TwilioListCallsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Twilio account key from configuration',
+                    'description' => 'Twilio profile key from configuration',
                 ],
                 'status' => [
                     'type' => 'string',
@@ -58,21 +58,21 @@ class TwilioListCallsTool implements ToolInterface
                     'description' => 'Max number of calls to return (default 20, max 1000)',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'twilio';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Missing required parameter: account']],
+                'content' => [['type' => 'text', 'text' => 'Missing required parameter: profile']],
                 'isError' => true,
             ];
         }
@@ -87,7 +87,7 @@ class TwilioListCallsTool implements ToolInterface
                 'limit' => $arguments['limit'] ?? null,
             ], fn($v) => $v !== null);
 
-            $result = $this->twilioService->listCalls($accountKey, $filters);
+            $result = $this->twilioService->listCalls($profileKey, $filters);
 
             $calls = array_map(fn(array $call) => [
                 'sid' => $call['sid'],

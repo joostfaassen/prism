@@ -14,15 +14,15 @@ class FreescoutConfigLoader
     }
 
     /**
-     * @return array<string, FreescoutAccountConfig>
+     * @return array<string, FreescoutProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('freescout', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('freescout', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new FreescoutAccountConfig(
+            $profiles[$key] = new FreescoutProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: rtrim($cfg['base_url'] ?? '', '/'),
@@ -30,21 +30,21 @@ class FreescoutConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): FreescoutAccountConfig
+    public function getProfile(string $key): FreescoutProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Freescout account: "%s". Available: %s',
+                'Unknown Freescout profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

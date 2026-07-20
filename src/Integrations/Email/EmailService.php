@@ -23,11 +23,11 @@ class EmailService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
         $result = [];
-        foreach ($this->configLoader->getAccounts() as $account) {
-            $result[] = $this->imap->listAccountSummary($account);
+        foreach ($this->configLoader->getProfiles() as $profile) {
+            $result[] = $this->imap->listAccountSummary($profile);
         }
 
         return $result;
@@ -36,10 +36,10 @@ class EmailService
     /**
      * @return list<array{name: string, delimiter: string, total: int, unseen: int}>
      */
-    public function listFolders(string $accountId, string $pattern = '*'): array
+    public function listFolders(string $profileId, string $pattern = '*'): array
     {
         return $this->imap->listFolders(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $pattern,
         );
     }
@@ -47,10 +47,10 @@ class EmailService
     /**
      * @return array{folder: string, created: true}
      */
-    public function createFolder(string $accountId, string $folder): array
+    public function createFolder(string $profileId, string $folder): array
     {
         return $this->imap->createFolder(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
         );
     }
@@ -59,14 +59,14 @@ class EmailService
      * @return array<string, mixed>
      */
     public function listLabels(
-        string $accountId,
+        string $profileId,
         string $folder = 'INBOX',
         bool $includeFolders = true,
         bool $includeKeywords = true,
         int $messageLimit = 1000,
     ): array {
         return $this->imap->listLabels(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $includeFolders,
             $includeKeywords,
@@ -80,12 +80,12 @@ class EmailService
      * @return array<string, mixed>
      */
     public function getMessageLabels(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uid,
     ): array {
         return $this->imap->getMessageLabels(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $uid,
         );
@@ -95,7 +95,7 @@ class EmailService
      * @return array{total: int, offset: int, messages: list<array<string, mixed>>}
      */
     public function search(
-        string $accountId,
+        string $profileId,
         string $folder = 'INBOX',
         ?string $from = null,
         ?string $to = null,
@@ -110,7 +110,7 @@ class EmailService
         bool $includeDeleted = false,
     ): array {
         return $this->imap->search(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $from,
             $to,
@@ -130,14 +130,14 @@ class EmailService
      * @return array<string, mixed>
      */
     public function getMessage(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uid,
         bool $includeHtml = false,
         int $maxBodyChars = 8000,
     ): array {
         return $this->imap->getMessage(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $uid,
             $includeHtml,
@@ -149,10 +149,10 @@ class EmailService
      * Fetch the complete, unparsed RFC822/MIME source for a single message,
      * e.g. so clients can extract attachments or inspect raw headers.
      */
-    public function getRawMessage(string $accountId, string $folder, int $uid): string
+    public function getRawMessage(string $profileId, string $folder, int $uid): string
     {
         return $this->imap->getRawMessage(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $uid,
         );
@@ -163,14 +163,14 @@ class EmailService
      * @return list<array<string, mixed>>
      */
     public function getMessages(
-        string $accountId,
+        string $profileId,
         string $folder,
         array $uids,
         bool $includeHtml = false,
         int $maxBodyChars = 8000,
     ): array {
         return $this->imap->getMessages(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $uids,
             $includeHtml,
@@ -183,7 +183,7 @@ class EmailService
      * @return array{queries: list<array{folder: string, total: int, offset: int, messages: list<array<string,mixed>>}>}
      */
     public function multiSearch(
-        string $accountId,
+        string $profileId,
         array $folders,
         ?string $from = null,
         ?string $to = null,
@@ -198,7 +198,7 @@ class EmailService
         bool $includeDeleted = false,
     ): array {
         return $this->imap->multiSearch(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folders,
             $from,
             $to,
@@ -218,14 +218,14 @@ class EmailService
      * @return array{folder: string, warmed: int, inspected: int, cached: int}
      */
     public function warmRecentCache(
-        string $accountId,
+        string $profileId,
         string $folder = 'INBOX',
         int $days = 7,
         int $limit = 200,
         ?callable $onProgress = null,
     ): array {
         return $this->imap->warmRecentCache(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $days,
             $limit,
@@ -236,10 +236,10 @@ class EmailService
     /**
      * @return array<string, mixed>
      */
-    public function moveMessage(string $accountId, string $fromFolder, int $uid, string $toFolder): array
+    public function moveMessage(string $profileId, string $fromFolder, int $uid, string $toFolder): array
     {
         return $this->imap->moveMessage(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $fromFolder,
             $uid,
             $toFolder,
@@ -254,7 +254,7 @@ class EmailService
      * @return array<string, mixed>
      */
     public function updateMessageFlags(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uid,
         array $standardFlags,
@@ -262,7 +262,7 @@ class EmailService
         array $removeLabels,
     ): array {
         return $this->imap->updateMessageFlags(
-            $this->configLoader->getAccount($accountId),
+            $this->configLoader->getProfile($profileId),
             $folder,
             $uid,
             $standardFlags,
@@ -283,7 +283,7 @@ class EmailService
      * @return array<string, mixed>
      */
     public function sendMessage(
-        string $accountId,
+        string $profileId,
         array $to,
         array $cc,
         array $bcc,
@@ -295,16 +295,16 @@ class EmailService
         bool $saveToSent,
         ?string $sentFolderOverride,
     ): array {
-        $account = $this->configLoader->getAccount($accountId);
+        $profile = $this->configLoader->getProfile($profileId);
 
-        if (!$account->hasSmtp()) {
+        if (!$profile->hasSmtp()) {
             throw new \RuntimeException(sprintf(
-                'Email account "%s" has no SMTP configured. Add an `smtp:` block to the account in prism.config.yaml.',
-                $accountId,
+                'Email profile "%s" has no SMTP configured. Add an `smtp:` block to the profile in prism.config.yaml.',
+                $profileId,
             ));
         }
 
-        $resolved = $this->resolveReply($account, $replyTo, $to, $cc);
+        $resolved = $this->resolveReply($profile, $replyTo, $to, $cc);
         $to = $resolved['to'];
         $cc = $resolved['cc'];
         $context = $resolved['context'];
@@ -314,7 +314,7 @@ class EmailService
         }
 
         $composed = $this->composer->compose(
-            $account,
+            $profile,
             $to,
             $cc,
             $bcc,
@@ -333,15 +333,15 @@ class EmailService
             $composed->email->getHeaders()->get('Message-ID')?->getBodyAsString() ?? '',
         );
 
-        $this->smtp->send($account, $composed->email);
+        $this->smtp->send($profile, $composed->email);
 
-        $sentFolder = $sentFolderOverride ?? $account->sentFolder;
+        $sentFolder = $sentFolderOverride ?? $profile->sentFolder;
         $savedToSent = false;
         $warning = null;
 
         if ($saveToSent) {
             try {
-                $this->imap->appendToFolder($account, $sentFolder, $rawMessage, '\\Seen');
+                $this->imap->appendToFolder($profile, $sentFolder, $rawMessage, '\\Seen');
                 $savedToSent = true;
             } catch (\Throwable $e) {
                 $warning = 'Message was sent but could not be saved to Sent folder: ' . $e->getMessage();
@@ -379,7 +379,7 @@ class EmailService
      * @return array<string, mixed>
      */
     public function createDraft(
-        string $accountId,
+        string $profileId,
         array $to,
         array $cc,
         array $bcc,
@@ -390,15 +390,15 @@ class EmailService
         ?array $replyTo,
         ?string $draftsFolderOverride,
     ): array {
-        $account = $this->configLoader->getAccount($accountId);
+        $profile = $this->configLoader->getProfile($profileId);
 
-        $resolved = $this->resolveReply($account, $replyTo, $to, $cc);
+        $resolved = $this->resolveReply($profile, $replyTo, $to, $cc);
         $to = $resolved['to'];
         $cc = $resolved['cc'];
         $context = $resolved['context'];
 
         $composed = $this->composer->compose(
-            $account,
+            $profile,
             $to,
             $cc,
             $bcc,
@@ -414,9 +414,9 @@ class EmailService
         );
         $rawMessage = $this->materializeDraft($composed->email);
 
-        $draftsFolder = $draftsFolderOverride ?? $account->draftsFolder;
+        $draftsFolder = $draftsFolderOverride ?? $profile->draftsFolder;
         $uid = $this->imap->appendToFolder(
-            $account,
+            $profile,
             $draftsFolder,
             $rawMessage,
             '\\Seen \\Draft',
@@ -451,16 +451,16 @@ class EmailService
      * @return array<string, mixed>
      */
     public function deleteDraft(
-        string $accountId,
+        string $profileId,
         int $uid,
         ?string $draftsFolderOverride,
         ?string $expectedMessageId,
     ): array {
-        $account = $this->configLoader->getAccount($accountId);
-        $draftsFolder = $draftsFolderOverride ?? $account->draftsFolder;
+        $profile = $this->configLoader->getProfile($profileId);
+        $draftsFolder = $draftsFolderOverride ?? $profile->draftsFolder;
 
         $deleted = $this->imap->deleteMessage(
-            $account,
+            $profile,
             $draftsFolder,
             $uid,
             requireDraftFlag: true,
@@ -483,7 +483,7 @@ class EmailService
      *
      * @return array{context: ?ReplyContext, to: list<string>, cc: list<string>}
      */
-    private function resolveReply(EmailAccountConfig $account, ?array $replyTo, array $to, array $cc): array
+    private function resolveReply(EmailProfileConfig $profile, ?array $replyTo, array $to, array $cc): array
     {
         if ($replyTo === null) {
             return ['context' => null, 'to' => $to, 'cc' => $cc];
@@ -497,14 +497,14 @@ class EmailService
             throw new \InvalidArgumentException('reply_to.uid must be a positive integer');
         }
 
-        $original = $this->imap->getMessageForReply($account, $folder, $uid);
+        $original = $this->imap->getMessageForReply($profile, $folder, $uid);
         $context = ReplyContext::fromImapMessage($original);
 
         if ($to === [] && $cc === []) {
             $extraReplyTo = $original['reply_to'] ?? [];
             $autoRecipients = $replyAll
-                ? $this->composer->buildReplyAllRecipients($account, $context, $extraReplyTo)
-                : ['to' => $this->pickPrimaryReplyAddress($context, $extraReplyTo, $account), 'cc' => []];
+                ? $this->composer->buildReplyAllRecipients($profile, $context, $extraReplyTo)
+                : ['to' => $this->pickPrimaryReplyAddress($context, $extraReplyTo, $profile), 'cc' => []];
 
             $to = $autoRecipients['to'];
             $cc = $autoRecipients['cc'];
@@ -534,9 +534,9 @@ class EmailService
      * @param list<array{name: string|null, address: string}> $extraReplyTo
      * @return list<string>
      */
-    private function pickPrimaryReplyAddress(ReplyContext $context, array $extraReplyTo, EmailAccountConfig $account): array
+    private function pickPrimaryReplyAddress(ReplyContext $context, array $extraReplyTo, EmailProfileConfig $profile): array
     {
-        $self = strtolower($account->getFromAddress());
+        $self = strtolower($profile->getFromAddress());
 
         $candidates = $extraReplyTo !== [] ? $extraReplyTo : [$context->originalFrom];
 

@@ -30,9 +30,9 @@ class EmailGetRawMessageTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID',
+                    'description' => 'Email profile ID',
                 ],
                 'folder' => [
                     'type' => 'string',
@@ -49,24 +49,24 @@ class EmailGetRawMessageTool implements ToolInterface
                         . 'UTF-8 and base64 otherwise; "raw" always returns text; "base64" always base64-encodes.',
                 ],
             ],
-            'required' => ['account', 'folder', 'uid'],
+            'required' => ['profile', 'folder', 'uid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $folder = (string) ($arguments['folder'] ?? '');
         $uid = $arguments['uid'] ?? null;
         $encoding = (string) ($arguments['encoding'] ?? 'auto');
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($folder === '') {
@@ -83,7 +83,7 @@ class EmailGetRawMessageTool implements ToolInterface
 
         try {
             $raw = $this->emailService->getRawMessage(
-                accountId: $account,
+                profileId: $profile,
                 folder: $folder,
                 uid: $uid,
             );
@@ -95,7 +95,7 @@ class EmailGetRawMessageTool implements ToolInterface
                 'content' => [[
                     'type' => 'text',
                     'text' => json_encode([
-                        'account' => $account,
+                        'profile' => $profile,
                         'folder' => $folder,
                         'uid' => $uid,
                         'size_bytes' => strlen($raw),

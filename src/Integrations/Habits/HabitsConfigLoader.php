@@ -13,15 +13,15 @@ class HabitsConfigLoader
     ) {
     }
 
-    /** @return array<string, HabitsAccountConfig> */
-    public function getAccounts(): array
+    /** @return array<string, HabitsProfileConfig> */
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('habits', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('habits', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $token = $cfg['rest_ingest_token'] ?? $cfg['rest_token'] ?? null;
-            $accounts[$key] = new HabitsAccountConfig(
+            $profiles[$key] = new HabitsProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 timezone: $cfg['timezone'] ?? 'UTC',
@@ -29,28 +29,28 @@ class HabitsConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): HabitsAccountConfig
+    public function getProfile(string $key): HabitsProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Habits account: "%s". Available: %s',
+                'Unknown Habits profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 
     public function getTimezone(): \DateTimeZone
     {
-        $accounts = $this->getAccounts();
-        $first = reset($accounts);
+        $profiles = $this->getProfiles();
+        $first = reset($profiles);
 
         return new \DateTimeZone($first ? $first->timezone : 'UTC');
     }

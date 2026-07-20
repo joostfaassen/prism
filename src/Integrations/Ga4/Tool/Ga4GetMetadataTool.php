@@ -28,20 +28,20 @@ class Ga4GetMetadataTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'GA4 account key. Optional if only one account is configured.',
+                    'description' => 'GA4 profile key. Optional if only one profile is configured.',
                 ],
                 'property_id' => [
                     'type' => 'string',
-                    'description' => 'GA4 property id (numeric, e.g. "365738680"). Optional if a default property_id is configured for the account.',
+                    'description' => 'GA4 property id (numeric, e.g. "365738680"). Optional if a default property_id is configured for the profile.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'ga4';
     }
@@ -50,7 +50,7 @@ class Ga4GetMetadataTool implements ToolInterface
     {
         try {
             $metadata = $this->ga4Service->getMetadata(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 propertyId: isset($arguments['property_id']) ? (string) $arguments['property_id'] : null,
             );
 

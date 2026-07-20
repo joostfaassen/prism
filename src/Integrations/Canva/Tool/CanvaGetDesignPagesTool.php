@@ -28,9 +28,9 @@ class CanvaGetDesignPagesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Canva account key (optional if only one account is configured).',
+                    'description' => 'Canva profile key (optional if only one profile is configured).',
                 ],
                 'design_id' => [
                     'type' => 'string',
@@ -49,7 +49,7 @@ class CanvaGetDesignPagesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'canva';
     }
@@ -66,7 +66,7 @@ class CanvaGetDesignPagesTool implements ToolInterface
 
         try {
             $result = $this->canvaService->getDesignPages(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 designId: $designId,
                 offset: isset($arguments['offset']) ? (int) $arguments['offset'] : null,
                 limit: isset($arguments['limit']) ? (int) $arguments['limit'] : null,

@@ -20,7 +20,7 @@ class TmdbSetWatchlistTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Add or remove a movie or TV series on your TMDb watchlist (wishlist / want-to-watch). Requires session_id on the account (see tmdb_create_session).';
+        return 'Add or remove a movie or TV series on your TMDb watchlist (wishlist / want-to-watch). Requires session_id on the profile (see tmdb_create_session).';
     }
 
     public function getInputSchema(): array
@@ -41,16 +41,16 @@ class TmdbSetWatchlistTool implements ToolInterface
                     'type' => 'boolean',
                     'description' => 'true to add, false to remove',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key. Optional if only one account is configured.',
+                    'description' => 'TMDb profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['tmdb_id', 'media_type', 'watchlist'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -69,7 +69,7 @@ class TmdbSetWatchlistTool implements ToolInterface
                 mediaType: (string) $arguments['media_type'],
                 tmdbId: (int) $arguments['tmdb_id'],
                 watchlist: (bool) $arguments['watchlist'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

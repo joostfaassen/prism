@@ -28,9 +28,9 @@ class SendGridGetGlobalStatsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'SendGrid account key. Optional if only one account is configured.',
+                    'description' => 'SendGrid profile key. Optional if only one profile is configured.',
                 ],
                 'start_date' => [
                     'type' => 'string',
@@ -58,7 +58,7 @@ class SendGridGetGlobalStatsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'sendgrid';
     }
@@ -76,7 +76,7 @@ class SendGridGetGlobalStatsTool implements ToolInterface
 
         try {
             $stats = $this->sendGridService->getGlobalStats(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 startDate: $startDate,
                 endDate: $arguments['end_date'] ?? null,
                 aggregatedBy: $arguments['aggregated_by'] ?? null,

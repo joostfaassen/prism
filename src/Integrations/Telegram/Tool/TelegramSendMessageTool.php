@@ -20,8 +20,8 @@ class TelegramSendMessageTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Send a text message via a Telegram bot. Requires chat_id (or a default_chat_id on the account). '
-            . 'If the account has allowed_chat_ids configured, only those chat ids are accepted. '
+        return 'Send a text message via a Telegram bot. Requires chat_id (or a default_chat_id on the profile). '
+            . 'If the profile has allowed_chat_ids configured, only those chat ids are accepted. '
             . 'To discover chat_ids: have someone message the bot, then call telegram_get_updates. '
             . 'Supports optional parse_mode (MarkdownV2, HTML, Markdown), reply_to_message_id, and silent send.';
     }
@@ -31,13 +31,13 @@ class TelegramSendMessageTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Telegram account key. Optional if only one account is configured.',
+                    'description' => 'Telegram profile key. Optional if only one profile is configured.',
                 ],
                 'chat_id' => [
                     'type' => 'string',
-                    'description' => 'Target chat id (user, group, or channel). Optional if the account has default_chat_id.',
+                    'description' => 'Target chat id (user, group, or channel). Optional if the profile has default_chat_id.',
                 ],
                 'text' => [
                     'type' => 'string',
@@ -65,7 +65,7 @@ class TelegramSendMessageTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'telegram';
     }
@@ -83,7 +83,7 @@ class TelegramSendMessageTool implements ToolInterface
 
         try {
             $result = $this->telegramService->sendMessage(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 chatId: isset($arguments['chat_id']) ? (string) $arguments['chat_id'] : null,
                 text: $text,
                 parseMode: isset($arguments['parse_mode']) ? (string) $arguments['parse_mode'] : null,

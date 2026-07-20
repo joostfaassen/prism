@@ -37,9 +37,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Freescout account key',
+                    'description' => 'Freescout profile key',
                 ],
                 'conversation_id' => [
                     'type' => 'integer',
@@ -55,23 +55,23 @@ DESC;
                     'description' => 'Include internal notes in the output (default: false)',
                 ],
             ],
-            'required' => ['account', 'conversation_id'],
+            'required' => ['profile', 'conversation_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'freescout';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $conversationId = isset($arguments['conversation_id']) ? (int) $arguments['conversation_id'] : 0;
 
-        if ($accountKey === '' || $conversationId === 0) {
+        if ($profileKey === '' || $conversationId === 0) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "conversation_id" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile" and "conversation_id" are required']],
                 'isError' => true,
             ];
         }
@@ -81,17 +81,17 @@ DESC;
 
         try {
             $result = match ($format) {
-                'text' => $this->freescoutService->getConversationText($accountKey, $conversationId, $includeNotes),
+                'text' => $this->freescoutService->getConversationText($profileKey, $conversationId, $includeNotes),
                 'convo' => json_encode(
-                    $this->freescoutService->getConversationConvo($accountKey, $conversationId),
+                    $this->freescoutService->getConversationConvo($profileKey, $conversationId),
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 ),
                 'full' => json_encode(
-                    $this->freescoutService->getConversationRaw($accountKey, $conversationId),
+                    $this->freescoutService->getConversationRaw($profileKey, $conversationId),
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 ),
                 default => json_encode(
-                    $this->freescoutService->getConversationSimple($accountKey, $conversationId),
+                    $this->freescoutService->getConversationSimple($profileKey, $conversationId),
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 ),
             };

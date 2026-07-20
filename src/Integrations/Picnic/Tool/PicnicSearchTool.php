@@ -39,16 +39,16 @@ class PicnicSearchTool implements ToolInterface
                     'minimum' => 1,
                     'maximum' => 50,
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['query'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -57,7 +57,7 @@ class PicnicSearchTool implements ToolInterface
     {
         $query = trim((string) ($arguments['query'] ?? ''));
         $limit = (int) ($arguments['limit'] ?? 20);
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($query === '') {
             return [
@@ -67,7 +67,7 @@ class PicnicSearchTool implements ToolInterface
         }
 
         try {
-            $result = $this->picnicService->searchProducts($query, $account, $limit);
+            $result = $this->picnicService->searchProducts($query, $profile, $limit);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

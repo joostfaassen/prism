@@ -32,16 +32,16 @@ class TransipGetDomainTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'The domain name to inspect, e.g. "example.com".',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TransIP account key. Optional when only one account is configured.',
+                    'description' => 'TransIP profile key. Optional when only one profile is configured.',
                 ],
             ],
             'required' => ['domain'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'transip';
     }
@@ -57,7 +57,7 @@ class TransipGetDomainTool implements ToolInterface
         }
 
         try {
-            $info = $this->transipService->getDomain($domain, $arguments['account'] ?? null);
+            $info = $this->transipService->getDomain($domain, $arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

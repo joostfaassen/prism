@@ -29,9 +29,9 @@ class PrometheusListRulesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
                 'type' => [
                     'type' => 'string',
@@ -43,7 +43,7 @@ class PrometheusListRulesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -52,7 +52,7 @@ class PrometheusListRulesTool implements ToolInterface
     {
         try {
             $result = $this->prometheusService->listRules(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 type: $arguments['type'] ?? null,
             );
 

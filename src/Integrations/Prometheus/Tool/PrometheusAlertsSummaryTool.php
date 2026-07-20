@@ -30,16 +30,16 @@ class PrometheusAlertsSummaryTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -47,7 +47,7 @@ class PrometheusAlertsSummaryTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->prometheusService->listAlerts($arguments['account'] ?? null);
+            $result = $this->prometheusService->listAlerts($arguments['profile'] ?? null);
             $alerts = $result['data']['alerts'] ?? [];
             if (!is_array($alerts)) {
                 $alerts = [];

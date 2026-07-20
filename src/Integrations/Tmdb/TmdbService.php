@@ -25,19 +25,19 @@ class TmdbService
     /**
      * @return list<array{key: string, label: string, language: string, session_configured: bool}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'language' => $account->language,
-                'session_configured' => $account->hasSession(),
+                'label' => $profile->label,
+                'language' => $profile->language,
+                'session_configured' => $profile->hasSession(),
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -46,7 +46,7 @@ class TmdbService
      *
      * @return array{session_id: string, account_id: int, username: string}
      */
-    public function createSession(string $username, string $password, ?string $accountKey = null): array
+    public function createSession(string $username, string $password, ?string $profileKey = null): array
     {
         $username = trim($username);
         $password = trim($password);
@@ -54,19 +54,19 @@ class TmdbService
             throw new \InvalidArgumentException('username and password are required');
         }
 
-        $tokenRes = $this->get($accountKey, '/authentication/token/new');
+        $tokenRes = $this->get($profileKey, '/authentication/token/new');
         $requestToken = (string) ($tokenRes['request_token'] ?? '');
         if ($requestToken === '') {
             throw new \RuntimeException('TMDb did not return a request_token');
         }
 
-        $this->post($accountKey, '/authentication/token/validate_with_login', [
+        $this->post($profileKey, '/authentication/token/validate_with_login', [
             'username' => $username,
             'password' => $password,
             'request_token' => $requestToken,
         ]);
 
-        $sessionRes = $this->post($accountKey, '/authentication/session/new', [
+        $sessionRes = $this->post($profileKey, '/authentication/session/new', [
             'request_token' => $requestToken,
         ]);
         $sessionId = (string) ($sessionRes['session_id'] ?? '');
@@ -74,21 +74,21 @@ class TmdbService
             throw new \RuntimeException('TMDb did not return a session_id');
         }
 
-        $account = $this->resolveAccount($accountKey);
-        $details = $this->get($accountKey, '/account', ['session_id' => $sessionId]);
-        $accountId = (int) ($details['id'] ?? 0);
-        if ($accountId <= 0) {
-            throw new \RuntimeException('TMDb did not return an account id for the new session');
+        $profile = $this->resolveProfile($profileKey);
+        $details = $this->get($profileKey, '/profile', ['session_id' => $sessionId]);
+        $profileId = (int) ($details['id'] ?? 0);
+        if ($profileId <= 0) {
+            throw new \RuntimeException('TMDb did not return a profile id for the new session');
         }
 
         return [
             'session_id' => $sessionId,
-            'account_id' => $accountId,
+            'account_id' => $profileId,
             'username' => (string) ($details['username'] ?? $username),
             'hint' => sprintf(
-                'Add session_id (and optional account_id: %d) under the "%s" tmdb account in your prism.*.yaml, then restart/reload.',
-                $accountId,
-                $account->key,
+                'Add session_id (and optional account_id: %d) under the "%s" tmdb profile in your prism.*.yaml, then restart/reload.',
+                $profileId,
+                $profile->key,
             ),
         ];
     }
@@ -102,14 +102,14 @@ class TmdbService
         string $mediaType,
         int $tmdbId,
         float $value,
-        ?string $accountKey = null,
+        ?string $profileKey = null,
     ): array {
         $mediaType = $this->normalizeMediaType($mediaType);
         $this->assertValidRating($value);
-        $this->requireSessionAccount($accountKey);
+        $this->requireSessionAccount($profileKey);
 
         $path = sprintf('/%s/%d/rating', $mediaType, $tmdbId);
-        $status = $this->post($accountKey, $path, ['value' => $value], withSession: true);
+        $status = $this->post($profileKey, $path, ['value' => $value], withSession: true);
 
         return [
             'ok' => true,
@@ -123,13 +123,13 @@ class TmdbService
     /**
      * @return array<string, mixed>
      */
-    public function deleteRating(string $mediaType, int $tmdbId, ?string $accountKey = null): array
+    public function deleteRating(string $mediaType, int $tmdbId, ?string $profileKey = null): array
     {
         $mediaType = $this->normalizeMediaType($mediaType);
-        $this->requireSessionAccount($accountKey);
+        $this->requireSessionAccount($profileKey);
 
         $path = sprintf('/%s/%d/rating', $mediaType, $tmdbId);
-        $status = $this->delete($accountKey, $path, withSession: true);
+        $status = $this->delete($profileKey, $path, withSession: true);
 
         return [
             'ok' => true,
@@ -142,22 +142,22 @@ class TmdbService
     /**
      * @return array{media_type: string, page: int, total_pages: int, total_results: int, results: list<array<string, mixed>>}
      */
-    public function listRated(string $mediaType = 'movie', int $page = 1, ?string $accountKey = null): array
+    public function listRated(string $mediaType = 'movie', int $page = 1, ?string $profileKey = null): array
     {
         $mediaType = $this->normalizeMediaType($mediaType);
-        $account = $this->requireSessionAccount($accountKey);
-        $accountId = $this->resolveTmdbAccountId($accountKey);
+        $profile = $this->requireSessionAccount($profileKey);
+        $profileId = $this->resolveTmdbAccountId($profileKey);
         $page = max(1, $page);
 
         $path = sprintf(
-            '/account/%d/rated/%s',
-            $accountId,
+            '/profile/%d/rated/%s',
+            $profileId,
             $mediaType === 'tv' ? 'tv' : 'movies',
         );
-        $res = $this->get($accountKey, $path, [
-            'session_id' => $account->sessionId,
+        $res = $this->get($profileKey, $path, [
+            'session_id' => $profile->sessionId,
             'page' => $page,
-            'language' => $account->language,
+            'language' => $profile->language,
         ]);
 
         $results = [];
@@ -180,12 +180,12 @@ class TmdbService
     /**
      * @return array<string, mixed>
      */
-    public function setWatchlist(string $mediaType, int $tmdbId, bool $watchlist, ?string $accountKey = null): array
+    public function setWatchlist(string $mediaType, int $tmdbId, bool $watchlist, ?string $profileKey = null): array
     {
         $mediaType = $this->normalizeMediaType($mediaType);
-        $accountId = $this->resolveTmdbAccountId($accountKey);
+        $profileId = $this->resolveTmdbAccountId($profileKey);
 
-        $status = $this->post($accountKey, '/account/' . $accountId . '/watchlist', [
+        $status = $this->post($profileKey, '/profile/' . $profileId . '/watchlist', [
             'media_type' => $mediaType,
             'media_id' => $tmdbId,
             'watchlist' => $watchlist,
@@ -203,22 +203,22 @@ class TmdbService
     /**
      * @return array{media_type: string, page: int, total_pages: int, total_results: int, results: list<array<string, mixed>>}
      */
-    public function listWatchlist(string $mediaType = 'movie', int $page = 1, ?string $accountKey = null): array
+    public function listWatchlist(string $mediaType = 'movie', int $page = 1, ?string $profileKey = null): array
     {
         $mediaType = $this->normalizeMediaType($mediaType);
-        $account = $this->requireSessionAccount($accountKey);
-        $accountId = $this->resolveTmdbAccountId($accountKey);
+        $profile = $this->requireSessionAccount($profileKey);
+        $profileId = $this->resolveTmdbAccountId($profileKey);
         $page = max(1, $page);
 
         $path = sprintf(
-            '/account/%d/watchlist/%s',
-            $accountId,
+            '/profile/%d/watchlist/%s',
+            $profileId,
             $mediaType === 'tv' ? 'tv' : 'movies',
         );
-        $res = $this->get($accountKey, $path, [
-            'session_id' => $account->sessionId,
+        $res = $this->get($profileKey, $path, [
+            'session_id' => $profile->sessionId,
             'page' => $page,
-            'language' => $account->language,
+            'language' => $profile->language,
         ]);
 
         $results = [];
@@ -243,23 +243,23 @@ class TmdbService
      *
      * @return array<string, mixed>
      */
-    public function findByImdb(string $imdbId, ?string $accountKey = null, ?string $language = null): array
+    public function findByImdb(string $imdbId, ?string $profileKey = null, ?string $language = null): array
     {
         $imdbId = trim($imdbId);
         if ($imdbId === '' || !preg_match('/^tt\d+$/', $imdbId)) {
             throw new \InvalidArgumentException('imdb_id must look like tt2798920');
         }
 
-        $res = $this->get($accountKey, '/find/' . rawurlencode($imdbId), [
+        $res = $this->get($profileKey, '/find/' . rawurlencode($imdbId), [
             'external_source' => 'imdb_id',
             'language' => $language,
         ]);
 
         if (!empty($res['movie_results'][0]['id'])) {
-            return $this->getMovie((int) $res['movie_results'][0]['id'], $accountKey, $language);
+            return $this->getMovie((int) $res['movie_results'][0]['id'], $profileKey, $language);
         }
         if (!empty($res['tv_results'][0]['id'])) {
-            return $this->getTv((int) $res['tv_results'][0]['id'], $accountKey, $language);
+            return $this->getTv((int) $res['tv_results'][0]['id'], $profileKey, $language);
         }
 
         throw new \RuntimeException(sprintf('No TMDb match for IMDb id "%s"', $imdbId));
@@ -274,7 +274,7 @@ class TmdbService
         string $query,
         ?int $year = null,
         string $kind = 'movie',
-        ?string $accountKey = null,
+        ?string $profileKey = null,
         ?string $language = null,
     ): array {
         $query = trim($query);
@@ -292,7 +292,7 @@ class TmdbService
             $params[$kind === 'tv' ? 'first_air_date_year' : 'year'] = $year;
         }
 
-        $res = $this->get($accountKey, $kind === 'tv' ? '/search/tv' : '/search/movie', $params);
+        $res = $this->get($profileKey, $kind === 'tv' ? '/search/tv' : '/search/movie', $params);
         $rawHits = is_array($res['results'] ?? null) ? $res['results'] : [];
         if ($rawHits === []) {
             throw new \RuntimeException(sprintf('No TMDb %s results for "%s"', $kind, $query));
@@ -315,8 +315,8 @@ class TmdbService
 
         $topId = (int) $rawHits[0]['id'];
         $result = $kind === 'tv'
-            ? $this->getTv($topId, $accountKey, $language)
-            : $this->getMovie($topId, $accountKey, $language);
+            ? $this->getTv($topId, $profileKey, $language)
+            : $this->getMovie($topId, $profileKey, $language);
 
         return [
             'result' => $result,
@@ -327,9 +327,9 @@ class TmdbService
     /**
      * @return array<string, mixed>
      */
-    public function getMovie(int $tmdbId, ?string $accountKey = null, ?string $language = null): array
+    public function getMovie(int $tmdbId, ?string $profileKey = null, ?string $language = null): array
     {
-        $d = $this->get($accountKey, '/movie/' . $tmdbId, [
+        $d = $this->get($profileKey, '/movie/' . $tmdbId, [
             'append_to_response' => 'credits',
             'language' => $language,
         ]);
@@ -349,9 +349,9 @@ class TmdbService
     /**
      * @return array<string, mixed>
      */
-    public function getTv(int $tmdbId, ?string $accountKey = null, ?string $language = null): array
+    public function getTv(int $tmdbId, ?string $profileKey = null, ?string $language = null): array
     {
-        $d = $this->get($accountKey, '/tv/' . $tmdbId, [
+        $d = $this->get($profileKey, '/tv/' . $tmdbId, [
             'append_to_response' => 'credits,external_ids',
             'language' => $language,
         ]);
@@ -467,54 +467,54 @@ class TmdbService
         return (int) substr($date, 0, 4);
     }
 
-    private function resolveAccount(?string $accountKey): TmdbAccountConfig
+    private function resolveProfile(?string $profileKey): TmdbProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if ($accounts === []) {
-            throw new \RuntimeException('No TMDb accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if ($profiles === []) {
+            throw new \RuntimeException('No TMDb profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
-    private function requireSessionAccount(?string $accountKey): TmdbAccountConfig
+    private function requireSessionAccount(?string $profileKey): TmdbProfileConfig
     {
-        $account = $this->resolveAccount($accountKey);
-        if (!$account->hasSession()) {
+        $profile = $this->resolveProfile($profileKey);
+        if (!$profile->hasSession()) {
             throw new \RuntimeException(sprintf(
-                'TMDb account "%s" has no session_id. Use tmdb_create_session once, then add session_id to the account YAML.',
-                $account->key,
+                'TMDb profile "%s" has no session_id. Use tmdb_create_session once, then add session_id to the profile YAML.',
+                $profile->key,
             ));
         }
 
-        return $account;
+        return $profile;
     }
 
-    private function resolveTmdbAccountId(?string $accountKey): int
+    private function resolveTmdbAccountId(?string $profileKey): int
     {
-        $account = $this->requireSessionAccount($accountKey);
-        if ($account->accountId !== null && $account->accountId > 0) {
-            return $account->accountId;
+        $profile = $this->requireSessionAccount($profileKey);
+        if ($profile->accountId !== null && $profile->accountId > 0) {
+            return $profile->accountId;
         }
 
-        if (isset($this->resolvedAccountIds[$account->key])) {
-            return $this->resolvedAccountIds[$account->key];
+        if (isset($this->resolvedAccountIds[$profile->key])) {
+            return $this->resolvedAccountIds[$profile->key];
         }
 
-        $details = $this->get($accountKey, '/account', ['session_id' => $account->sessionId]);
+        $details = $this->get($profileKey, '/profile', ['session_id' => $profile->sessionId]);
         $id = (int) ($details['id'] ?? 0);
         if ($id <= 0) {
             throw new \RuntimeException(sprintf(
-                'Could not resolve TMDb account id for "%s". Set account_id in YAML or recreate the session.',
-                $account->key,
+                'Could not resolve TMDb profile id for "%s". Set account_id in YAML or recreate the session.',
+                $profile->key,
             ));
         }
 
-        return $this->resolvedAccountIds[$account->key] = $id;
+        return $this->resolvedAccountIds[$profile->key] = $id;
     }
 
     private function normalizeMediaType(string $mediaType): string
@@ -577,9 +577,9 @@ class TmdbService
      *
      * @return array<string, mixed>
      */
-    private function get(?string $accountKey, string $path, array $params = []): array
+    private function get(?string $profileKey, string $path, array $params = []): array
     {
-        return $this->request('GET', $accountKey, $path, query: $params);
+        return $this->request('GET', $profileKey, $path, query: $params);
     }
 
     /**
@@ -587,17 +587,17 @@ class TmdbService
      *
      * @return array<string, mixed>
      */
-    private function post(?string $accountKey, string $path, array $body = [], bool $withSession = false): array
+    private function post(?string $profileKey, string $path, array $body = [], bool $withSession = false): array
     {
-        return $this->request('POST', $accountKey, $path, body: $body, withSession: $withSession);
+        return $this->request('POST', $profileKey, $path, body: $body, withSession: $withSession);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function delete(?string $accountKey, string $path, bool $withSession = false): array
+    private function delete(?string $profileKey, string $path, bool $withSession = false): array
     {
-        return $this->request('DELETE', $accountKey, $path, withSession: $withSession);
+        return $this->request('DELETE', $profileKey, $path, withSession: $withSession);
     }
 
     /**
@@ -608,18 +608,18 @@ class TmdbService
      */
     private function request(
         string $method,
-        ?string $accountKey,
+        ?string $profileKey,
         string $path,
         array $query = [],
         array $body = [],
         bool $withSession = false,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->apiKey === '') {
+        if ($profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'TMDb account "%s" is missing api_key',
-                $account->key,
+                'TMDb profile "%s" is missing api_key',
+                $profile->key,
             ));
         }
 
@@ -630,13 +630,13 @@ class TmdbService
             }
             $params[$name] = $value;
         }
-        $params['api_key'] = $account->apiKey;
+        $params['api_key'] = $profile->apiKey;
         if ($withSession) {
-            $sessionAccount = $this->requireSessionAccount($accountKey);
+            $sessionAccount = $this->requireSessionAccount($profileKey);
             $params['session_id'] = $sessionAccount->sessionId;
         }
         if ($method === 'GET' && !isset($params['language'])) {
-            $params['language'] = $account->language;
+            $params['language'] = $profile->language;
         }
 
         $options = [

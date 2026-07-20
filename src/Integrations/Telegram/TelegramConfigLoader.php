@@ -14,12 +14,12 @@ class TelegramConfigLoader
     }
 
     /**
-     * @return array<string, TelegramAccountConfig>
+     * @return array<string, TelegramProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('telegram', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('telegram', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $defaultChatId = $cfg['default_chat_id'] ?? null;
@@ -30,7 +30,7 @@ class TelegramConfigLoader
                 }
             }
 
-            $accounts[$key] = new TelegramAccountConfig(
+            $profiles[$key] = new TelegramProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 botToken: $cfg['bot_token'] ?? '',
@@ -39,22 +39,22 @@ class TelegramConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): TelegramAccountConfig
+    public function getProfile(string $key): TelegramProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Telegram account: "%s". Available: %s',
+                'Unknown Telegram profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 
     /**

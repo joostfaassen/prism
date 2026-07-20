@@ -14,17 +14,17 @@ class MatomoConfigLoader
     }
 
     /**
-     * @return array<string, MatomoAccountConfig>
+     * @return array<string, MatomoProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('matomo', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('matomo', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $defaultIdSite = $cfg['default_id_site'] ?? null;
 
-            $accounts[$key] = new MatomoAccountConfig(
+            $profiles[$key] = new MatomoProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: rtrim($cfg['base_url'] ?? '', '/'),
@@ -33,21 +33,21 @@ class MatomoConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): MatomoAccountConfig
+    public function getProfile(string $key): MatomoProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Matomo account: "%s". Available: %s',
+                'Unknown Matomo profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

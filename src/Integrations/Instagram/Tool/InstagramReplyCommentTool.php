@@ -22,7 +22,7 @@ class InstagramReplyCommentTool implements ToolInterface
     {
         return 'Post a comment to boost engagement. Provide a comment_id to reply to an existing comment (threaded), '
             . 'OR a media_id to post a new top-level comment on a post/reel. Exactly one of comment_id or media_id '
-            . 'is required, plus the message text. This writes publicly as your account.';
+            . 'is required, plus the message text. This writes publicly as your profile.';
     }
 
     public function getInputSchema(): array
@@ -30,7 +30,7 @@ class InstagramReplyCommentTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'comment_id' => ['type' => 'string', 'description' => 'Reply to this comment id (threaded reply).'],
                 'media_id' => ['type' => 'string', 'description' => 'Post a new top-level comment on this media id.'],
                 'message' => ['type' => 'string', 'description' => 'The comment text.'],
@@ -39,7 +39,7 @@ class InstagramReplyCommentTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -65,8 +65,8 @@ class InstagramReplyCommentTool implements ToolInterface
 
         try {
             $result = $commentId !== ''
-                ? $this->instagramService->replyToComment($arguments['account'] ?? null, $commentId, $message)
-                : $this->instagramService->commentOnMedia($arguments['account'] ?? null, $mediaId, $message);
+                ? $this->instagramService->replyToComment($arguments['profile'] ?? null, $commentId, $message)
+                : $this->instagramService->commentOnMedia($arguments['profile'] ?? null, $mediaId, $message);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],

@@ -35,14 +35,14 @@ Under **OAuth & Permissions** → **User Token Scopes**, add:
 
 ## 4. Configure in `prism.config.yaml`
 
-Add a `slack` account to any server:
+Add a `slack` profile to any server:
 
 ```yaml
 servers:
   my-server:
     label: "My Server"
     bearer_token: "your-prism-bearer-token"
-    accounts:
+    profiles:
       work-slack:
         type: slack
         label: "Work Slack"
@@ -53,10 +53,10 @@ That's it — the server will now expose all Slack tools.
 
 ### Multiple Workspaces
 
-Add one account per workspace. Each needs its own Slack App and token:
+Add one profile per workspace. Each needs its own Slack App and token:
 
 ```yaml
-accounts:
+profiles:
   work-slack:
     type: slack
     label: "Work"
@@ -67,13 +67,13 @@ accounts:
     token: "xoxp-oss-token"
 ```
 
-Every tool accepts an `account` parameter so the AI client can target the right workspace.
+Every tool accepts an `profile` parameter so the AI client can target the right workspace.
 
 ## Available Tools
 
 | Tool | Description |
 |---|---|
-| `slack_list_accounts` | List configured Slack workspaces |
+| `slack_list_profiles` | List configured Slack workspaces |
 | `slack_list_channels` | List channels, DMs, and group conversations (filterable by type) |
 | `slack_list_messages` | Read message history in a channel with pagination |
 | `slack_get_thread_replies` | Get all replies in a message thread |
@@ -86,7 +86,7 @@ Every tool accepts an `account` parameter so the AI client can target the right 
 
 ## Typical Workflow
 
-1. `slack_list_accounts` → find the account key
+1. `slack_list_profiles` → find the profile key
 2. `slack_list_channels` → find the channel ID
 3. `slack_get_messages_with_threads` → read recent messages with thread context in one request
 4. `slack_get_unresponded_messages` → see what needs attention
@@ -96,7 +96,7 @@ Every tool accepts an `account` parameter so the AI client can target the right 
 ## Performance Notes
 
 - Prism caches frequently repeated Slack reads:
-  - account auth info and user id
+  - profile auth info and user id
   - channel list snapshots
   - workspace directory snapshots
   - short-lived message/thread pages

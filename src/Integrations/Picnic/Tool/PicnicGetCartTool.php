@@ -29,25 +29,25 @@ class PicnicGetCartTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
 
     public function execute(array $arguments): array
     {
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         try {
-            $cart = $this->picnicService->getCart($account);
+            $cart = $this->picnicService->getCart($profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

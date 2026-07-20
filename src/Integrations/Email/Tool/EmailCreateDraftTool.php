@@ -21,11 +21,11 @@ class EmailCreateDraftTool implements ToolInterface
     public function getDescription(): string
     {
         return <<<TXT
-            Stage a draft email in the account's IMAP Drafts folder — never sends it.
+            Stage a draft email in the profile's IMAP Drafts folder — never sends it.
 
             The draft is a complete message (multipart text+HTML from markdown), identical to what Thunderbird would save: flags \\Seen \\Draft, optional Bcc preserved, and when `reply_to` is supplied the draft is properly threaded (In-Reply-To / References), subject prefixed with "Re:" if needed, and the original message quoted. The human then opens their mail client, reviews/edits, and hits Send.
 
-            Recipients may be omitted (including for non-replies); on replies without `to`/`cc`, recipients are derived from the original (use `reply_to.reply_all = true` for reply-all). SMTP is not required — read-only IMAP accounts can stage drafts too.
+            Recipients may be omitted (including for non-replies); on replies without `to`/`cc`, recipients are derived from the original (use `reply_to.reply_all = true` for reply-all). SMTP is not required — read-only IMAP profiles can stage drafts too.
 
             To replace an existing draft: call email_delete_draft first, then email_create_draft again. Use email_list_folders if the drafts folder name is unclear (override with `drafts_folder`).
             TXT;
@@ -36,9 +36,9 @@ class EmailCreateDraftTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID (see email_list_accounts).',
+                    'description' => 'Email profile ID (see email_list_profiles).',
                 ],
                 'to' => [
                     'oneOf' => [
@@ -71,7 +71,7 @@ class EmailCreateDraftTool implements ToolInterface
                 ],
                 'from_name' => [
                     'type' => 'string',
-                    'description' => 'Optional override of the From display name (the address always comes from the account config).',
+                    'description' => 'Optional override of the From display name (the address always comes from the profile config).',
                 ],
                 'reply_to_address' => [
                     'type' => 'string',
@@ -98,25 +98,25 @@ class EmailCreateDraftTool implements ToolInterface
                 ],
                 'drafts_folder' => [
                     'type' => 'string',
-                    'description' => 'Override the IMAP Drafts folder. Defaults to the account\'s configured drafts_folder (usually "Drafts"). Use email_list_folders to find the exact name.',
+                    'description' => 'Override the IMAP Drafts folder. Defaults to the profile\'s configured drafts_folder (usually "Drafts"). Use email_list_folders to find the exact name.',
                 ],
             ],
-            'required' => ['account', 'body_markdown'],
+            'required' => ['profile', 'body_markdown'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $bodyMarkdown = (string) ($arguments['body_markdown'] ?? '');
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($bodyMarkdown === '') {
@@ -154,7 +154,7 @@ class EmailCreateDraftTool implements ToolInterface
 
         try {
             $result = $this->emailService->createDraft(
-                accountId: $account,
+                profileId: $profile,
                 to: $to,
                 cc: $cc,
                 bcc: $bcc,

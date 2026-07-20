@@ -31,9 +31,9 @@ class TelegramGetUpdatesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Telegram account key. Optional if only one account is configured.',
+                    'description' => 'Telegram profile key. Optional if only one profile is configured.',
                 ],
                 'offset' => [
                     'type' => 'integer',
@@ -48,7 +48,7 @@ class TelegramGetUpdatesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'telegram';
     }
@@ -57,7 +57,7 @@ class TelegramGetUpdatesTool implements ToolInterface
     {
         try {
             $updates = $this->telegramService->getUpdates(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 offset: isset($arguments['offset']) ? (int) $arguments['offset'] : null,
                 limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 100,
             );

@@ -33,15 +33,15 @@ class PicnicBrowseRecipesTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Optional filter, e.g. SAVED_RECIPES, NEW_RECIPES, USER_DEFINED_RECIPES, THIS_WEEK_RECIPES',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -52,10 +52,10 @@ class PicnicBrowseRecipesTool implements ToolInterface
         if ($segment === '') {
             $segment = null;
         }
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         try {
-            $result = $this->picnicService->browseRecipes($account, $segment);
+            $result = $this->picnicService->browseRecipes($profile, $segment);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

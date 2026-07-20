@@ -22,7 +22,7 @@ class TwilioListTranscriptionsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List available call transcriptions for a Twilio account. Transcriptions are created by the twilio:transcribe-calls console command. Supports text search across transcription content and phone numbers.';
+        return 'List available call transcriptions for a Twilio profile. Transcriptions are created by the twilio:transcribe-calls console command. Supports text search across transcription content and phone numbers.';
     }
 
     public function getInputSchema(): array
@@ -30,9 +30,9 @@ class TwilioListTranscriptionsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Twilio account key from configuration',
+                    'description' => 'Twilio profile key from configuration',
                 ],
                 'search' => [
                     'type' => 'string',
@@ -43,21 +43,21 @@ class TwilioListTranscriptionsTool implements ToolInterface
                     'description' => 'Max results to return (default 50)',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'twilio';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Missing required parameter: account']],
+                'content' => [['type' => 'text', 'text' => 'Missing required parameter: profile']],
                 'isError' => true,
             ];
         }
@@ -67,7 +67,7 @@ class TwilioListTranscriptionsTool implements ToolInterface
             $search = $arguments['search'] ?? null;
             $limit = $arguments['limit'] ?? 50;
 
-            $transcriptions = $this->transcriptionStore->list($serverName, $accountKey, $search, $limit);
+            $transcriptions = $this->transcriptionStore->list($serverName, $profileKey, $search, $limit);
 
             $summaries = array_map(fn(array $t) => [
                 'call_sid' => $t['call_sid'],

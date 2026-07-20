@@ -13,27 +13,27 @@ class TrackingConfigLoader
     ) {
     }
 
-    /** @return array<string, TrackingAccountConfig> */
-    public function getAccounts(): array
+    /** @return array<string, TrackingProfileConfig> */
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('tracking', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('tracking', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new TrackingAccountConfig(
+            $profiles[$key] = new TrackingProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 timezone: $cfg['timezone'] ?? 'UTC',
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     public function getTimezone(): \DateTimeZone
     {
-        $accounts = $this->getAccounts();
-        $first = reset($accounts);
+        $profiles = $this->getProfiles();
+        $first = reset($profiles);
 
         return new \DateTimeZone($first ? $first->timezone : 'UTC');
     }

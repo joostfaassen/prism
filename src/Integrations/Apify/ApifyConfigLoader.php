@@ -16,12 +16,12 @@ class ApifyConfigLoader
     }
 
     /**
-     * @return array<string, ApifyAccountConfig>
+     * @return array<string, ApifyProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('apify', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('apify', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $baseUrl = rtrim($cfg['base_url'] ?? self::DEFAULT_BASE_URL, '/');
@@ -29,7 +29,7 @@ class ApifyConfigLoader
                 $baseUrl = self::DEFAULT_BASE_URL;
             }
 
-            $accounts[$key] = new ApifyAccountConfig(
+            $profiles[$key] = new ApifyProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: $baseUrl,
@@ -39,21 +39,21 @@ class ApifyConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): ApifyAccountConfig
+    public function getProfile(string $key): ApifyProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Apify account: "%s". Available: %s',
+                'Unknown Apify profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

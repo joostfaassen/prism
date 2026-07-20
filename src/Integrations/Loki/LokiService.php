@@ -15,18 +15,18 @@ class LokiService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -35,7 +35,7 @@ class LokiService
      * @return array<string, mixed>
      */
     public function queryRange(
-        ?string $accountKey,
+        ?string $profileKey,
         string $query,
         ?string $start = null,
         ?string $end = null,
@@ -58,7 +58,7 @@ class LokiService
             $params['step'] = $step;
         }
 
-        return $this->request($accountKey, '/loki/api/v1/query_range', $params);
+        return $this->request($profileKey, '/loki/api/v1/query_range', $params);
     }
 
     /**
@@ -67,7 +67,7 @@ class LokiService
      * @return array<string, mixed>
      */
     public function query(
-        ?string $accountKey,
+        ?string $profileKey,
         string $query,
         ?string $time = null,
         int $limit = 100,
@@ -82,7 +82,7 @@ class LokiService
             $params['time'] = $time;
         }
 
-        return $this->request($accountKey, '/loki/api/v1/query', $params);
+        return $this->request($profileKey, '/loki/api/v1/query', $params);
     }
 
     /**
@@ -90,7 +90,7 @@ class LokiService
      *
      * @return list<string>
      */
-    public function listLabels(?string $accountKey, ?string $start = null, ?string $end = null): array
+    public function listLabels(?string $profileKey, ?string $start = null, ?string $end = null): array
     {
         $params = [];
         if ($start !== null && $start !== '') {
@@ -100,7 +100,7 @@ class LokiService
             $params['end'] = $end;
         }
 
-        $data = $this->request($accountKey, '/loki/api/v1/labels', $params);
+        $data = $this->request($profileKey, '/loki/api/v1/labels', $params);
         $values = $data['data'] ?? [];
 
         return is_array($values) ? array_values(array_filter($values, 'is_string')) : [];
@@ -112,7 +112,7 @@ class LokiService
      * @return list<string>
      */
     public function labelValues(
-        ?string $accountKey,
+        ?string $profileKey,
         string $label,
         ?string $start = null,
         ?string $end = null,
@@ -125,24 +125,24 @@ class LokiService
             $params['end'] = $end;
         }
 
-        $data = $this->request($accountKey, '/loki/api/v1/label/' . rawurlencode($label) . '/values', $params);
+        $data = $this->request($profileKey, '/loki/api/v1/label/' . rawurlencode($label) . '/values', $params);
         $values = $data['data'] ?? [];
 
         return is_array($values) ? array_values(array_filter($values, 'is_string')) : [];
     }
 
-    private function resolveAccount(?string $accountKey): LokiAccountConfig
+    private function resolveProfile(?string $profileKey): LokiProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No Loki accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No Loki profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -150,14 +150,14 @@ class LokiService
      *
      * @return array<string, mixed>
      */
-    private function request(?string $accountKey, string $path, array $params = []): array
+    private function request(?string $profileKey, string $path, array $params = []): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '') {
+        if ($profile->baseUrl === '') {
             throw new \RuntimeException(sprintf(
-                'Loki account "%s" is missing base_url',
-                $account->key,
+                'Loki profile "%s" is missing base_url',
+                $profile->key,
             ));
         }
 
@@ -167,20 +167,20 @@ class LokiService
         }
 
         $headers = [];
-        if ($account->orgId !== '') {
-            $headers['X-Scope-OrgID'] = $account->orgId;
+        if ($profile->orgId !== '') {
+            $headers['X-Scope-OrgID'] = $profile->orgId;
         }
         if ($headers !== []) {
             $options['headers'] = $headers;
         }
 
-        if ($account->bearerToken !== '') {
-            $options['auth_bearer'] = $account->bearerToken;
-        } elseif ($account->username !== '') {
-            $options['auth_basic'] = [$account->username, $account->password];
+        if ($profile->bearerToken !== '') {
+            $options['auth_bearer'] = $profile->bearerToken;
+        } elseif ($profile->username !== '') {
+            $options['auth_basic'] = [$profile->username, $profile->password];
         }
 
-        $response = $this->httpClient->request('GET', $account->baseUrl . $path, $options);
+        $response = $this->httpClient->request('GET', $profile->baseUrl . $path, $options);
 
         $statusCode = $response->getStatusCode();
         $content = $response->getContent(false);

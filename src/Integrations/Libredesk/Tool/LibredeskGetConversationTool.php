@@ -38,9 +38,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key',
+                    'description' => 'Libredesk profile key',
                 ],
                 'uuid' => [
                     'type' => 'string',
@@ -56,23 +56,23 @@ DESC;
                     'description' => 'Include internal/private notes in the output (default: false)',
                 ],
             ],
-            'required' => ['account', 'uuid'],
+            'required' => ['profile', 'uuid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
 
-        if ($accountKey === '' || $uuid === '') {
+        if ($profileKey === '' || $uuid === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "uuid" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile" and "uuid" are required']],
                 'isError' => true,
             ];
         }
@@ -82,20 +82,20 @@ DESC;
 
         try {
             $result = match ($format) {
-                'text' => $this->libredeskService->getConversationText($accountKey, $uuid, $includeNotes),
+                'text' => $this->libredeskService->getConversationText($profileKey, $uuid, $includeNotes),
                 'convo' => json_encode(
-                    $this->libredeskService->getConversationConvo($accountKey, $uuid, $includeNotes),
+                    $this->libredeskService->getConversationConvo($profileKey, $uuid, $includeNotes),
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 ),
                 'full' => json_encode(
                     [
-                        'conversation' => $this->libredeskService->getConversationRaw($accountKey, $uuid),
-                        'messages' => $this->libredeskService->getMessages($accountKey, $uuid, $includeNotes),
+                        'conversation' => $this->libredeskService->getConversationRaw($profileKey, $uuid),
+                        'messages' => $this->libredeskService->getMessages($profileKey, $uuid, $includeNotes),
                     ],
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 ),
                 default => json_encode(
-                    $this->libredeskService->getConversationSimple($accountKey, $uuid, $includeNotes),
+                    $this->libredeskService->getConversationSimple($profileKey, $uuid, $includeNotes),
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
                 ),
             };

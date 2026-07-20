@@ -21,10 +21,10 @@ Every public method calls `connect()` → `imap_open()` and `imap_close()` in a
 `finally`:
 
 ```329:344:src/Email/ImapClient.php
-    private function connect(EmailAccountConfig $account, string $folder = 'INBOX'): \IMAP\Connection
+    private function connect(EmailProfileConfig $profile, string $folder = 'INBOX'): \IMAP\Connection
     {
-        $mailbox = $account->imap->getMailboxString($folder);
-        $conn = @imap_open($mailbox, $account->imap->username, $account->imap->password, 0, 3);
+        $mailbox = $profile->imap->getMailboxString($folder);
+        $conn = @imap_open($mailbox, $profile->imap->username, $profile->imap->password, 0, 3);
 ```
 
 A single `imap_open` against a TLS server is the expensive part: TCP handshake
@@ -75,7 +75,7 @@ relying on them keeps us server-independent:
 
 The single most important consequence:
 
-> **A message body is immutable for a given `(account, folder, UIDVALIDITY, UID)`.**
+> **A message body is immutable for a given `(profile, folder, UIDVALIDITY, UID)`.**
 > The bytes of `RFC822`/`BODYSTRUCTURE`/`ENVELOPE`/MIME parts never change while
 > UIDVALIDITY is constant. Only **flags** (`\Seen`, `\Flagged`, keywords) mutate.
 
@@ -99,7 +99,7 @@ Symfony autowiring (same pattern as the rest of the codebase):
 ```
 src/Email/
 ├── ImapConnection.php      # one live, reusable connection (lifecycle + low-level fetch)
-├── ImapConnectionPool.php  # request-scoped registry: account+folder -> ImapConnection
+├── ImapConnectionPool.php  # request-scoped registry: profile+folder -> ImapConnection
 ├── FolderSignature.php     # value object: uidvalidity/uidnext/messages/highestmodseq
 └── MessageCache.php        # immutable-body + flag cache on top of a Symfony cache pool
 ```
@@ -111,13 +111,13 @@ methods. Nothing about the *other* integrations changes.
 ### 3a. Connection reuse (biggest single win, zero correctness risk)
 
 Within one MCP request, a batch tool may touch many UIDs and several folders.
-Open the connection **once per (account, folder)** and reuse it for every fetch
+Open the connection **once per (profile, folder)** and reuse it for every fetch
 in that request.
 
 - `ImapConnectionPool` is a normal (request-scoped) service that lazily opens an
-  `ImapConnection` the first time an `(account, folder)` is needed and closes all
+  `ImapConnection` the first time an `(profile, folder)` is needed and closes all
   of them at the end of the request (kernel terminate / explicit `closeAll()`).
-- Switching folders on the same account reuses the TCP+TLS+LOGIN session and only
+- Switching folders on the same profile reuses the TCP+TLS+LOGIN session and only
   re-issues `SELECT` (or `imap_reopen()`), which is cheap.
 
 > Cross-request pooling (a persistent IMAP daemon) is explicitly **out of scope**
@@ -212,7 +212,7 @@ This avoids a stale window between an agent flagging a message and re-reading it
 ## 4. New & changed MCP tools (the agent-facing API)
 
 All new tools follow the existing `ToolInterface` conventions (snake_case,
-`email_` prefix, `getAccountType() === 'email'`, MCP content/isError return
+`email_` prefix, `getProfileType() === 'email'`, MCP content/isError return
 shape).
 
 ### 4a. `email_get_messages` (multi-get) — NEW
@@ -221,7 +221,7 @@ Fetch many messages in one call.
 
 ```jsonc
 {
-  "account": "work-mail",
+  "profile": "work-mail",
   "folder": "INBOX",
   "uids": [101, 104, 119, 200],
   "include_html": false,
@@ -241,7 +241,7 @@ over a single reused connection.
 
 ```jsonc
 {
-  "account": "work-mail",
+  "profile": "work-mail",
   "folders": ["INBOX", "Archive", "Sent"],
   "from": "boss@example.com",
   "unseen_only": true,
@@ -264,7 +264,7 @@ returned UIDs — not three fetches per message.
 
 ### 4d. `email_prefetch` (optional, opportunistic) — NEW, phase 3
 
-A hint tool: `{ account, folder, uids: [...] }` warms the body cache without
+A hint tool: `{ profile, folder, uids: [...] }` warms the body cache without
 returning payloads. Lets an agent kick off background warming right after a
 search while it reasons about which message to open. Cheap to implement once the
 cache exists; skip if it complicates the agent UX.

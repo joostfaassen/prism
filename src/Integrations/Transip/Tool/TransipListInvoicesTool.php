@@ -20,7 +20,7 @@ class TransipListInvoicesTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List the invoices on a TransIP account. Each invoice has an invoiceNumber, creationDate and totalAmount (in cents). This is the account/billing information TransIP exposes via its API. Use transip_get_invoice for the full details of a single invoice.';
+        return 'List the invoices on a TransIP profile. Each invoice has an invoiceNumber, creationDate and totalAmount (in cents). This is the profile/billing information TransIP exposes via its API. Use transip_get_invoice for the full details of a single invoice.';
     }
 
     public function getInputSchema(): array
@@ -28,16 +28,16 @@ class TransipListInvoicesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TransIP account key. Optional when only one account is configured.',
+                    'description' => 'TransIP profile key. Optional when only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'transip';
     }
@@ -45,7 +45,7 @@ class TransipListInvoicesTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $invoices = $this->transipService->listInvoices($arguments['account'] ?? null);
+            $invoices = $this->transipService->listInvoices($arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

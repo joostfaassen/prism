@@ -15,18 +15,18 @@ class AlertmanagerService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -37,7 +37,7 @@ class AlertmanagerService
      * @return list<array<string, mixed>>
      */
     public function listAlerts(
-        ?string $accountKey,
+        ?string $profileKey,
         bool $active = true,
         bool $silenced = false,
         bool $inhibited = false,
@@ -53,7 +53,7 @@ class AlertmanagerService
             $query['filter'] = $filters;
         }
 
-        $data = $this->request($accountKey, 'GET', '/api/v2/alerts', $query);
+        $data = $this->request($profileKey, 'GET', '/api/v2/alerts', $query);
 
         return is_array($data) ? $data : [];
     }
@@ -65,14 +65,14 @@ class AlertmanagerService
      *
      * @return list<array<string, mixed>>
      */
-    public function listSilences(?string $accountKey, array $filters = []): array
+    public function listSilences(?string $profileKey, array $filters = []): array
     {
         $query = [];
         if ($filters !== []) {
             $query['filter'] = $filters;
         }
 
-        $data = $this->request($accountKey, 'GET', '/api/v2/silences', $query);
+        $data = $this->request($profileKey, 'GET', '/api/v2/silences', $query);
 
         return is_array($data) ? $data : [];
     }
@@ -85,7 +85,7 @@ class AlertmanagerService
      * @return list<array<string, mixed>>
      */
     public function listAlertGroups(
-        ?string $accountKey,
+        ?string $profileKey,
         bool $active = true,
         bool $silenced = false,
         bool $inhibited = false,
@@ -101,7 +101,7 @@ class AlertmanagerService
             $query['filter'] = $filters;
         }
 
-        $data = $this->request($accountKey, 'GET', '/api/v2/alerts/groups', $query);
+        $data = $this->request($profileKey, 'GET', '/api/v2/alerts/groups', $query);
 
         return is_array($data) ? $data : [];
     }
@@ -111,9 +111,9 @@ class AlertmanagerService
      *
      * @return array<string, mixed>
      */
-    public function getStatus(?string $accountKey): array
+    public function getStatus(?string $profileKey): array
     {
-        $data = $this->request($accountKey, 'GET', '/api/v2/status');
+        $data = $this->request($profileKey, 'GET', '/api/v2/status');
 
         return is_array($data) ? $data : [];
     }
@@ -126,7 +126,7 @@ class AlertmanagerService
      * @return array<string, mixed> The created silence, including its silenceID
      */
     public function createSilence(
-        ?string $accountKey,
+        ?string $profileKey,
         array $matchers,
         string $startsAt,
         string $endsAt,
@@ -148,7 +148,7 @@ class AlertmanagerService
             'comment' => $comment,
         ];
 
-        $data = $this->request($accountKey, 'POST', '/api/v2/silences', [], $body);
+        $data = $this->request($profileKey, 'POST', '/api/v2/silences', [], $body);
 
         return is_array($data) ? $data : [];
     }
@@ -156,23 +156,23 @@ class AlertmanagerService
     /**
      * Expire (delete) a silence (DELETE /api/v2/silence/{silenceID}).
      */
-    public function expireSilence(?string $accountKey, string $silenceId): void
+    public function expireSilence(?string $profileKey, string $silenceId): void
     {
-        $this->request($accountKey, 'DELETE', '/api/v2/silence/' . rawurlencode($silenceId));
+        $this->request($profileKey, 'DELETE', '/api/v2/silence/' . rawurlencode($silenceId));
     }
 
-    private function resolveAccount(?string $accountKey): AlertmanagerAccountConfig
+    private function resolveProfile(?string $profileKey): AlertmanagerProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No Alertmanager accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No Alertmanager profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -181,14 +181,14 @@ class AlertmanagerService
      *
      * @return mixed Decoded JSON response
      */
-    private function request(?string $accountKey, string $method, string $path, array $query = [], ?array $json = null): mixed
+    private function request(?string $profileKey, string $method, string $path, array $query = [], ?array $json = null): mixed
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->baseUrl === '') {
+        if ($profile->baseUrl === '') {
             throw new \RuntimeException(sprintf(
-                'Alertmanager account "%s" is missing base_url',
-                $account->key,
+                'Alertmanager profile "%s" is missing base_url',
+                $profile->key,
             ));
         }
 
@@ -200,13 +200,13 @@ class AlertmanagerService
             $options['json'] = $json;
         }
 
-        if ($account->bearerToken !== '') {
-            $options['auth_bearer'] = $account->bearerToken;
-        } elseif ($account->username !== '') {
-            $options['auth_basic'] = [$account->username, $account->password];
+        if ($profile->bearerToken !== '') {
+            $options['auth_bearer'] = $profile->bearerToken;
+        } elseif ($profile->username !== '') {
+            $options['auth_basic'] = [$profile->username, $profile->password];
         }
 
-        $response = $this->httpClient->request($method, $account->baseUrl . $path, $options);
+        $response = $this->httpClient->request($method, $profile->baseUrl . $path, $options);
 
         $statusCode = $response->getStatusCode();
         $content = $response->getContent(false);

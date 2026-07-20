@@ -28,9 +28,9 @@ class EmailSearchTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID',
+                    'description' => 'Email profile ID',
                 ],
                 'folder' => [
                     'type' => 'string',
@@ -85,22 +85,22 @@ class EmailSearchTool implements ToolInterface
                     'description' => 'If > 0, pre-warm cache for recent messages in this folder before searching. Typical value: 7',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
 
-        if ($account === '') {
+        if ($profile === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
@@ -112,14 +112,14 @@ class EmailSearchTool implements ToolInterface
         try {
             if ($warmCacheDays > 0) {
                 $this->emailService->warmRecentCache(
-                    accountId: $account,
+                    profileId: $profile,
                     folder: (string) ($arguments['folder'] ?? 'INBOX'),
                     days: $warmCacheDays,
                 );
             }
 
             $result = $this->emailService->search(
-                accountId: $account,
+                profileId: $profile,
                 folder: $arguments['folder'] ?? 'INBOX',
                 from: $arguments['from'] ?? null,
                 to: $arguments['to'] ?? null,

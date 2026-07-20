@@ -6,7 +6,7 @@ namespace App\Integrations\Apify\Tool;
  * Wraps the "harvestapi/linkedin-profile-search" actor.
  *
  * Searches LinkedIn profiles with a fuzzy query and a rich set of filters,
- * returning detailed profile information — no cookies/account required.
+ * returning detailed profile information — no cookies/profile required.
  *
  * The underlying actor exposes a very large set of filters (and MongoDB-based
  * deduplication / segmentation options). This tool exposes the commonly used
@@ -29,7 +29,7 @@ class ApifyLinkedinProfileSearchTool extends AbstractApifyActorTool
 
     public function getDescription(): string
     {
-        return 'Search LinkedIn profiles with a fuzzy query and filters (location, company, school, job title, industry, headcount, recently changed jobs/posted) and return detailed profile info. No LinkedIn cookies/account required. Via the Apify harvestapi/linkedin-profile-search actor.';
+        return 'Search LinkedIn profiles with a fuzzy query and filters (location, company, school, job title, industry, headcount, recently changed jobs/posted) and return detailed profile info. No LinkedIn cookies/profile required. Via the Apify harvestapi/linkedin-profile-search actor.';
     }
 
     protected function getProperties(): array

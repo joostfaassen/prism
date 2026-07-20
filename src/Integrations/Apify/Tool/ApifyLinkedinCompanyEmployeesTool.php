@@ -6,7 +6,7 @@ namespace App\Integrations\Apify\Tool;
  * Wraps the "harvestapi/linkedin-company-employees" actor.
  *
  * Extracts employees of one or more LinkedIn companies, with filters and
- * detailed profile info (and optional email search) — no cookies/account
+ * detailed profile info (and optional email search) — no cookies/profile
  * required.
  *
  * @see https://apify.com/harvestapi/linkedin-company-employees
@@ -25,7 +25,7 @@ class ApifyLinkedinCompanyEmployeesTool extends AbstractApifyActorTool
 
     public function getDescription(): string
     {
-        return 'Extract employees of one or more LinkedIn companies with filters (location, job title, industry, headcount) and detailed profile info. No LinkedIn cookies/account required. Via the Apify harvestapi/linkedin-company-employees actor.';
+        return 'Extract employees of one or more LinkedIn companies with filters (location, job title, industry, headcount) and detailed profile info. No LinkedIn cookies/profile required. Via the Apify harvestapi/linkedin-company-employees actor.';
     }
 
     protected function getProperties(): array

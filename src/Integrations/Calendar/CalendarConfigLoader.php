@@ -18,7 +18,7 @@ class CalendarConfigLoader
      */
     public function getCalendars(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('calendar', $this->serverContext);
+        $raw = $this->configLoader->getProfilesByTypeForServer('calendar', $this->serverContext);
         $calendars = [];
 
         foreach ($raw as $key => $cfg) {

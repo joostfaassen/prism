@@ -18,25 +18,25 @@ class FreescoutService
     /**
      * @return list<array{key: string, label: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
+                'label' => $profile->label,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    public function listMailboxes(string $accountKey): array
+    public function listMailboxes(string $profileKey): array
     {
-        $response = $this->request($accountKey, 'GET', 'mailboxes');
+        $response = $this->request($profileKey, 'GET', 'mailboxes');
         $data = $response;
 
         $mailboxes = [];
@@ -55,7 +55,7 @@ class FreescoutService
      * @return array<string, mixed>
      */
     public function listConversations(
-        string $accountKey,
+        string $profileKey,
         ?int $mailboxId = null,
         ?int $folderId = null,
         ?string $status = null,
@@ -78,7 +78,7 @@ class FreescoutService
             $params['updatedSince'] = $updatedSince;
         }
 
-        $data = $this->request($accountKey, 'GET', 'conversations', $params);
+        $data = $this->request($profileKey, 'GET', 'conversations', $params);
 
         $conversations = [];
         foreach ($data['_embedded']['conversations'] ?? [] as $conv) {
@@ -120,9 +120,9 @@ class FreescoutService
      *
      * @return array<string, mixed>
      */
-    public function getConversationRaw(string $accountKey, int $conversationId): array
+    public function getConversationRaw(string $profileKey, int $conversationId): array
     {
-        return $this->request($accountKey, 'GET', "conversations/{$conversationId}", [
+        return $this->request($profileKey, 'GET', "conversations/{$conversationId}", [
             'embed' => 'tags,threads',
         ]);
     }
@@ -132,9 +132,9 @@ class FreescoutService
      *
      * @return array<string, mixed>
      */
-    public function getConversationSimple(string $accountKey, int $conversationId): array
+    public function getConversationSimple(string $profileKey, int $conversationId): array
     {
-        $data = $this->getConversationRaw($accountKey, $conversationId);
+        $data = $this->getConversationRaw($profileKey, $conversationId);
 
         $simplified = [
             'id' => $data['id'] ?? null,
@@ -196,9 +196,9 @@ class FreescoutService
     /**
      * Get conversation as plain text optimized for AI consumption.
      */
-    public function getConversationText(string $accountKey, int $conversationId, bool $includeNotes = false): string
+    public function getConversationText(string $profileKey, int $conversationId, bool $includeNotes = false): string
     {
-        $data = $this->getConversationRaw($accountKey, $conversationId);
+        $data = $this->getConversationRaw($profileKey, $conversationId);
 
         $output = '';
         $output .= "======= CONVERSATION #{$conversationId} =======\n";
@@ -258,9 +258,9 @@ class FreescoutService
      *
      * @return array<string, mixed>
      */
-    public function getConversationConvo(string $accountKey, int $conversationId): array
+    public function getConversationConvo(string $profileKey, int $conversationId): array
     {
-        $data = $this->getConversationRaw($accountKey, $conversationId);
+        $data = $this->getConversationRaw($profileKey, $conversationId);
 
         $statusMap = [
             'active' => 'open',
@@ -359,13 +359,13 @@ class FreescoutService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listUsers(string $accountKey): array
+    public function listUsers(string $profileKey): array
     {
         $allUsers = [];
         $page = 1;
 
         do {
-            $data = $this->request($accountKey, 'GET', 'users', ['page' => $page]);
+            $data = $this->request($profileKey, 'GET', 'users', ['page' => $page]);
 
             $users = $data['_embedded']['users'] ?? $data['data'] ?? [];
             foreach ($users as $user) {
@@ -391,7 +391,7 @@ class FreescoutService
      * @return array<string, mixed>
      */
     public function createThread(
-        string $accountKey,
+        string $profileKey,
         int $conversationId,
         string $text,
         string $type = 'message',
@@ -414,33 +414,33 @@ class FreescoutService
             $body['user'] = $userId;
         }
 
-        return $this->request($accountKey, 'POST', "conversations/{$conversationId}/threads", [], $body);
+        return $this->request($profileKey, 'POST', "conversations/{$conversationId}/threads", [], $body);
     }
 
     /**
      * @return array<string, mixed>
      */
     private function request(
-        string $accountKey,
+        string $profileKey,
         string $method,
         string $endpoint,
         array $query = [],
         ?array $json = null,
     ): array {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        if ($account->baseUrl === '' || $account->apiKey === '') {
+        if ($profile->baseUrl === '' || $profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'Freescout account "%s" is missing base_url or api_key',
-                $accountKey,
+                'Freescout profile "%s" is missing base_url or api_key',
+                $profileKey,
             ));
         }
 
-        $url = $account->baseUrl . '/api/' . ltrim($endpoint, '/');
+        $url = $profile->baseUrl . '/api/' . ltrim($endpoint, '/');
 
         $options = [
             'headers' => [
-                'X-FreeScout-API-Key' => $account->apiKey,
+                'X-FreeScout-API-Key' => $profile->apiKey,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ],

@@ -6,7 +6,7 @@ namespace App\Integrations\Apify\Tool;
  * Wraps the "harvestapi/linkedin-profile-search-by-name" actor.
  *
  * Searches LinkedIn profiles by first/last name (with optional filters) and
- * returns detailed profile info — no cookies or LinkedIn account required.
+ * returns detailed profile info — no cookies or LinkedIn profile required.
  *
  * @see https://apify.com/harvestapi/linkedin-profile-search-by-name
  */
@@ -24,7 +24,7 @@ class ApifyLinkedinProfileSearchByNameTool extends AbstractApifyActorTool
 
     public function getDescription(): string
     {
-        return 'Search LinkedIn profiles by first/last name with optional filters (location, company, school, job title, industry) and return detailed profile information. No LinkedIn cookies/account required. Via the Apify harvestapi/linkedin-profile-search-by-name actor.';
+        return 'Search LinkedIn profiles by first/last name with optional filters (location, company, school, job title, industry) and return detailed profile information. No LinkedIn cookies/profile required. Via the Apify harvestapi/linkedin-profile-search-by-name actor.';
     }
 
     protected function getProperties(): array

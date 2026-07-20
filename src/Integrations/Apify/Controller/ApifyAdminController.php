@@ -27,7 +27,7 @@ class ApifyAdminController extends AbstractController
 
         $tools = [];
         foreach ($this->mcpHandler->getTools() as $tool) {
-            if ($tool->getAccountType() !== 'apify') {
+            if ($tool->getProfileType() !== 'apify') {
                 continue;
             }
 
@@ -35,7 +35,7 @@ class ApifyAdminController extends AbstractController
                 'name' => $tool->getName(),
                 'description' => $tool->getDescription(),
                 'isActor' => $tool instanceof AbstractApifyActorTool,
-                'enabled' => $serverConfig->hasAccountType('apify')
+                'enabled' => $serverConfig->hasProfileType('apify')
                     && $serverConfig->isToolAllowed($tool->getName(), 'apify'),
             ];
         }
@@ -45,7 +45,7 @@ class ApifyAdminController extends AbstractController
         return $this->render('admin/apify/hub.html.twig', [
             ...$this->nav($request, $serverName, $serverConfig),
             'activeSection' => 'apify',
-            'serverHasApify' => $serverConfig->hasAccountType('apify'),
+            'serverHasApify' => $serverConfig->hasProfileType('apify'),
             'apifyTools' => $tools,
         ]);
     }
@@ -60,14 +60,14 @@ class ApifyAdminController extends AbstractController
     }
 
     /**
-     * @return array{server: array{name: string, label: string, mcpUrl: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     * @return array{server: array{name: string, label: string, mcpUrl: string, profileCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
      */
     private function nav(Request $request, string $serverName, ServerConfig $serverConfig): array
     {
         $visible = array_values(array_filter(
             $this->mcpHandler->getTools(),
-            static fn (ToolInterface $tool) => $tool->getAccountType() === null
-                || $serverConfig->hasAccountType($tool->getAccountType()),
+            static fn (ToolInterface $tool) => $tool->getProfileType() === null
+                || $serverConfig->hasProfileType($tool->getProfileType()),
         ));
         $baseUrl = $request->getSchemeAndHttpHost();
 
@@ -76,11 +76,11 @@ class ApifyAdminController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $baseUrl . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($visible),
             ],
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ];
     }
 }

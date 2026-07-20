@@ -14,15 +14,15 @@ class AtlasConfigLoader
     }
 
     /**
-     * @return array<string, AtlasAccountConfig>
+     * @return array<string, AtlasProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('atlas', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('atlas', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new AtlasAccountConfig(
+            $profiles[$key] = new AtlasProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: rtrim($cfg['base_url'] ?? '', '/'),
@@ -30,21 +30,21 @@ class AtlasConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): AtlasAccountConfig
+    public function getProfile(string $key): AtlasProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Atlas account: "%s". Available: %s',
+                'Unknown Atlas profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

@@ -31,9 +31,9 @@ class GitHubSearchIssuesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'GitHub account key. Optional if only one account is configured.',
+                    'description' => 'GitHub profile key. Optional if only one profile is configured.',
                 ],
                 'q' => [
                     'type' => 'string',
@@ -58,7 +58,7 @@ class GitHubSearchIssuesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'github';
     }
@@ -75,7 +75,7 @@ class GitHubSearchIssuesTool implements ToolInterface
 
         try {
             $result = $this->gitHubService->searchIssues(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 query: $query,
                 sort: $arguments['sort'] ?? 'updated',
                 order: $arguments['order'] ?? 'desc',

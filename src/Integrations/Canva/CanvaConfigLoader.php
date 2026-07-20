@@ -23,12 +23,12 @@ class CanvaConfigLoader
     }
 
     /**
-     * @return array<string, CanvaAccountConfig>
+     * @return array<string, CanvaProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('canva', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('canva', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $scopes = $cfg['scopes'] ?? self::DEFAULT_SCOPES;
@@ -36,7 +36,7 @@ class CanvaConfigLoader
                 $scopes = self::DEFAULT_SCOPES;
             }
 
-            $accounts[$key] = new CanvaAccountConfig(
+            $profiles[$key] = new CanvaProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 clientId: (string) ($cfg['client_id'] ?? ''),
@@ -49,21 +49,21 @@ class CanvaConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): CanvaAccountConfig
+    public function getProfile(string $key): CanvaProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Canva account: "%s". Available: %s',
+                'Unknown Canva profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)) ?: '(none)',
+                implode(', ', array_keys($profiles)) ?: '(none)',
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

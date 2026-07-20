@@ -29,16 +29,16 @@ class AlertmanagerGetStatusTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Alertmanager account key. Optional if only one account is configured.',
+                    'description' => 'Alertmanager profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'alertmanager';
     }
@@ -46,7 +46,7 @@ class AlertmanagerGetStatusTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $status = $this->alertmanagerService->getStatus($arguments['account'] ?? null);
+            $status = $this->alertmanagerService->getStatus($arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

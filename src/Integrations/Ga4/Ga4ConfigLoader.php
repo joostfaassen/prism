@@ -15,44 +15,44 @@ class Ga4ConfigLoader
     }
 
     /**
-     * @return array<string, Ga4AccountConfig>
+     * @return array<string, Ga4ProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('ga4', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('ga4', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = $this->buildAccountConfig($key, $cfg);
+            $profiles[$key] = $this->buildProfileConfig($key, $cfg);
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): Ga4AccountConfig
+    public function getProfile(string $key): Ga4ProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown GA4 account: "%s". Available: %s',
+                'Unknown GA4 profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 
     /**
      * @param array<string, mixed> $cfg
      */
-    private function buildAccountConfig(string $key, array $cfg): Ga4AccountConfig
+    private function buildProfileConfig(string $key, array $cfg): Ga4ProfileConfig
     {
         $propertyId = $cfg['property_id'] ?? null;
         $credentials = $this->resolveCredentials($cfg);
 
-        return new Ga4AccountConfig(
+        return new Ga4ProfileConfig(
             key: $key,
             label: $cfg['label'] ?? $key,
             defaultPropertyId: $propertyId !== null ? (string) $propertyId : null,

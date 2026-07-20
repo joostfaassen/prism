@@ -42,16 +42,16 @@ class PicnicRemoveFromCartTool implements ToolInterface
                     'description' => 'Alias for quantity (legacy)',
                     'minimum' => 1,
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['product_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -60,7 +60,7 @@ class PicnicRemoveFromCartTool implements ToolInterface
     {
         $productId = trim((string) ($arguments['product_id'] ?? ''));
         $count = (int) ($arguments['quantity'] ?? $arguments['count'] ?? 1);
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($productId === '') {
             return [
@@ -77,7 +77,7 @@ class PicnicRemoveFromCartTool implements ToolInterface
         }
 
         try {
-            $cart = $this->picnicService->removeFromCart($productId, $count, $account);
+            $cart = $this->picnicService->removeFromCart($productId, $count, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

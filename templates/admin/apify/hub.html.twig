@@ -18,8 +18,8 @@
 {% block server_main %}
             {% if not serverHasApify %}
             <div class="mb-6 rounded-2xl border border-amber-800/50 bg-amber-950/20 px-6 py-5">
-                <p class="text-slate-300 text-sm">These tools are listed for reference, but become active only once this server has an <span class="font-mono text-amber-200/90">apify</span> account. Add one (with an <span class="font-mono">api_token</span>) under this server in your prism config to enable them.</p>
-                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'accounts'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300 mt-3">View accounts →</a>
+                <p class="text-slate-300 text-sm">These tools are listed for reference, but become active only once this server has an <span class="font-mono text-amber-200/90">apify</span> profile. Add one (with an <span class="font-mono">api_token</span>) under this server in your prism config to enable them.</p>
+                <a href="{{ path('admin_server_tab', {serverName: server.name, tab: 'profiles'}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 hover:text-cyan-300 mt-3">View profiles →</a>
             </div>
             {% endif %}
 
@@ -53,6 +53,6 @@
                 {% endfor %}
             </div>
 
-            <p class="text-xs text-slate-600 mt-6">Restrict which tools are exposed by adding a <span class="font-mono text-slate-400">tools:</span> allowlist to the <span class="font-mono text-slate-400">apify</span> account in your prism config (supports wildcards, e.g. <span class="font-mono text-slate-400">apify_get_*</span>). Omit it to expose all. Add new actor-backed tools by extending <code class="text-slate-400">App\Integrations\Apify\Tool\AbstractApifyActorTool</code>; use <span class="font-mono text-slate-400">apify_get_actor</span> to inspect an actor first.</p>
+            <p class="text-xs text-slate-600 mt-6">Restrict which tools are exposed by adding a <span class="font-mono text-slate-400">tools:</span> allowlist to the <span class="font-mono text-slate-400">apify</span> profile in your prism config (supports wildcards, e.g. <span class="font-mono text-slate-400">apify_get_*</span>). Omit it to expose all. Add new actor-backed tools by extending <code class="text-slate-400">App\Integrations\Apify\Tool\AbstractApifyActorTool</code>; use <span class="font-mono text-slate-400">apify_get_actor</span> to inspect an actor first.</p>
             {% endif %}
 {% endblock %}

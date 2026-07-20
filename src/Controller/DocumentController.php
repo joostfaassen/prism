@@ -329,26 +329,26 @@ class DocumentController extends AbstractController
     }
 
     /**
-     * @return array{server: array{name: string, label: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     * @return array{server: array{name: string, label: string, profileCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
      */
     private function navContext(string $serverName, ServerConfig $serverConfig): array
     {
         $tools = $this->mcpHandler->getTools();
         $visible = array_values(array_filter(
             $tools,
-            static fn (ToolInterface $tool) => $tool->getAccountType() === null
-                || $serverConfig->hasAccountType($tool->getAccountType()),
+            static fn (ToolInterface $tool) => $tool->getProfileType() === null
+                || $serverConfig->hasProfileType($tool->getProfileType()),
         ));
 
         return [
             'server' => [
                 'name' => $serverName,
                 'label' => $serverConfig->label,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($visible),
             ],
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ];
     }
 }

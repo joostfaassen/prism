@@ -56,16 +56,16 @@ TXT;
                     'type' => 'integer',
                     'description' => 'Optional. TTL in seconds, used to further disambiguate.',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TransIP account key. Optional when only one account is configured.',
+                    'description' => 'TransIP profile key. Optional when only one profile is configured.',
                 ],
             ],
             'required' => ['domain', 'name', 'type'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'transip';
     }
@@ -90,7 +90,7 @@ TXT;
                 type: $type,
                 content: isset($arguments['content']) ? (string) $arguments['content'] : null,
                 expire: isset($arguments['expire']) ? (int) $arguments['expire'] : null,
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

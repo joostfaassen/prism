@@ -29,13 +29,13 @@ class TelegramDeleteMessageTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Telegram account key. Optional if only one account is configured.',
+                    'description' => 'Telegram profile key. Optional if only one profile is configured.',
                 ],
                 'chat_id' => [
                     'type' => 'string',
-                    'description' => 'Chat id containing the message. Optional if the account has default_chat_id.',
+                    'description' => 'Chat id containing the message. Optional if the profile has default_chat_id.',
                 ],
                 'message_id' => [
                     'type' => 'integer',
@@ -46,7 +46,7 @@ class TelegramDeleteMessageTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'telegram';
     }
@@ -64,7 +64,7 @@ class TelegramDeleteMessageTool implements ToolInterface
 
         try {
             $result = $this->telegramService->deleteMessage(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 chatId: isset($arguments['chat_id']) ? (string) $arguments['chat_id'] : null,
                 messageId: $messageId,
             );

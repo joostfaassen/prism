@@ -33,9 +33,9 @@ class ApifyRunActorTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Apify account key (from apify_list_accounts). Optional if only one account is configured.',
+                    'description' => 'Apify profile key (from apify_list_profiles). Optional if only one profile is configured.',
                 ],
                 'actor' => [
                     'type' => 'string',
@@ -54,7 +54,7 @@ class ApifyRunActorTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'apify';
     }
@@ -83,7 +83,7 @@ class ApifyRunActorTool implements ToolInterface
 
         try {
             $items = $this->apifyService->runActorSync(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 actorId: (string) $arguments['actor'],
                 input: $input,
                 options: $options,

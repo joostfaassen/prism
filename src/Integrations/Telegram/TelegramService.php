@@ -17,19 +17,19 @@ class TelegramService
     /**
      * @return list<array{key: string, label: string, default_chat_id: string|null, allowed_chat_ids: list<string>|null}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'default_chat_id' => $account->defaultChatId,
-                'allowed_chat_ids' => $account->allowedChatIds,
+                'label' => $profile->label,
+                'default_chat_id' => $profile->defaultChatId,
+                'allowed_chat_ids' => $profile->allowedChatIds,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -37,9 +37,9 @@ class TelegramService
      *
      * @return array<string, mixed>
      */
-    public function getMe(?string $accountKey): array
+    public function getMe(?string $profileKey): array
     {
-        return $this->call($accountKey, 'getMe');
+        return $this->call($profileKey, 'getMe');
     }
 
     /**
@@ -48,7 +48,7 @@ class TelegramService
      * @return array<string, mixed>
      */
     public function sendMessage(
-        ?string $accountKey,
+        ?string $profileKey,
         ?string $chatId,
         string $text,
         ?string $parseMode = null,
@@ -56,9 +56,9 @@ class TelegramService
         bool $disableNotification = false,
         bool $disableWebPagePreview = false,
     ): array {
-        $account = $this->resolveAccount($accountKey);
-        $resolvedChatId = $this->resolveChatId($account, $chatId);
-        $this->assertChatAllowed($account, $resolvedChatId);
+        $profile = $this->resolveProfile($profileKey);
+        $resolvedChatId = $this->resolveChatId($profile, $chatId);
+        $this->assertChatAllowed($profile, $resolvedChatId);
 
         $params = [
             'chat_id' => $resolvedChatId,
@@ -78,7 +78,7 @@ class TelegramService
             $params['disable_web_page_preview'] = true;
         }
 
-        return $this->call($account->key, 'sendMessage', $params);
+        return $this->call($profile->key, 'sendMessage', $params);
     }
 
     /**
@@ -87,7 +87,7 @@ class TelegramService
      * @return list<array<string, mixed>>
      */
     public function getUpdates(
-        ?string $accountKey,
+        ?string $profileKey,
         ?int $offset = null,
         int $limit = 100,
         int $timeout = 0,
@@ -100,7 +100,7 @@ class TelegramService
             $params['offset'] = $offset;
         }
 
-        $result = $this->call($accountKey, 'getUpdates', $params);
+        $result = $this->call($profileKey, 'getUpdates', $params);
 
         return is_array($result) ? $result : [];
     }
@@ -110,12 +110,12 @@ class TelegramService
      *
      * @return array<string, mixed>
      */
-    public function getChat(?string $accountKey, ?string $chatId): array
+    public function getChat(?string $profileKey, ?string $chatId): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $resolvedChatId = $this->resolveChatId($account, $chatId);
+        $profile = $this->resolveProfile($profileKey);
+        $resolvedChatId = $this->resolveChatId($profile, $chatId);
 
-        return $this->call($account->key, 'getChat', [
+        return $this->call($profile->key, 'getChat', [
             'chat_id' => $resolvedChatId,
         ]);
     }
@@ -126,16 +126,16 @@ class TelegramService
      * @return array<string, mixed>
      */
     public function editMessageText(
-        ?string $accountKey,
+        ?string $profileKey,
         ?string $chatId,
         int $messageId,
         string $text,
         ?string $parseMode = null,
         bool $disableWebPagePreview = false,
     ): array {
-        $account = $this->resolveAccount($accountKey);
-        $resolvedChatId = $this->resolveChatId($account, $chatId);
-        $this->assertChatAllowed($account, $resolvedChatId);
+        $profile = $this->resolveProfile($profileKey);
+        $resolvedChatId = $this->resolveChatId($profile, $chatId);
+        $this->assertChatAllowed($profile, $resolvedChatId);
 
         $params = [
             'chat_id' => $resolvedChatId,
@@ -150,7 +150,7 @@ class TelegramService
             $params['disable_web_page_preview'] = true;
         }
 
-        return $this->call($account->key, 'editMessageText', $params);
+        return $this->call($profile->key, 'editMessageText', $params);
     }
 
     /**
@@ -158,69 +158,69 @@ class TelegramService
      *
      * @return array<string, mixed>
      */
-    public function deleteMessage(?string $accountKey, ?string $chatId, int $messageId): array
+    public function deleteMessage(?string $profileKey, ?string $chatId, int $messageId): array
     {
-        $account = $this->resolveAccount($accountKey);
-        $resolvedChatId = $this->resolveChatId($account, $chatId);
-        $this->assertChatAllowed($account, $resolvedChatId);
+        $profile = $this->resolveProfile($profileKey);
+        $resolvedChatId = $this->resolveChatId($profile, $chatId);
+        $this->assertChatAllowed($profile, $resolvedChatId);
 
-        return $this->call($account->key, 'deleteMessage', [
+        return $this->call($profile->key, 'deleteMessage', [
             'chat_id' => $resolvedChatId,
             'message_id' => $messageId,
         ]);
     }
 
-    private function resolveAccount(?string $accountKey): TelegramAccountConfig
+    private function resolveProfile(?string $profileKey): TelegramProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if ($accounts === []) {
-            throw new \RuntimeException('No Telegram accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if ($profiles === []) {
+            throw new \RuntimeException('No Telegram profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
-    private function resolveChatId(TelegramAccountConfig $account, ?string $chatId): string
+    private function resolveChatId(TelegramProfileConfig $profile, ?string $chatId): string
     {
         if ($chatId !== null && $chatId !== '') {
             return $chatId;
         }
 
-        if ($account->defaultChatId !== null && $account->defaultChatId !== '') {
-            return $account->defaultChatId;
+        if ($profile->defaultChatId !== null && $profile->defaultChatId !== '') {
+            return $profile->defaultChatId;
         }
 
         throw new \InvalidArgumentException(sprintf(
-            'No chat_id provided and account "%s" has no default_chat_id. '
+            'No chat_id provided and profile "%s" has no default_chat_id. '
             . 'Message the bot, then use telegram_get_updates to discover the chat_id.',
-            $account->key,
+            $profile->key,
         ));
     }
 
-    private function assertChatAllowed(TelegramAccountConfig $account, string $chatId): void
+    private function assertChatAllowed(TelegramProfileConfig $profile, string $chatId): void
     {
-        if ($account->allowedChatIds === null) {
+        if ($profile->allowedChatIds === null) {
             return;
         }
 
-        if ($account->allowedChatIds === []) {
+        if ($profile->allowedChatIds === []) {
             throw new \InvalidArgumentException(sprintf(
-                'Telegram account "%s" has an empty allowed_chat_ids list — no send/edit/delete targets are permitted. '
+                'Telegram profile "%s" has an empty allowed_chat_ids list — no send/edit/delete targets are permitted. '
                 . 'Add your chat id to allowed_chat_ids, or remove the key to allow any chat.',
-                $account->key,
+                $profile->key,
             ));
         }
 
-        if (!in_array($chatId, $account->allowedChatIds, true)) {
+        if (!in_array($chatId, $profile->allowedChatIds, true)) {
             throw new \InvalidArgumentException(sprintf(
-                'Chat id "%s" is not allowed for Telegram account "%s". Allowed: %s',
+                'Chat id "%s" is not allowed for Telegram profile "%s". Allowed: %s',
                 $chatId,
-                $account->key,
-                implode(', ', $account->allowedChatIds),
+                $profile->key,
+                implode(', ', $profile->allowedChatIds),
             ));
         }
     }
@@ -230,18 +230,18 @@ class TelegramService
      *
      * @return array<string, mixed>|list<array<string, mixed>>|bool
      */
-    private function call(?string $accountKey, string $method, array $params = []): array|bool
+    private function call(?string $profileKey, string $method, array $params = []): array|bool
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->botToken === '' || str_contains($account->botToken, 'replace-with')) {
+        if ($profile->botToken === '' || str_contains($profile->botToken, 'replace-with')) {
             throw new \RuntimeException(sprintf(
-                'Telegram account "%s" is missing a valid bot_token',
-                $account->key,
+                'Telegram profile "%s" is missing a valid bot_token',
+                $profile->key,
             ));
         }
 
-        $url = sprintf('%s/bot%s/%s', self::API_BASE, $account->botToken, $method);
+        $url = sprintf('%s/bot%s/%s', self::API_BASE, $profile->botToken, $method);
 
         $options = [
             'timeout' => 30,

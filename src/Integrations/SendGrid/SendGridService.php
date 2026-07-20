@@ -15,18 +15,18 @@ class SendGridService
     /**
      * @return list<array{key: string, label: string, base_url: string}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'base_url' => $account->baseUrl,
+                'label' => $profile->label,
+                'base_url' => $profile->baseUrl,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     /**
@@ -37,14 +37,14 @@ class SendGridService
      * @return mixed
      */
     public function getGlobalStats(
-        ?string $accountKey,
+        ?string $profileKey,
         string $startDate,
         ?string $endDate = null,
         ?string $aggregatedBy = null,
         ?int $limit = null,
         ?int $offset = null,
     ): mixed {
-        return $this->request($accountKey, 'GET', '/v3/stats', [
+        return $this->request($profileKey, 'GET', '/v3/stats', [
             'start_date' => $startDate,
             'end_date' => $endDate,
             'aggregated_by' => $aggregatedBy,
@@ -63,13 +63,13 @@ class SendGridService
      * @return mixed
      */
     public function getCategoryStats(
-        ?string $accountKey,
+        ?string $profileKey,
         string $startDate,
         array $categories,
         ?string $endDate = null,
         ?string $aggregatedBy = null,
     ): mixed {
-        return $this->request($accountKey, 'GET', '/v3/categories/stats', [
+        return $this->request($profileKey, 'GET', '/v3/categories/stats', [
             'start_date' => $startDate,
             'end_date' => $endDate,
             'categories' => $categories,
@@ -85,7 +85,7 @@ class SendGridService
      * @return mixed
      */
     public function getCategoryStatsSums(
-        ?string $accountKey,
+        ?string $profileKey,
         string $startDate,
         ?string $endDate = null,
         ?string $sortByMetric = null,
@@ -94,7 +94,7 @@ class SendGridService
         ?int $offset = null,
         ?string $aggregatedBy = null,
     ): mixed {
-        return $this->request($accountKey, 'GET', '/v3/categories/stats/sums', [
+        return $this->request($profileKey, 'GET', '/v3/categories/stats/sums', [
             'start_date' => $startDate,
             'end_date' => $endDate,
             'sort_by_metric' => $sortByMetric,
@@ -112,10 +112,10 @@ class SendGridService
      * @return mixed
      */
     public function listSingleSends(
-        ?string $accountKey,
+        ?string $profileKey,
         ?int $pageSize = null,
     ): mixed {
-        return $this->request($accountKey, 'GET', '/v3/marketing/singlesends', [
+        return $this->request($profileKey, 'GET', '/v3/marketing/singlesends', [
             'page_size' => $pageSize,
         ]);
     }
@@ -128,7 +128,7 @@ class SendGridService
      * @return mixed
      */
     public function getSingleSendStats(
-        ?string $accountKey,
+        ?string $profileKey,
         ?string $singleSendId = null,
         ?string $aggregatedBy = null,
         ?string $startDate = null,
@@ -139,7 +139,7 @@ class SendGridService
             ? '/v3/marketing/stats/singlesends/' . rawurlencode($singleSendId)
             : '/v3/marketing/stats/singlesends';
 
-        return $this->request($accountKey, 'GET', $path, [
+        return $this->request($profileKey, 'GET', $path, [
             'aggregated_by' => $aggregatedBy,
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -155,23 +155,23 @@ class SendGridService
      *
      * @return mixed
      */
-    public function get(?string $accountKey, string $path, array $query = []): mixed
+    public function get(?string $profileKey, string $path, array $query = []): mixed
     {
-        return $this->request($accountKey, 'GET', $path, $query);
+        return $this->request($profileKey, 'GET', $path, $query);
     }
 
-    private function resolveAccount(?string $accountKey): SendGridAccountConfig
+    private function resolveProfile(?string $profileKey): SendGridProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if (empty($accounts)) {
-            throw new \RuntimeException('No SendGrid accounts configured for this server');
+        $profiles = $this->configLoader->getProfiles();
+        if (empty($profiles)) {
+            throw new \RuntimeException('No SendGrid profiles configured for this server');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -179,14 +179,14 @@ class SendGridService
      *
      * @return mixed
      */
-    private function request(?string $accountKey, string $method, string $path, array $query = []): mixed
+    private function request(?string $profileKey, string $method, string $path, array $query = []): mixed
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        if ($account->apiKey === '') {
+        if ($profile->apiKey === '') {
             throw new \RuntimeException(sprintf(
-                'SendGrid account "%s" is missing api_key',
-                $account->key,
+                'SendGrid profile "%s" is missing api_key',
+                $profile->key,
             ));
         }
 
@@ -194,7 +194,7 @@ class SendGridService
             $path = '/' . $path;
         }
 
-        $url = $account->baseUrl . $path;
+        $url = $profile->baseUrl . $path;
         $queryString = $this->buildQueryString($query);
         if ($queryString !== '') {
             $url .= '?' . $queryString;
@@ -202,7 +202,7 @@ class SendGridService
 
         $response = $this->httpClient->request($method, $url, [
             'headers' => [
-                'Authorization' => 'Bearer ' . $account->apiKey,
+                'Authorization' => 'Bearer ' . $profile->apiKey,
                 'Accept' => 'application/json',
             ],
             'timeout' => 30,

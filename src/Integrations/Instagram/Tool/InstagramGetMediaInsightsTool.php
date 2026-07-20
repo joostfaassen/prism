@@ -31,7 +31,7 @@ class InstagramGetMediaInsightsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'media_id' => ['type' => 'string', 'description' => 'The media object id (from instagram_list_media).'],
                 'metric' => ['type' => 'string', 'description' => 'Comma-separated metric names, e.g. "reach,likes,comments,saved,shares".'],
                 'breakdown' => ['type' => 'string', 'description' => 'Optional breakdown dimension (e.g. "action_type" for profile_activity).'],
@@ -40,7 +40,7 @@ class InstagramGetMediaInsightsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -58,7 +58,7 @@ class InstagramGetMediaInsightsTool implements ToolInterface
 
         try {
             $result = $this->instagramService->getMediaInsights(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 mediaId: $mediaId,
                 metric: $metric,
                 breakdown: isset($arguments['breakdown']) ? (string) $arguments['breakdown'] : null,

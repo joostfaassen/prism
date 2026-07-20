@@ -35,14 +35,14 @@ class BunqGetTransactionNotesTool implements ToolInterface
                 ],
                 'monetary_account_id' => [
                     'type' => 'integer',
-                    'description' => 'The monetary account ID. Optional — omit to use the primary account.',
+                    'description' => 'The monetary account ID. Optional — omit to use the primary profile.',
                 ],
             ],
             'required' => ['payment_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'bunq';
     }

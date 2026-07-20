@@ -30,7 +30,7 @@ class InstagramGetMediaTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'media_id' => ['type' => 'string', 'description' => 'The media object id (from instagram_list_media).'],
                 'fields' => ['type' => 'string', 'description' => 'Optional comma-separated Graph API fields override.'],
             ],
@@ -38,7 +38,7 @@ class InstagramGetMediaTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -55,7 +55,7 @@ class InstagramGetMediaTool implements ToolInterface
 
         try {
             $result = $this->instagramService->getMedia(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 mediaId: $mediaId,
                 fields: isset($arguments['fields']) ? (string) $arguments['fields'] : null,
             );

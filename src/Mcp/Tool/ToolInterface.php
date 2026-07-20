@@ -16,10 +16,10 @@ interface ToolInterface
     public function getInputSchema(): array;
 
     /**
-     * The account type this tool operates on (e.g. 'bunq', 'email', 'calendar', 'cyans').
-     * Return null for utility tools that don't require account access.
+     * The profile type this tool operates on (e.g. 'bunq', 'email', 'calendar', 'cyans').
+     * Return null for utility tools that don't require profile access.
      */
-    public function getAccountType(): ?string;
+    public function getProfileType(): ?string;
 
     /**
      * Execute the tool with the given arguments.

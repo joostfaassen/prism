@@ -59,13 +59,13 @@ class IntegrationsController extends AbstractController
 
         $tools = array_values(array_filter(
             $this->mcpHandler->getTools(),
-            fn(ToolInterface $tool) => $tool->getAccountType() === $type,
+            fn(ToolInterface $tool) => $tool->getProfileType() === $type,
         ));
         usort($tools, fn(ToolInterface $a, ToolInterface $b) => $a->getName() <=> $b->getName());
 
-        $accounts = [];
-        foreach ($serverConfig->getAccountsByType($type) as $key => $cfg) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($serverConfig->getProfilesByType($type) as $key => $cfg) {
+            $profiles[] = [
                 'key' => $key,
                 'label' => $cfg['label'] ?? $key,
             ];
@@ -78,8 +78,8 @@ class IntegrationsController extends AbstractController
             'activeType' => $type,
             'integration' => $integration,
             'tools' => $tools,
-            'accounts' => $accounts,
-            'active' => $accounts !== [],
+            'profiles' => $profiles,
+            'active' => $profiles !== [],
         ]);
     }
 
@@ -107,21 +107,21 @@ class IntegrationsController extends AbstractController
         foreach ($this->integrationRegistry->all() as $type => $integration) {
             $toolCount = 0;
             foreach ($tools as $tool) {
-                if ($tool->getAccountType() === $type) {
+                if ($tool->getProfileType() === $type) {
                     ++$toolCount;
                 }
             }
 
-            $accounts = $server->getAccountsByType($type);
-            $accountCount = count($accounts);
-            $active = $accountCount > 0;
+            $profiles = $server->getProfilesByType($type);
+            $profileCount = count($profiles);
+            $active = $profileCount > 0;
 
             $integrations[] = [
                 'type' => $type,
                 'label' => $integration->getLabel(),
                 'description' => $integration->getDescription(),
                 'toolCount' => $toolCount,
-                'accountCount' => $accountCount,
+                'profileCount' => $profileCount,
                 'active' => $active,
             ];
         }
@@ -145,7 +145,7 @@ class IntegrationsController extends AbstractController
 
         $utilityTools = array_values(array_filter(
             $tools,
-            fn(ToolInterface $tool) => $tool->getAccountType() === null,
+            fn(ToolInterface $tool) => $tool->getProfileType() === null,
         ));
         usort($utilityTools, fn(ToolInterface $a, ToolInterface $b) => $a->getName() <=> $b->getName());
 
@@ -161,15 +161,15 @@ class IntegrationsController extends AbstractController
     }
 
     /**
-     * @return array{server: array{name: string, label: string, mcpUrl: string, accountCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
+     * @return array{server: array{name: string, label: string, mcpUrl: string, profileCount: int, toolCount: int}, serverHasHabits: bool, serverHasTracking: bool}
      */
     private function serverShell(Request $request, string $serverName, ServerConfig $serverConfig): array
     {
         $tools = $this->mcpHandler->getTools();
         $serverTools = array_values(array_filter(
             $tools,
-            fn(ToolInterface $tool) => $tool->getAccountType() === null
-                || $serverConfig->hasAccountType($tool->getAccountType()),
+            fn(ToolInterface $tool) => $tool->getProfileType() === null
+                || $serverConfig->hasProfileType($tool->getProfileType()),
         ));
 
         return [
@@ -177,11 +177,11 @@ class IntegrationsController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $request->getSchemeAndHttpHost() . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($serverTools),
             ],
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ];
     }
 

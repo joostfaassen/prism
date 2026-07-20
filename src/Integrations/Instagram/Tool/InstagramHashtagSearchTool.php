@@ -23,8 +23,8 @@ class InstagramHashtagSearchTool implements ToolInterface
         return 'Find content and creators by hashtag — the engine for discovery and competitor/niche research. '
             . 'Resolves a hashtag name to its id and (by default) returns the top public media for it; set media="recent" '
             . 'for the most recent posts, or media="none" to only resolve the id. Returned media includes permalinks and '
-            . 'engagement counts you can use to find accounts to engage with and trends to ride. Note: Instagram limits '
-            . 'you to ~30 unique hashtag lookups per 7 days per account, and only public business/creator media is returned.';
+            . 'engagement counts you can use to find profiles to engage with and trends to ride. Note: Instagram limits '
+            . 'you to ~30 unique hashtag lookups per 7 days per profile, and only public business/creator media is returned.';
     }
 
     public function getInputSchema(): array
@@ -32,7 +32,7 @@ class InstagramHashtagSearchTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'hashtag' => ['type' => 'string', 'description' => 'Hashtag to search (with or without leading #).'],
                 'media' => [
                     'type' => 'string',
@@ -45,7 +45,7 @@ class InstagramHashtagSearchTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -67,7 +67,7 @@ class InstagramHashtagSearchTool implements ToolInterface
 
         try {
             $result = $this->instagramService->hashtagSearch(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 hashtag: $hashtag,
                 media: $media,
                 limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 25,

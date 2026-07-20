@@ -30,7 +30,7 @@ class BrowserlessScreenshotTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Browserless account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Browserless profile key. Optional if only one is configured.'],
                 'url' => ['type' => 'string', 'description' => 'The fully-qualified URL to screenshot (http/https).'],
                 'full_page' => ['type' => 'boolean', 'description' => 'Capture the full scrollable page instead of just the viewport. Default false.'],
                 'type' => ['type' => 'string', 'enum' => ['png', 'jpeg'], 'description' => 'Image format. Default png.'],
@@ -46,7 +46,7 @@ class BrowserlessScreenshotTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'browserless';
     }
@@ -86,7 +86,7 @@ class BrowserlessScreenshotTool implements ToolInterface
         }
 
         try {
-            $result = $this->browserlessService->screenshot($arguments['account'] ?? null, $url, $options);
+            $result = $this->browserlessService->screenshot($arguments['profile'] ?? null, $url, $options);
 
             return [
                 'content' => [

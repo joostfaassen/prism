@@ -37,16 +37,16 @@ class TransipGetInvoiceTool implements ToolInterface
                     'description' => 'Include the invoice line items. Defaults to false.',
                     'default' => false,
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TransIP account key. Optional when only one account is configured.',
+                    'description' => 'TransIP profile key. Optional when only one profile is configured.',
                 ],
             ],
             'required' => ['invoice_number'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'transip';
     }
@@ -65,7 +65,7 @@ class TransipGetInvoiceTool implements ToolInterface
             $invoice = $this->transipService->getInvoice(
                 $invoiceNumber,
                 (bool) ($arguments['with_items'] ?? false),
-                $arguments['account'] ?? null,
+                $arguments['profile'] ?? null,
             );
 
             return [

@@ -29,20 +29,20 @@ class TelegramGetChatTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Telegram account key. Optional if only one account is configured.',
+                    'description' => 'Telegram profile key. Optional if only one profile is configured.',
                 ],
                 'chat_id' => [
                     'type' => 'string',
-                    'description' => 'Chat id to look up. Optional if the account has default_chat_id.',
+                    'description' => 'Chat id to look up. Optional if the profile has default_chat_id.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'telegram';
     }
@@ -51,7 +51,7 @@ class TelegramGetChatTool implements ToolInterface
     {
         try {
             $result = $this->telegramService->getChat(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 chatId: isset($arguments['chat_id']) ? (string) $arguments['chat_id'] : null,
             );
 

@@ -20,9 +20,9 @@ class BunqListTransactionsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List transactions across one or more bunq bank accounts. Supports date range filtering. '
-            . 'Use account key (e.g. "personal"), comma-separated keys (e.g. "personal,shared-household"), '
-            . 'or "*" for all configured accounts.';
+        return 'List transactions across one or more bunq bank profiles. Supports date range filtering. '
+            . 'Use profile key (e.g. "personal"), comma-separated keys (e.g. "personal,shared-household"), '
+            . 'or "*" for all configured profiles.';
     }
 
     public function getInputSchema(): array
@@ -30,9 +30,9 @@ class BunqListTransactionsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'accounts' => [
+                'profiles' => [
                     'type' => 'string',
-                    'description' => 'Account key, comma-separated keys, or "*" for all accounts',
+                    'description' => 'Profile key, comma-separated keys, or "*" for all profiles',
                 ],
                 'date_from' => [
                     'type' => 'string',
@@ -44,25 +44,25 @@ class BunqListTransactionsTool implements ToolInterface
                 ],
                 'limit' => [
                     'type' => 'integer',
-                    'description' => 'Max transactions per account. Default: 50, max: 500',
+                    'description' => 'Max transactions per profile. Default: 50, max: 500',
                 ],
             ],
-            'required' => ['accounts'],
+            'required' => ['profiles'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'bunq';
     }
 
     public function execute(array $arguments): array
     {
-        $accounts = $arguments['accounts'] ?? '';
+        $profiles = $arguments['profiles'] ?? '';
 
-        if ($accounts === '') {
+        if ($profiles === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "accounts" is required. Use an account key, comma-separated keys, or "*" for all.']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profiles" is required. Use a profile key, comma-separated keys, or "*" for all.']],
                 'isError' => true,
             ];
         }
@@ -72,7 +72,7 @@ class BunqListTransactionsTool implements ToolInterface
 
         try {
             $result = $this->bunqService->listTransactions(
-                accountsParam: $accounts,
+                profilesParam: $profiles,
                 dateFrom: $arguments['date_from'] ?? null,
                 dateTo: $arguments['date_to'] ?? null,
                 limit: $limit,
@@ -85,7 +85,7 @@ class BunqListTransactionsTool implements ToolInterface
 
             $output = [
                 'total_transactions' => $totalCount,
-                'accounts' => $result,
+                'profiles' => $result,
             ];
 
             return [

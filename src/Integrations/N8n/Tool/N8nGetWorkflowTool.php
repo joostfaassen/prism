@@ -28,9 +28,9 @@ class N8nGetWorkflowTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'n8n account key (from n8n_list_accounts). Optional if only one account is configured.',
+                    'description' => 'n8n profile key (from n8n_list_profiles). Optional if only one profile is configured.',
                 ],
                 'id' => [
                     'type' => 'string',
@@ -41,7 +41,7 @@ class N8nGetWorkflowTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'n8n';
     }
@@ -59,7 +59,7 @@ class N8nGetWorkflowTool implements ToolInterface
 
         try {
             $workflow = $this->n8nService->getWorkflow(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 id: $id,
             );
 

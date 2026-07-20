@@ -28,32 +28,32 @@ class SlackGetDirectoryTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key. Use slack_list_accounts to see available accounts.',
+                    'description' => 'Slack profile key. Use slack_list_profiles to see available profiles.',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $directory = $this->slackService->getDirectory($accountKey);
+            $directory = $this->slackService->getDirectory($profileKey);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

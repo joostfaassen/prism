@@ -30,9 +30,9 @@ class PrometheusListMetricsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
                 'filter' => [
                     'type' => 'string',
@@ -47,7 +47,7 @@ class PrometheusListMetricsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -55,7 +55,7 @@ class PrometheusListMetricsTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $names = $this->prometheusService->listMetricNames($arguments['account'] ?? null);
+            $names = $this->prometheusService->listMetricNames($arguments['profile'] ?? null);
 
             $filter = isset($arguments['filter']) ? trim((string) $arguments['filter']) : '';
             if ($filter !== '') {

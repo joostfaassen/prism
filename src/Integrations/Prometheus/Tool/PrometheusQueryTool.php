@@ -30,9 +30,9 @@ class PrometheusQueryTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
                 'query' => [
                     'type' => 'string',
@@ -47,7 +47,7 @@ class PrometheusQueryTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -65,7 +65,7 @@ class PrometheusQueryTool implements ToolInterface
 
         try {
             $result = $this->prometheusService->query(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 query: $query,
                 time: isset($arguments['time']) ? (string) $arguments['time'] : null,
             );

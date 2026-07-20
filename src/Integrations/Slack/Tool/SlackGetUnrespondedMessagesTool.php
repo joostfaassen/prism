@@ -28,9 +28,9 @@ class SlackGetUnrespondedMessagesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'channel' => [
                     'type' => 'string',
@@ -45,23 +45,23 @@ class SlackGetUnrespondedMessagesTool implements ToolInterface
                     'description' => 'Only check messages after this Unix timestamp',
                 ],
             ],
-            'required' => ['account', 'channel'],
+            'required' => ['profile', 'channel'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $channelId = $arguments['channel'] ?? '';
 
-        if ($accountKey === '' || $channelId === '') {
+        if ($profileKey === '' || $channelId === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "channel" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile" and "channel" are required']],
                 'isError' => true,
             ];
         }
@@ -70,7 +70,7 @@ class SlackGetUnrespondedMessagesTool implements ToolInterface
         $oldest = $arguments['oldest'] ?? null;
 
         try {
-            $result = $this->slackService->getUnrespondedMessages($accountKey, $channelId, $limit, $oldest);
+            $result = $this->slackService->getUnrespondedMessages($profileKey, $channelId, $limit, $oldest);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

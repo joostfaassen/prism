@@ -30,9 +30,9 @@ class AlertmanagerExpireSilenceTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Alertmanager account key. Optional if only one account is configured.',
+                    'description' => 'Alertmanager profile key. Optional if only one profile is configured.',
                 ],
                 'silence_id' => [
                     'type' => 'string',
@@ -43,7 +43,7 @@ class AlertmanagerExpireSilenceTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'alertmanager';
     }
@@ -59,7 +59,7 @@ class AlertmanagerExpireSilenceTool implements ToolInterface
         }
 
         try {
-            $this->alertmanagerService->expireSilence($arguments['account'] ?? null, $silenceId);
+            $this->alertmanagerService->expireSilence($arguments['profile'] ?? null, $silenceId);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

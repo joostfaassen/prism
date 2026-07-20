@@ -15,57 +15,57 @@ class BunqConfigLoader
     }
 
     /**
-     * @return array<string, BunqAccountConfig>
+     * @return array<string, BunqProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('bunq', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('bunq', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = $this->buildAccountConfig($key, $cfg);
+            $profiles[$key] = $this->buildProfileConfig($key, $cfg);
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): BunqAccountConfig
+    public function getProfile(string $key): BunqProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
-            $available = implode(', ', array_keys($accounts));
+        if (!isset($profiles[$key])) {
+            $available = implode(', ', array_keys($profiles));
             throw new \InvalidArgumentException(sprintf(
-                'Unknown bunq account: "%s". Available: %s',
+                'Unknown bunq profile: "%s". Available: %s',
                 $key,
                 $available,
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 
     /**
      * @return list<string>
      */
-    public function resolveAccountKeys(string $accountsParam): array
+    public function resolveProfileKeys(string $profilesParam): array
     {
-        if ($accountsParam === '*') {
-            return array_keys($this->getAccounts());
+        if ($profilesParam === '*') {
+            return array_keys($this->getProfiles());
         }
 
-        $keys = array_map('trim', explode(',', $accountsParam));
+        $keys = array_map('trim', explode(',', $profilesParam));
         $keys = array_filter($keys, fn(string $k) => $k !== '');
 
         foreach ($keys as $key) {
-            $this->getAccount($key);
+            $this->getProfile($key);
         }
 
         return array_values($keys);
     }
 
     /**
-     * Context files are keyed by API key hash so accounts sharing the same
+     * Context files are keyed by API key hash so profiles sharing the same
      * API key reuse a single bunq session.
      */
     public function getContextFilePath(string $apiKey): string
@@ -83,9 +83,9 @@ class BunqConfigLoader
     /**
      * @param array<string, mixed> $cfg
      */
-    private function buildAccountConfig(string $key, array $cfg): BunqAccountConfig
+    private function buildProfileConfig(string $key, array $cfg): BunqProfileConfig
     {
-        return new BunqAccountConfig(
+        return new BunqProfileConfig(
             key: $key,
             label: $cfg['label'] ?? $key,
             apiKey: $cfg['api_key'] ?? '',

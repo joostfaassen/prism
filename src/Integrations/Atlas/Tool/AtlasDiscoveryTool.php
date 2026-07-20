@@ -20,7 +20,7 @@ class AtlasDiscoveryTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Get the Atlas Content API discovery document for a configured Atlas account.';
+        return 'Get the Atlas Content API discovery document for a configured Atlas profile.';
     }
 
     public function getInputSchema(): array
@@ -30,14 +30,14 @@ class AtlasDiscoveryTool implements ToolInterface
             'properties' => [
                 'atlas' => [
                     'type' => 'string',
-                    'description' => 'Atlas account name, for example "engineering" or "hr".',
+                    'description' => 'Atlas profile name, for example "engineering" or "hr".',
                 ],
             ],
             'required' => ['atlas'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'atlas';
     }

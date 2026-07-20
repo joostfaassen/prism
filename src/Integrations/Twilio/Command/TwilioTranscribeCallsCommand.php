@@ -35,7 +35,7 @@ class TwilioTranscribeCallsCommand extends Command
     {
         $this
             ->addArgument('server', InputArgument::REQUIRED, 'Server name from prism.config.yaml')
-            ->addArgument('account', InputArgument::REQUIRED, 'Twilio account key')
+            ->addArgument('profile', InputArgument::REQUIRED, 'Twilio profile key')
             ->addOption('call-sid', null, InputOption::VALUE_REQUIRED, 'Transcribe a specific call by SID')
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Max number of recent calls to process', '20')
             ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Filter calls by status', 'completed')
@@ -48,7 +48,7 @@ class TwilioTranscribeCallsCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $serverName = $input->getArgument('server');
-        $accountKey = $input->getArgument('account');
+        $profileKey = $input->getArgument('profile');
 
         try {
             $server = $this->configLoader->getServer($serverName);
@@ -66,7 +66,7 @@ class TwilioTranscribeCallsCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->title(sprintf('Twilio Call Transcription — %s / %s', $serverName, $accountKey));
+        $io->title(sprintf('Twilio Call Transcription — %s / %s', $serverName, $profileKey));
         $io->info(sprintf('Whisper provider: %s', $this->whisperService->getProviderName()));
 
         $callSid = $input->getOption('call-sid');
@@ -74,14 +74,14 @@ class TwilioTranscribeCallsCommand extends Command
         $language = $input->getOption('language');
 
         if ($callSid !== null) {
-            $calls = [$this->twilioService->getCall($accountKey, $callSid)];
+            $calls = [$this->twilioService->getCall($profileKey, $callSid)];
         } else {
             $limit = (int) $input->getOption('limit');
             $status = $input->getOption('status');
 
             $io->info(sprintf('Fetching up to %d %s calls...', $limit, $status));
 
-            $result = $this->twilioService->listCalls($accountKey, [
+            $result = $this->twilioService->listCalls($profileKey, [
                 'limit' => $limit,
                 'status' => $status,
             ]);
@@ -102,14 +102,14 @@ class TwilioTranscribeCallsCommand extends Command
 
             $io->section(sprintf('Call %s (%s → %s, %ss)', $sid, $from, $to, $duration));
 
-            if ($skipExisting && $this->transcriptionStore->exists($serverName, $accountKey, $sid)) {
+            if ($skipExisting && $this->transcriptionStore->exists($serverName, $profileKey, $sid)) {
                 $io->comment('Transcription already exists, skipping');
                 $skipped++;
                 continue;
             }
 
             try {
-                $recordings = $this->twilioService->listRecordings($accountKey, $sid);
+                $recordings = $this->twilioService->listRecordings($profileKey, $sid);
             } catch (\Throwable $e) {
                 $io->warning('Failed to fetch recordings: ' . $e->getMessage());
                 $errors++;
@@ -132,7 +132,7 @@ class TwilioTranscribeCallsCommand extends Command
 
                 try {
                     $io->text('  Downloading audio...');
-                    $this->twilioService->downloadRecording($accountKey, $recordingSid, $tempFile);
+                    $this->twilioService->downloadRecording($profileKey, $recordingSid, $tempFile);
 
                     $io->text('  Transcribing...');
                     $result = $this->whisperService->transcribe($tempFile, $language);
@@ -159,7 +159,7 @@ class TwilioTranscribeCallsCommand extends Command
             if (!empty($allTranscriptions)) {
                 $combinedText = implode("\n\n", array_map(fn($t) => $t['text'], $allTranscriptions));
 
-                $this->transcriptionStore->save($serverName, $accountKey, $sid, [
+                $this->transcriptionStore->save($serverName, $profileKey, $sid, [
                     'call_sid' => $sid,
                     'from' => $call['from'] ?? '',
                     'to' => $call['to'] ?? '',

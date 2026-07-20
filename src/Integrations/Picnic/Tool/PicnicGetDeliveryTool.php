@@ -32,16 +32,16 @@ class PicnicGetDeliveryTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'The delivery ID as returned by picnic_list_deliveries',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['delivery_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -49,7 +49,7 @@ class PicnicGetDeliveryTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $deliveryId = trim((string) ($arguments['delivery_id'] ?? ''));
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($deliveryId === '') {
             return [
@@ -59,7 +59,7 @@ class PicnicGetDeliveryTool implements ToolInterface
         }
 
         try {
-            $delivery = $this->picnicService->getDelivery($deliveryId, $account);
+            $delivery = $this->picnicService->getDelivery($deliveryId, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

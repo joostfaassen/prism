@@ -1,9 +1,9 @@
 # Prism — Future MCP Tools Roadmap
 
 ## Email Bridge (IMAP + SMTP)
-- [x] Multi-account email configuration (`type: email` accounts in `prism.config.yaml`)
-- [x] `email_list_accounts` — List configured accounts
-- [x] `email_list_folders` — List all mailbox folders for an account
+- [x] Multi-profile email configuration (`type: email` profiles in `prism.config.yaml`)
+- [x] `email_list_profiles` — List configured profiles
+- [x] `email_list_folders` — List all mailbox folders for a profile
 - [x] `email_create_folder` — Create an IMAP folder (error if it already exists)
 - [x] `email_search` — Search emails by subject, sender, date range, flags
 - [x] `email_get_messages` — Fetch full email content in bulk (including single-message fetches)
@@ -16,9 +16,9 @@
 
 ## bunq Banking Bridge
 - [ ] bunq API authentication (API key + permitted IPs config)
-- [ ] `bunq_list_accounts` — List all monetary accounts
+- [ ] `bunq_list_profiles` — List all monetary accounts
 - [ ] `bunq_list_transactions` — Pull transactions with date/amount filters
-- [ ] `bunq_get_balance` — Get current account balance
+- [ ] `bunq_get_balance` — Get current profile balance
 - [ ] `bunq_transaction_details` — Get details of a specific transaction
 - [ ] `bunq_list_cards` — List linked cards and their status
 

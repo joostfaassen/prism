@@ -20,7 +20,7 @@ class InstagramListMediaTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List the account\'s published media (posts, reels, carousels) newest first, with like and comment '
+        return 'List the profile\'s published media (posts, reels, carousels) newest first, with like and comment '
             . 'counts. Returns a "data" array plus "paging" cursors; pass paging.cursors.after as the "after" '
             . 'argument to fetch the next page. Use a custom fields list to fetch additional Graph API media fields.';
     }
@@ -30,7 +30,7 @@ class InstagramListMediaTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'fields' => ['type' => 'string', 'description' => 'Optional comma-separated Graph API media fields override.'],
                 'limit' => ['type' => 'integer', 'description' => 'Max items per page (default 25).'],
                 'after' => ['type' => 'string', 'description' => 'Pagination cursor (paging.cursors.after from a previous call).'],
@@ -39,7 +39,7 @@ class InstagramListMediaTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -48,7 +48,7 @@ class InstagramListMediaTool implements ToolInterface
     {
         try {
             $result = $this->instagramService->listMedia(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 fields: isset($arguments['fields']) ? (string) $arguments['fields'] : null,
                 limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 25,
                 after: isset($arguments['after']) ? (string) $arguments['after'] : null,

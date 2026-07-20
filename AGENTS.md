@@ -4,14 +4,14 @@
 
 Prism is a **multi-server MCP (Model Context Protocol) bridge** built on Symfony 7.2. It exposes tools for banking, email, calendars, and custom APIs over MCP so that AI clients (Cursor, Claude Desktop, etc.) can interact with them.
 
-The key design idea: you define **servers** in YAML config, each with its own bearer token and a set of **accounts**. Each account has a **type** (e.g. `bunq`, `email`, `calendar`, `cyans`). Tools are automatically scoped to servers based on which account types that server has. This means different AI clients can connect to different servers and see different sets of tools and data — a single Prism instance serves multiple tenants.
+The key design idea: you define **servers** in YAML config, each with its own bearer token and a set of **profiles**. Each profile has a **type** (e.g. `bunq`, `email`, `calendar`, `cyans`). Tools are automatically scoped to servers based on which profile types that server has. This means different AI clients can connect to different servers and see different sets of tools and data — a single Prism instance serves multiple tenants.
 
 ## Architecture Overview
 
 There is **no database**. All configuration lives in `prism.config.yaml` (gitignored). The domain model is:
 
-- **Server** (`ServerConfig`) — a named MCP endpoint with a bearer token and a map of accounts
-- **Account** — a named entry in a server's `accounts` map, with a `type` and type-specific credentials
+- **Server** (`ServerConfig`) — a named MCP endpoint with a bearer token and a map of profiles
+- **Profile** — a named entry in a server's `profiles` map, with a `type` and type-specific credentials
 - **Tool** (`ToolInterface`) — a PHP class that implements an MCP tool; auto-registered via Symfony DI tags
 
 The flow:
@@ -20,9 +20,9 @@ The flow:
 AI Client → POST /mcp/{serverName} (Bearer token)
   → BearerTokenAuthenticator resolves token → ServerConfig
   → McpHandler dispatches JSON-RPC method (initialize, tools/list, tools/call)
-  → tools/list filters tools by server's account types
+  → tools/list filters tools by server's profile types
   → tools/call delegates to ToolInterface::execute()
-  → Tool uses *Service + *ConfigLoader scoped to the active server's accounts
+  → Tool uses *Service + *ConfigLoader scoped to the active server's profiles
 ```
 
 ## Key Concepts and How They Relate
@@ -32,16 +32,16 @@ AI Client → POST /mcp/{serverName} (Bearer token)
 Defined in `prism.config.yaml` under `servers:`. Each server has:
 - `label` — human-readable name
 - `bearer_token` — authentication secret for MCP clients
-- `accounts` — map of account names to config (each must have a `type`)
+- `profiles` — map of profile names to config (each must have a `type`)
 
 Servers are loaded by `PrismConfigLoader` and stored as `ServerConfig` objects.
 
-### Accounts
+### Profiles
 
-Each account is a keyed entry under a server's `accounts:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo`, `tmdb`, `igdb`, `telegram`, `picnic`, and others (extend by adding your own).
+Each profile is a keyed entry under a server's `profiles:` block. The `type` field determines which integration it connects to and which tools become available. Supported types: `bunq`, `email`, `calendar`, `cyans`, `slack`, `freescout`, `libredesk`, `matomo`, `tmdb`, `igdb`, `telegram`, `picnic`, and others (extend by adding your own).
 
-Each account type has:
-- An `*AccountConfig` DTO (e.g. `EmailAccountConfig`) — typed value object for credentials
+Each profile type has:
+- An `*ProfileConfig` DTO (e.g. `EmailProfileConfig`) — typed value object for credentials
 - An `*ConfigLoader` (e.g. `EmailConfigLoader`) — reads raw YAML into DTOs, scoped to the current server via `ServerContext`
 - An `*Service` (e.g. `EmailService`) — the actual integration logic
 
@@ -55,7 +55,7 @@ interface ToolInterface
     public function getName(): string;
     public function getDescription(): string;
     public function getInputSchema(): array;    // JSON Schema
-    public function getAccountType(): ?string;  // null = utility, always available
+    public function getProfileType(): ?string;  // null = utility, always available
     public function execute(array $arguments): array;
 }
 ```
@@ -63,12 +63,12 @@ interface ToolInterface
 Tools are auto-discovered by Symfony DI: any class implementing `ToolInterface` is tagged `app.mcp_tool` and injected into `McpHandler`.
 
 **Visibility rule:** A tool appears on a server if and only if:
-- `getAccountType()` returns `null` (utility tool — always visible), OR
-- The server has at least one account whose `type` matches the tool's account type
+- `getProfileType()` returns `null` (utility tool — always visible), OR
+- The server has at least one profile whose `type` matches the tool's profile type
 
 ### ServerContext
 
-A request-scoped service that holds the active `ServerConfig` for the current request. Set by `BearerTokenAuthenticator` (for MCP requests) or by `AdminController` (for admin "Try It" execution). All config loaders use `ServerContext` to scope account access.
+A request-scoped service that holds the active `ServerConfig` for the current request. Set by `BearerTokenAuthenticator` (for MCP requests) or by `AdminController` (for admin "Try It" execution). All config loaders use `ServerContext` to scope profile access.
 
 ## Project Structure
 
@@ -79,10 +79,10 @@ src/
 │   ├── IntegrationRegistry.php    # Tagged iterator of all *Integration classes
 │   ├── Bunq/
 │   │   ├── BunqIntegration.php    # Registry metadata
-│   │   ├── BunqAccountConfig.php
+│   │   ├── BunqProfileConfig.php
 │   │   ├── BunqConfigLoader.php
 │   │   ├── BunqService.php
-│   │   └── Tool/                  # MCP tools for this account type
+│   │   └── Tool/                  # MCP tools for this profile type
 │   ├── Email/
 │   │   ├── EmailIntegration.php
 │   │   ├── …config/service…
@@ -90,10 +90,10 @@ src/
 │   │   └── Tool/
 │   ├── Habits/                    # may also have Controller/, Entity/
 │   ├── Tracking/                  # may also have Controller/, Entity/, Repository/
-│   └── …one directory per account type…
+│   └── …one directory per profile type…
 ├── Config/
 │   ├── PrismConfigLoader.php    # Loads prism.config.yaml → ServerConfig objects
-│   ├── ServerConfig.php         # Server value object (name, token, accounts)
+│   ├── ServerConfig.php         # Server value object (name, token, profiles)
 │   └── ServerContext.php        # Request-scoped active server holder
 ├── Controller/
 │   ├── McpController.php        # POST /mcp/{serverName} — MCP JSON-RPC endpoint
@@ -104,7 +104,7 @@ src/
 │   └── HealthController.php     # / and /health — service metadata
 ├── Mcp/
 │   ├── McpHandler.php           # JSON-RPC dispatcher (initialize, tools/list, tools/call)
-│   └── Tool/                    # core/utility tools only (not account-typed)
+│   └── Tool/                    # core/utility tools only (not profile-typed)
 │       ├── ToolInterface.php
 │       ├── SumTool.php
 │       ├── DayNameTool.php
@@ -120,23 +120,23 @@ src/
     └── EnvUserProvider.php
 ```
 
-Each integration module is self-contained: account config, config loader, service, MCP tools,
+Each integration module is self-contained: profile config, config loader, service, MCP tools,
 and (where needed) controllers, commands, entities, and repositories. See a server’s
-Integrations page (`/admin/server/{server}/integrations`) for packs and accounts on that server.
+Integrations page (`/admin/server/{server}/integrations`) for packs and profiles on that server.
 
 ## How to Add a New Integration
 
 Adding a new integration follows a repeatable pattern under `src/Integrations/{Name}/`.
 Existing modules (e.g. `src/Integrations/Cyans/`, `src/Integrations/Slack/`) demonstrate it.
 
-### Step 1: Create the Account Config DTO
+### Step 1: Create the Profile Config DTO
 
-Create `src/Integrations/Slack/SlackAccountConfig.php`:
+Create `src/Integrations/Slack/SlackProfileConfig.php`:
 
 ```php
 namespace App\Integrations\Slack;
 
-class SlackAccountConfig
+class SlackProfileConfig
 {
     public function __construct(
         public readonly string $key,
@@ -166,14 +166,14 @@ class SlackConfigLoader
     ) {
     }
 
-    /** @return array<string, SlackAccountConfig> */
-    public function getAccounts(): array
+    /** @return array<string, SlackProfileConfig> */
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('slack', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('slack', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new SlackAccountConfig(
+            $profiles[$key] = new SlackProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 botToken: $cfg['bot_token'] ?? '',
@@ -181,22 +181,22 @@ class SlackConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): SlackAccountConfig
+    public function getProfile(string $key): SlackProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Slack account: "%s". Available: %s',
+                'Unknown Slack profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }
 ```
@@ -207,7 +207,7 @@ Create `src/Integrations/Slack/SlackService.php` — the actual API integration.
 
 ### Step 4: Create the Integration metadata class
 
-Create `src/Integrations/Slack/SlackIntegration.php` implementing `App\Integrations\IntegrationInterface` (`getType()`, `getLabel()`, `getDescription()`). Symfony tags it as `app.integration` automatically — no manual registration. `getType()` must match the YAML `type:` string and tool `getAccountType()`.
+Create `src/Integrations/Slack/SlackIntegration.php` implementing `App\Integrations\IntegrationInterface` (`getType()`, `getLabel()`, `getDescription()`). Symfony tags it as `app.integration` automatically — no manual registration. `getType()` must match the YAML `type:` string and tool `getProfileType()`.
 
 ### Step 5: Create Tool Classes
 
@@ -241,9 +241,9 @@ class SlackSendMessageTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'channel' => [
                     'type' => 'string',
@@ -254,11 +254,11 @@ class SlackSendMessageTool implements ToolInterface
                     'description' => 'Message text to send',
                 ],
             ],
-            'required' => ['account', 'message'],
+            'required' => ['profile', 'message'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
@@ -267,7 +267,7 @@ class SlackSendMessageTool implements ToolInterface
     {
         try {
             $result = $this->slackService->sendMessage(
-                accountKey: $arguments['account'],
+                profileKey: $arguments['profile'],
                 channel: $arguments['channel'] ?? null,
                 message: $arguments['message'],
             );
@@ -287,16 +287,16 @@ class SlackSendMessageTool implements ToolInterface
 
 **That's it.** No registration code needed — Symfony auto-discovers the tool via the `ToolInterface` tag and the integration via `IntegrationInterface`.
 
-### Step 6: Add Account Config in YAML
+### Step 6: Add Profile Config in YAML
 
-Add accounts to the appropriate server(s) in `prism.config.yaml`:
+Add profiles to the appropriate server(s) in `prism.config.yaml`:
 
 ```yaml
 servers:
   my-server:
     label: "My Server"
     bearer_token: "my-secret-token"
-    accounts:
+    profiles:
       work-slack:
         type: slack
         label: "Work Slack"
@@ -304,9 +304,9 @@ servers:
         default_channel: "general"
 ```
 
-## Adding a Utility Tool (No Account Required)
+## Adding a Utility Tool (No Profile Required)
 
-For tools that don't require external service credentials (date math, text processing, calculations), return `null` from `getAccountType()`. These tools are available on every server.
+For tools that don't require external service credentials (date math, text processing, calculations), return `null` from `getProfileType()`. These tools are available on every server.
 
 See `SumTool` and `DayNameTool` for examples.
 
@@ -319,8 +319,8 @@ servers:
   new-server:
     label: "New Server"
     bearer_token: "generate-a-unique-token"
-    accounts:
-      # Add any accounts this server should have access to
+    profiles:
+      # Add any profiles this server should have access to
       my-email:
         type: email
         imap:
@@ -345,7 +345,7 @@ For internal services where you control the API and can connect directly:
 
 1. Tell the AI: "Add a new integration for [service name]. The API is at [base URL], uses [auth method], and I need tools for [list operations]."
 2. Provide the API documentation or example curl commands.
-3. The AI creates the 4-file integration (AccountConfig, ConfigLoader, Service, Tool classes) following the established pattern.
+3. The AI creates the 4-file integration (ProfileConfig, ConfigLoader, Service, Tool classes) following the established pattern.
 
 **Example prompt:** "Add a Jira integration. The API uses Basic Auth with an API token. I need tools to list issues, get issue details, and add comments. Here's the API docs: [paste or link]."
 
@@ -364,7 +364,7 @@ For third-party services that have REST or GraphQL APIs but don't offer their ow
 **Key considerations:**
 - For SDKs: `composer require vendor/package`, create a Service that wraps the SDK, then create Tool classes that call the Service
 - For raw REST APIs: use Symfony's `HttpClientInterface` (already available via autowiring)
-- Always scope by account — the same tool should work with different credentials on different servers
+- Always scope by profile — the same tool should work with different credentials on different servers
 
 ### Pattern C: Proxying Access-Controlled MCP Servers
 
@@ -374,9 +374,9 @@ For services that already have their own MCP server but where you want centraliz
 2. Tool classes proxy `tools/call` to the upstream, passing through arguments
 3. Prism adds its own auth layer (bearer tokens) and scoping (which upstream servers each Prism server can reach)
 
-**Example prompt:** "Add a proxy integration for an upstream MCP server. The upstream is at [URL] and uses Bearer auth. I want to proxy these tools: [list]. The upstream credentials should be stored in account config."
+**Example prompt:** "Add a proxy integration for an upstream MCP server. The upstream is at [URL] and uses Bearer auth. I want to proxy these tools: [list]. The upstream credentials should be stored in profile config."
 
-**Example account config:**
+**Example profile config:**
 
 ```yaml
 upstream-service:
@@ -413,7 +413,7 @@ docker compose up -d
 
 | File | Purpose | Committed? |
 |---|---|---|
-| `prism.config.yaml` | Server/account definitions (secrets) | No (gitignored) |
+| `prism.config.yaml` | Server/profile definitions (secrets) | No (gitignored) |
 | `prism.config.yaml.example` | Scrubbed template for new setups | Yes |
 | `.env.local` | Admin credentials, APP_SECRET | No (gitignored) |
 | `docker-compose.yml` | Container + Traefik config | No (gitignored) |
@@ -431,13 +431,13 @@ There is currently no test suite. When adding tests, use PHPUnit with `tests/` d
 
 ## Conventions
 
-- **Tool names:** lowercase snake_case, prefixed with the account type (e.g. `bunq_list_accounts`, `email_search`). Utility tools use a descriptive name without prefix.
-- **Account type strings:** lowercase, match the `type` field in YAML config. Must be consistent between config, `*ConfigLoader`, and `ToolInterface::getAccountType()`.
+- **Tool names:** lowercase snake_case, prefixed with the profile type (e.g. `bunq_list_profiles`, `email_search`). Utility tools use a descriptive name without prefix.
+- **Profile type strings:** lowercase, match the `type` field in YAML config. Must be consistent between config, `*ConfigLoader`, and `ToolInterface::getProfileType()`.
 - **Tool execute() return format:** Always return `['content' => [['type' => 'text', 'text' => '...']]]`. Add `'isError' => true` for error responses. JSON-encode structured data in the text field.
 - **Error handling:** Catch exceptions in `execute()` and return MCP error format — don't let exceptions bubble up unhandled.
 - **Input validation:** Validate required arguments at the start of `execute()` and return clear error messages.
 - **Config DTOs:** Use readonly constructor-promoted properties. Keep them simple value objects.
-- **Services:** Inject `HttpClientInterface` for HTTP APIs. Inject `*ConfigLoader` for account access. Always scope to the active server via `ServerContext`.
+- **Services:** Inject `HttpClientInterface` for HTTP APIs. Inject `*ConfigLoader` for profile access. Always scope to the active server via `ServerContext`.
 
 ## MCP Protocol Details
 
@@ -453,8 +453,8 @@ There is currently no test suite. When adding tests, use PHPUnit with `tests/` d
 | I want to... | What to create | Where |
 |---|---|---|
 | Add a new server | YAML entry | `prism.config.yaml` |
-| Add an account to a server | YAML entry under server's `accounts:` | `prism.config.yaml` |
-| Add a new account type | AccountConfig + ConfigLoader + Service + `*Integration` + `Tool/` | `src/Integrations/{Name}/` |
+| Add a profile to a server | YAML entry under server's `profiles:` | `prism.config.yaml` |
+| Add a new profile type | ProfileConfig + ConfigLoader + Service + `*Integration` + `Tool/` | `src/Integrations/{Name}/` |
 | Add a tool for an existing type | Tool class implementing `ToolInterface` | `src/Integrations/{Name}/Tool/` |
-| Add a utility tool | Tool class with `getAccountType() → null` | `src/Mcp/Tool/` |
+| Add a utility tool | Tool class with `getProfileType() → null` | `src/Mcp/Tool/` |
 | Add a new integration end-to-end | All of the above | See "How to Add a New Integration" |

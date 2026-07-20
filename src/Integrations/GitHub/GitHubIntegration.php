@@ -18,6 +18,6 @@ class GitHubIntegration implements IntegrationInterface
 
     public function getDescription(): string
     {
-        return 'GitHub — account activity and issue/PR search.';
+        return 'GitHub — profile activity and issue/PR search.';
     }
 }

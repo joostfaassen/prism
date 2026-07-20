@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Integrations\Picnic;
+
+class PicnicProfileConfig
+{
+    public function __construct(
+        public readonly string $key,
+        public readonly string $label,
+        public readonly string $username,
+        public readonly string $password,
+        public readonly string $countryCode = 'nl',
+        public readonly string $apiVersion = '15',
+        public readonly ?string $authKey = null,
+    ) {
+    }
+}

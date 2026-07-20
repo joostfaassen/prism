@@ -86,9 +86,9 @@ class McpHandler
         return array_values(array_filter(
             $this->toolMap,
             fn(ToolInterface $tool) => (
-                $tool->getAccountType() === null
-                || $server->hasAccountType($tool->getAccountType())
-            ) && $server->isToolAllowed($tool->getName(), $tool->getAccountType()),
+                $tool->getProfileType() === null
+                || $server->hasProfileType($tool->getProfileType())
+            ) && $server->isToolAllowed($tool->getName(), $tool->getProfileType()),
         ));
     }
 
@@ -138,8 +138,8 @@ class McpHandler
             ];
         }
 
-        if ($this->serverContext->hasServer() && $tool->getAccountType() !== null) {
-            if (!$this->serverContext->getServer()->hasAccountType($tool->getAccountType())) {
+        if ($this->serverContext->hasServer() && $tool->getProfileType() !== null) {
+            if (!$this->serverContext->getServer()->hasProfileType($tool->getProfileType())) {
                 return [
                     'content' => [['type' => 'text', 'text' => "Tool \"{$name}\" is not available on this server"]],
                     'isError' => true,

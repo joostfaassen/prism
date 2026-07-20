@@ -30,9 +30,9 @@ class LokiListLabelsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Loki account key. Optional if only one account is configured.',
+                    'description' => 'Loki profile key. Optional if only one profile is configured.',
                 ],
                 'start' => [
                     'type' => 'string',
@@ -47,7 +47,7 @@ class LokiListLabelsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'loki';
     }
@@ -56,7 +56,7 @@ class LokiListLabelsTool implements ToolInterface
     {
         try {
             $labels = $this->lokiService->listLabels(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 start: isset($arguments['start']) ? (string) $arguments['start'] : null,
                 end: isset($arguments['end']) ? (string) $arguments['end'] : null,
             );

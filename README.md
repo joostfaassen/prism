@@ -2,7 +2,7 @@
 
 **Multi-server MCP tool bridge** — expose banking, email, calendar, and custom API tools over the [Model Context Protocol](https://modelcontextprotocol.io/).
 
-Prism lets you define multiple *servers*, each with its own bearer token and set of accounts. AI clients (Cursor, Claude Desktop, etc.) connect to a server's MCP endpoint and get access to only the tools and accounts that server is configured for.
+Prism lets you define multiple *servers*, each with its own bearer token and set of profiles. AI clients (Cursor, Claude Desktop, etc.) connect to a server's MCP endpoint and get access to only the tools and profiles that server is configured for.
 
 ## Architecture
 
@@ -26,17 +26,17 @@ Prism lets you define multiple *servers*, each with its own bearer token and set
    bunq  IMAP  Cal  Cyans
 ```
 
-Each server exposes the same tool *types* but scoped to its own accounts. A personal server sees all your email accounts; a shared server only sees the shared mailbox.
+Each server exposes the same tool *types* but scoped to its own profiles. A personal server sees all your email profiles; a shared server only sees the shared mailbox.
 
 ## Tools (24)
 
 | Category | Tool | Description |
 |---|---|---|
-| **bunq** | `bunq_list_accounts` | List configured bank accounts |
+| **bunq** | `bunq_list_profiles` | List configured bank profiles |
 | | `bunq_list_transactions` | List transactions with date/amount filters |
 | | `bunq_get_transaction` | Get full transaction details |
 | | `bunq_get_transaction_notes` | Get notes and attachments on a transaction |
-| **Email** | `email_list_accounts` | List configured email accounts |
+| **Email** | `email_list_profiles` | List configured email profiles |
 | | `email_list_folders` | List mailbox folders with unread counts |
 | | `email_create_folder` | Create a new IMAP folder (errors if it already exists) |
 | | `email_list_labels` | List folders and custom IMAP keyword tags |
@@ -54,7 +54,7 @@ Each server exposes the same tool *types* but scoped to its own accounts. A pers
 | | `cyans_get_topic_details` | Get full topic with posts |
 | | `cyans_search_topics` | Search topics by subject |
 | | `cyans_add_post` | Add a post to a topic |
-| **Picnic** | `picnic_list_accounts` | List configured Picnic accounts |
+| **Picnic** | `picnic_list_profiles` | List configured Picnic profiles |
 | | `picnic_search_products` | Search grocery products by name |
 | | `picnic_get_cart` | Get the current shopping cart |
 | | `picnic_add_to_cart` | Add a product to the cart |
@@ -88,7 +88,7 @@ servers:
   my-server:
     label: "My Personal Server"
     bearer_token: "generate-a-random-token"
-    accounts:
+    profiles:
       my-email:
         type: email
         label: "Personal Email"
@@ -151,15 +151,15 @@ Add to your Cursor `.mcp.json`:
 
 Prism includes a built-in admin dashboard at `/admin` with:
 
-- **Server list** — overview of all configured servers with account/tool counts
+- **Server list** — overview of all configured servers with profile/tool counts
 - **Configuration tab** — connection details and `.mcp.json` snippet
-- **Accounts tab** — accounts grouped by type
+- **Profiles tab** — profiles grouped by type
 - **Tools tab** — all available tools for the server, linking to detail pages
 - **Tool detail** — input schema, parameters table, and an interactive **Try It** panel for executing tools with YAML input/output
 
 Each tab and tool detail page has its own URL for bookmarking.
 
-## Account Types
+## Profile Types
 
 | Type | Config Keys | What It Connects To |
 |---|---|---|

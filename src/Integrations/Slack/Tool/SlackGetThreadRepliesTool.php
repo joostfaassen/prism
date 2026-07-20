@@ -28,9 +28,9 @@ class SlackGetThreadRepliesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'channel' => [
                     'type' => 'string',
@@ -45,24 +45,24 @@ class SlackGetThreadRepliesTool implements ToolInterface
                     'description' => 'Max replies to return (default 50)',
                 ],
             ],
-            'required' => ['account', 'channel', 'thread_ts'],
+            'required' => ['profile', 'channel', 'thread_ts'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $channelId = $arguments['channel'] ?? '';
         $threadTs = $arguments['thread_ts'] ?? '';
 
-        if ($accountKey === '' || $channelId === '' || $threadTs === '') {
+        if ($profileKey === '' || $channelId === '' || $threadTs === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "channel", and "thread_ts" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "channel", and "thread_ts" are required']],
                 'isError' => true,
             ];
         }
@@ -70,7 +70,7 @@ class SlackGetThreadRepliesTool implements ToolInterface
         $limit = min((int) ($arguments['limit'] ?? 50), 200);
 
         try {
-            $replies = $this->slackService->getThreadReplies($accountKey, $channelId, $threadTs, $limit);
+            $replies = $this->slackService->getThreadReplies($profileKey, $channelId, $threadTs, $limit);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

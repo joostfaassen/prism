@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * REST ingest for habit events and read-only reporting. Auth: Bearer token from any
- * habits account’s rest_ingest_token on prism.config.yaml for this server.
+ * habits profile’s rest_ingest_token on prism.config.yaml for this server.
  */
 class HabitsApiController extends AbstractController
 {
@@ -274,8 +274,8 @@ class HabitsApiController extends AbstractController
             return new JsonResponse(['error' => 'Unknown server'], Response::HTTP_NOT_FOUND);
         }
 
-        if (!$server->hasAccountType('habits')) {
-            return new JsonResponse(['error' => 'Server has no habits account'], Response::HTTP_NOT_FOUND);
+        if (!$server->hasProfileType('habits')) {
+            return new JsonResponse(['error' => 'Server has no habits profile'], Response::HTTP_NOT_FOUND);
         }
 
         $auth = (string) $request->headers->get('Authorization', '');

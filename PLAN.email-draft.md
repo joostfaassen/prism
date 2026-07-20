@@ -5,7 +5,7 @@
 Add two MCP tools to the `email` integration:
 
 1. **`email_create_draft`** — compose a message (optionally as a reply to an
-   existing `folder` + `uid`) and store it in the account's IMAP **Drafts**
+   existing `folder` + `uid`) and store it in the profile's IMAP **Drafts**
    folder, byte-for-byte the way Thunderbird saves a draft. The human then
    opens their mail client, reviews, optionally edits, and hits Send.
 2. **`email_delete_draft`** — permanently remove a draft from the Drafts
@@ -26,14 +26,14 @@ are ordinary IMAP messages, so `email_search`, `email_get_messages` and
 
 | Building block | Where | State |
 |---|---|---|
-| `drafts_folder` account config (default `"Drafts"`) | `EmailConfigLoader` → `EmailAccountConfig::$draftsFolder` | **Already parsed and documented** (docs/email.md §1), but unused by any code path today. |
+| `drafts_folder` profile config (default `"Drafts"`) | `EmailConfigLoader` → `EmailProfileConfig::$draftsFolder` | **Already parsed and documented** (docs/email.md §1), but unused by any code path today. |
 | APPEND to an arbitrary folder, auto-creating it, CRLF-normalized, with flags | `ImapClient::appendToFolder()` | Exists — used for the Sent copy with `'\\Seen'`. Takes a `$flags` string, so `'\\Seen \\Draft'` works as-is. Returns `void` (no UID). |
 | Full compose pipeline: markdown → text+HTML multipart, From/identity, Message-ID, Date, threading headers, quoted original | `MessageComposer::compose()` + `ReplyContext` | Exists — exactly what `email_send` uses. Message-ID and Date are fixed at compose time, so we know the Message-ID *before* materializing. |
 | Reply-recipient derivation (reply vs reply-all, skip self) | `EmailService::sendMessage()` lines ~274–295 + `pickPrimaryReplyAddress()` + `MessageComposer::buildReplyAllRecipients()` | Exists inline in `sendMessage()` — should be extracted into a private helper so `createDraft()` can share it. |
 | Message deletion | — | **Missing.** `ImapClient` has move + flag update, but no delete/expunge primitive. |
 | UID of an appended message | — | **Missing.** ext-imap's `imap_append()` does not expose the UIDPLUS `APPENDUID` response. See §4a for the resolution strategy. |
 
-Conclusion: this is a thin feature. No new config, no new account type, no
+Conclusion: this is a thin feature. No new config, no new profile type, no
 database. Two new tools, two new `EmailService` methods, two focused
 `ImapClient` changes, one Bcc subtlety in materialization.
 
@@ -80,7 +80,7 @@ What "identical to Thunderbird" concretely means (and what we will match):
 ## 3. Tool design (agent-facing API)
 
 Both tools follow existing conventions: snake_case `email_` prefix,
-`getAccountType() === 'email'`, MCP `content`/`isError` return shape,
+`getProfileType() === 'email'`, MCP `content`/`isError` return shape,
 validation at the top of `execute()`.
 
 ### 3a. `email_create_draft`
@@ -90,7 +90,7 @@ send/Sent-copy options, plus a `drafts_folder` override:
 
 ```jsonc
 {
-  "account": "personal-mail",          // required
+  "profile": "personal-mail",          // required
   "to": "alice@example.com",           // string | string[], optional
   "cc": ["bob@example.com"],           // string | string[], optional
   "bcc": "carol@example.com",          // string | string[], optional — PRESERVED in the draft
@@ -103,13 +103,13 @@ send/Sent-copy options, plus a `drafts_folder` override:
     "uid": 4821,
     "reply_all": false
   },
-  "drafts_folder": "INBOX.Drafts"      // optional override; default = account's drafts_folder
+  "drafts_folder": "INBOX.Drafts"      // optional override; default = profile's drafts_folder
 }
 ```
 
 Behavioral notes:
 
-- **No SMTP required.** Draft creation is pure IMAP, so read-only accounts
+- **No SMTP required.** Draft creation is pure IMAP, so read-only profiles
   (no `smtp:` block) can stage drafts too — the human sends from their own
   client. Do **not** copy `sendMessage()`'s `hasSmtp()` guard.
 - **Recipients may be empty** for a non-reply draft (a human can fill them
@@ -145,9 +145,9 @@ folder for review; to replace an existing draft, delete it first with
 
 ```jsonc
 {
-  "account": "personal-mail",          // required
+  "profile": "personal-mail",          // required
   "uid": 4903,                         // required — UID within the drafts folder
-  "drafts_folder": "INBOX.Drafts",     // optional override; default = account's drafts_folder
+  "drafts_folder": "INBOX.Drafts",     // optional override; default = profile's drafts_folder
   "expected_message_id": "abc123…@example.com"  // optional safety guard
 }
 ```
@@ -212,7 +212,7 @@ Signature change (Sent-copy call site stays behaviorally identical):
 
 ```php
 public function appendToFolder(
-    EmailAccountConfig $account,
+    EmailProfileConfig $profile,
     string $folder,
     string $rawMessage,
     string $flags = '\\Seen',
@@ -229,7 +229,7 @@ New method:
 ```php
 /** @return array<string, mixed>  overview summary of the deleted message */
 public function deleteMessage(
-    EmailAccountConfig $account,
+    EmailProfileConfig $profile,
     string $folder,
     int $uid,
     bool $requireDraftFlag = true,
@@ -237,7 +237,7 @@ public function deleteMessage(
 ): array
 ```
 
-- `connect($account, $folder)`, `imap_fetch_overview((string) $uid, FT_UID)`
+- `connect($profile, $folder)`, `imap_fetch_overview((string) $uid, FT_UID)`
   → not found ⇒ clear `\RuntimeException`.
 - `$requireDraftFlag` and the overview's `draft` property enforce §3b's
   guard; `$expectedMessageId` compared against the normalized
@@ -262,7 +262,7 @@ derive `to`/`cc` when omitted) into a private helper, e.g.:
 /**
  * @return array{context: ?ReplyContext, to: list<string>, cc: list<string>}
  */
-private function resolveReply(EmailAccountConfig $account, ?array $replyTo, array $to, array $cc): array
+private function resolveReply(EmailProfileConfig $profile, ?array $replyTo, array $to, array $cc): array
 ```
 
 `sendMessage()` keeps its behavior (including the "at least one recipient"
@@ -271,7 +271,7 @@ drafts allow zero recipients).
 
 ```php
 public function createDraft(
-    string $accountId,
+    string $profileId,
     array $to, array $cc, array $bcc,
     ?string $subject,
     string $bodyMarkdown,
@@ -282,14 +282,14 @@ public function createDraft(
 ): array
 ```
 
-Flow: `getAccount()` → `resolveReply()` → `MessageComposer::compose()` →
-materialize **with Bcc** (§4c) → `appendToFolder($account, $draftsFolder,
+Flow: `getProfile()` → `resolveReply()` → `MessageComposer::compose()` →
+materialize **with Bcc** (§4c) → `appendToFolder($profile, $draftsFolder,
 $raw, '\\Seen \\Draft', $messageId)` → build result array (§3a).
-`$draftsFolder = $draftsFolderOverride ?? $account->draftsFolder`.
+`$draftsFolder = $draftsFolderOverride ?? $profile->draftsFolder`.
 
 ```php
 public function deleteDraft(
-    string $accountId,
+    string $profileId,
     int $uid,
     ?string $draftsFolderOverride,
     ?string $expectedMessageId,
@@ -333,10 +333,10 @@ resolution is stable. CRLF normalization already happens inside
   a small shared trait for `normalizeRecipients()` — only if the
   implementer prefers; duplication of ~30 lines is also acceptable in this
   codebase's current style.)
-- `EmailCreateDraftTool::execute()` validates `account` + `body_markdown`
+- `EmailCreateDraftTool::execute()` validates `profile` + `body_markdown`
   (non-empty), `reply_to.folder`/`reply_to.uid` when present — but **not**
   "at least one recipient".
-- `EmailDeleteDraftTool::execute()` validates `account` and integer
+- `EmailDeleteDraftTool::execute()` validates `profile` and integer
   `uid > 0`.
 - No registration needed — DI auto-discovers `ToolInterface` implementations.
 
@@ -346,7 +346,7 @@ resolution is stable. CRLF normalization already happens inside
 
 - **Drafts folder name varies per provider** (`Drafts`, `INBOX.Drafts`,
   `[Gmail]/Drafts`, `Concepten`, …). Handled by the existing
-  `drafts_folder` account config + the per-call override; `appendToFolder()`
+  `drafts_folder` profile config + the per-call override; `appendToFolder()`
   already auto-creates missing folders. The tool description should point
   agents to `email_list_folders` when in doubt.
 - **Gmail quirk:** appending to `[Gmail]/Drafts` is the documented way to
@@ -409,7 +409,7 @@ behavior of `email_send`.
 
 ## 8. Manual verification checklist (no test suite exists yet)
 
-Using a dev account and the admin "Try It" page (or an MCP client):
+Using a dev profile and the admin "Try It" page (or an MCP client):
 
 1. **Fresh draft:** `email_create_draft` with to+cc+bcc+subject+markdown →
    open the mailbox in Thunderbird → draft appears in Drafts, opens in the
@@ -428,7 +428,7 @@ Using a dev account and the admin "Try It" page (or an MCP client):
 5. **Guards:** delete with a wrong `expected_message_id` refuses; delete of
    a non-draft message (e.g. after moving a regular mail into Drafts
    without `\Draft`) refuses.
-6. **Read-only account:** create a draft on an account without `smtp:` —
+6. **Read-only profile:** create a draft on a profile without `smtp:` —
    must succeed.
 7. **Folder override/auto-create:** `drafts_folder` override pointing at a
    not-yet-existing folder gets created and used.

@@ -20,7 +20,7 @@ class TelegramGetMeTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Return the Telegram bot identity for a configured account (getMe). '
+        return 'Return the Telegram bot identity for a configured profile (getMe). '
             . 'Use this to verify the bot_token works and to see the bot username/id.';
     }
 
@@ -29,16 +29,16 @@ class TelegramGetMeTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Telegram account key. Optional if only one account is configured.',
+                    'description' => 'Telegram profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'telegram';
     }
@@ -47,7 +47,7 @@ class TelegramGetMeTool implements ToolInterface
     {
         try {
             $result = $this->telegramService->getMe(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

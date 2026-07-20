@@ -33,16 +33,16 @@ class PicnicVerify2faCodeTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'The OTP / SMS code',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['code'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -50,7 +50,7 @@ class PicnicVerify2faCodeTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $code = trim((string) ($arguments['code'] ?? ''));
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($code === '') {
             return [
@@ -60,7 +60,7 @@ class PicnicVerify2faCodeTool implements ToolInterface
         }
 
         try {
-            $result = $this->picnicService->verify2faCode($code, $account);
+            $result = $this->picnicService->verify2faCode($code, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

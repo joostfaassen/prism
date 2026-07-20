@@ -20,7 +20,7 @@ class TmdbListWatchlistTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List movies or TV series on your TMDb watchlist (wishlist). Paginated. Requires session_id on the account.';
+        return 'List movies or TV series on your TMDb watchlist (wishlist). Paginated. Requires session_id on the profile.';
     }
 
     public function getInputSchema(): array
@@ -37,16 +37,16 @@ class TmdbListWatchlistTool implements ToolInterface
                     'type' => 'integer',
                     'description' => 'Page number (default 1)',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key. Optional if only one account is configured.',
+                    'description' => 'TMDb profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -57,7 +57,7 @@ class TmdbListWatchlistTool implements ToolInterface
             $result = $this->tmdbService->listWatchlist(
                 mediaType: (string) ($arguments['media_type'] ?? 'movie'),
                 page: isset($arguments['page']) ? (int) $arguments['page'] : 1,
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

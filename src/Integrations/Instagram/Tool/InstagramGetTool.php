@@ -22,7 +22,7 @@ class InstagramGetTool implements ToolInterface
     {
         return 'Run an arbitrary read-only Meta Graph API GET against any Instagram node or edge for advanced/ad-hoc '
             . 'queries not covered by the dedicated tools (e.g. "{media-id}/comments", "{ig-user-id}/tags", '
-            . '"{ig-user-id}/stories", "{ig-user-id}/live_media"). The account\'s access token, version prefix and '
+            . '"{ig-user-id}/stories", "{ig-user-id}/live_media"). The profile\'s access token, version prefix and '
             . 'appsecret_proof are added automatically — pass the path WITHOUT a leading version or access_token. '
             . 'Use the "params" object for query parameters like fields, limit, after, since, until.';
     }
@@ -32,7 +32,7 @@ class InstagramGetTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'path' => ['type' => 'string', 'description' => 'Graph API node/edge path, e.g. "me/accounts" or "{ig-user-id}/stories". No version prefix.'],
                 'params' => [
                     'type' => 'object',
@@ -44,7 +44,7 @@ class InstagramGetTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -69,7 +69,7 @@ class InstagramGetTool implements ToolInterface
         }
 
         try {
-            $result = $this->instagramService->rawGet($arguments['account'] ?? null, $path, $params);
+            $result = $this->instagramService->rawGet($arguments['profile'] ?? null, $path, $params);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

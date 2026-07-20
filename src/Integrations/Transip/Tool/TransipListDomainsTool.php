@@ -20,7 +20,7 @@ class TransipListDomainsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List all domain names in a TransIP account, including registration/renewal dates, transfer lock and DNSSEC status, tags and overall status. Omit "account" to use the only configured account.';
+        return 'List all domain names in a TransIP profile, including registration/renewal dates, transfer lock and DNSSEC status, tags and overall status. Omit "profile" to use the only configured profile.';
     }
 
     public function getInputSchema(): array
@@ -28,16 +28,16 @@ class TransipListDomainsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TransIP account key (see transip_list_accounts). Optional when only one account is configured.',
+                    'description' => 'TransIP profile key (see transip_list_profiles). Optional when only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'transip';
     }
@@ -45,7 +45,7 @@ class TransipListDomainsTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $domains = $this->transipService->listDomains($arguments['account'] ?? null);
+            $domains = $this->transipService->listDomains($arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

@@ -21,20 +21,20 @@ class CanvaService
     /**
      * @return list<array{key: string, label: string, connected: bool, has_credentials: bool, scopes: list<string>}>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
-                'connected' => $account->isConnected(),
-                'has_credentials' => $account->hasCredentials(),
-                'scopes' => $account->scopes,
+                'label' => $profile->label,
+                'connected' => $profile->isConnected(),
+                'has_credentials' => $profile->hasCredentials(),
+                'scopes' => $profile->scopes,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -45,26 +45,26 @@ class CanvaService
      * @param list<string> $scopes
      */
     public function buildAuthorizationUrl(
-        string $accountKey,
+        string $profileKey,
         string $redirectUri,
         string $codeChallenge,
         string $state,
         array $scopes,
     ): string {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        if (!$account->hasCredentials()) {
+        if (!$profile->hasCredentials()) {
             throw new \RuntimeException(sprintf(
-                'Canva account "%s" is missing client_id / client_secret in prism.config.yaml.',
-                $accountKey,
+                'Canva profile "%s" is missing client_id / client_secret in prism.config.yaml.',
+                $profileKey,
             ));
         }
 
         $params = http_build_query([
             'response_type' => 'code',
-            'client_id' => $account->clientId,
+            'client_id' => $profile->clientId,
             'redirect_uri' => $redirectUri,
-            'scope' => implode(' ', $scopes !== [] ? $scopes : $account->scopes),
+            'scope' => implode(' ', $scopes !== [] ? $scopes : $profile->scopes),
             'code_challenge' => $codeChallenge,
             'code_challenge_method' => 'S256',
             'state' => $state,
@@ -79,21 +79,21 @@ class CanvaService
      * @return array{scope: string, token_expires_at: int}
      */
     public function exchangeAuthorizationCode(
-        string $accountKey,
+        string $profileKey,
         string $code,
         string $codeVerifier,
         string $redirectUri,
     ): array {
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        $data = $this->tokenRequest($account, [
+        $data = $this->tokenRequest($profile, [
             'grant_type' => 'authorization_code',
             'code' => $code,
             'code_verifier' => $codeVerifier,
             'redirect_uri' => $redirectUri,
         ]);
 
-        $updated = $this->storeTokenResponse($account, $data);
+        $updated = $this->storeTokenResponse($profile, $data);
 
         return [
             'scope' => (string) ($data['scope'] ?? ''),
@@ -101,11 +101,11 @@ class CanvaService
         ];
     }
 
-    public function disconnect(string $accountKey): void
+    public function disconnect(string $profileKey): void
     {
-        // Ensure the account exists before clearing.
-        $this->configLoader->getAccount($accountKey);
-        $this->tokenStore->clearTokens($this->serverContext->getServerName(), $accountKey);
+        // Ensure the profile exists before clearing.
+        $this->configLoader->getProfile($profileKey);
+        $this->tokenStore->clearTokens($this->serverContext->getServerName(), $profileKey);
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -118,16 +118,16 @@ class CanvaService
      * @return array<string, mixed>
      */
     public function listDesigns(
-        ?string $accountKey = null,
+        ?string $profileKey = null,
         ?string $query = null,
         ?string $continuation = null,
         ?string $ownership = null,
         ?string $sortBy = null,
         ?int $limit = null,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->apiGet($account, '/v1/designs', [
+        return $this->apiGet($profile, '/v1/designs', [
             'query' => $query,
             'continuation' => $continuation,
             'ownership' => $ownership,
@@ -141,11 +141,11 @@ class CanvaService
      *
      * @return array<string, mixed>
      */
-    public function getDesign(?string $accountKey, string $designId): array
+    public function getDesign(?string $profileKey, string $designId): array
     {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->apiGet($account, '/v1/designs/' . rawurlencode($designId));
+        return $this->apiGet($profile, '/v1/designs/' . rawurlencode($designId));
     }
 
     /**
@@ -154,14 +154,14 @@ class CanvaService
      * @return array<string, mixed>
      */
     public function getDesignPages(
-        ?string $accountKey,
+        ?string $profileKey,
         string $designId,
         ?int $offset = null,
         ?int $limit = null,
     ): array {
-        $account = $this->resolveAccount($accountKey);
+        $profile = $this->resolveProfile($profileKey);
 
-        return $this->apiGet($account, '/v1/designs/' . rawurlencode($designId) . '/pages', [
+        return $this->apiGet($profile, '/v1/designs/' . rawurlencode($designId) . '/pages', [
             'offset' => $offset,
             'limit' => $limit,
         ]);
@@ -171,18 +171,18 @@ class CanvaService
     // Internals
     // ──────────────────────────────────────────────────────────────────
 
-    private function resolveAccount(?string $accountKey): CanvaAccountConfig
+    private function resolveProfile(?string $profileKey): CanvaProfileConfig
     {
-        if ($accountKey !== null && $accountKey !== '') {
-            return $this->configLoader->getAccount($accountKey);
+        if ($profileKey !== null && $profileKey !== '') {
+            return $this->configLoader->getProfile($profileKey);
         }
 
-        $accounts = $this->configLoader->getAccounts();
-        if ($accounts === []) {
-            throw new \RuntimeException('No Canva accounts configured for this server.');
+        $profiles = $this->configLoader->getProfiles();
+        if ($profiles === []) {
+            throw new \RuntimeException('No Canva profiles configured for this server.');
         }
 
-        return reset($accounts);
+        return reset($profiles);
     }
 
     /**
@@ -190,11 +190,11 @@ class CanvaService
      *
      * @return array<string, mixed>
      */
-    private function apiGet(CanvaAccountConfig $account, string $path, array $query = []): array
+    private function apiGet(CanvaProfileConfig $profile, string $path, array $query = []): array
     {
-        $token = $this->validAccessToken($account);
+        $token = $this->validAccessToken($profile);
 
-        $response = $this->httpClient->request('GET', $account->apiBaseUrl . $path, [
+        $response = $this->httpClient->request('GET', $profile->apiBaseUrl . $path, [
             'headers' => [
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
@@ -222,30 +222,30 @@ class CanvaService
         return is_array($data) ? $data : ['value' => $data];
     }
 
-    private function validAccessToken(CanvaAccountConfig $account): string
+    private function validAccessToken(CanvaProfileConfig $profile): string
     {
-        if ($account->isAccessTokenValid()) {
-            return $account->accessToken;
+        if ($profile->isAccessTokenValid()) {
+            return $profile->accessToken;
         }
 
-        if ($account->refreshToken === '') {
+        if ($profile->refreshToken === '') {
             throw new \RuntimeException(sprintf(
-                'Canva account "%s" is not connected. Open the Canva page in the Prism admin for this server and click "Connect".',
-                $account->key,
+                'Canva profile "%s" is not connected. Open the Canva page in the Prism admin for this server and click "Connect".',
+                $profile->key,
             ));
         }
 
-        return $this->refreshAccessToken($account)->accessToken;
+        return $this->refreshAccessToken($profile)->accessToken;
     }
 
-    private function refreshAccessToken(CanvaAccountConfig $account): CanvaAccountConfig
+    private function refreshAccessToken(CanvaProfileConfig $profile): CanvaProfileConfig
     {
-        $data = $this->tokenRequest($account, [
+        $data = $this->tokenRequest($profile, [
             'grant_type' => 'refresh_token',
-            'refresh_token' => $account->refreshToken,
+            'refresh_token' => $profile->refreshToken,
         ]);
 
-        return $this->storeTokenResponse($account, $data);
+        return $this->storeTokenResponse($profile, $data);
     }
 
     /**
@@ -253,18 +253,18 @@ class CanvaService
      *
      * @return array<string, mixed>
      */
-    private function tokenRequest(CanvaAccountConfig $account, array $body): array
+    private function tokenRequest(CanvaProfileConfig $profile, array $body): array
     {
-        if (!$account->hasCredentials()) {
+        if (!$profile->hasCredentials()) {
             throw new \RuntimeException(sprintf(
-                'Canva account "%s" is missing client_id / client_secret in prism.config.yaml.',
-                $account->key,
+                'Canva profile "%s" is missing client_id / client_secret in prism.config.yaml.',
+                $profile->key,
             ));
         }
 
         $response = $this->httpClient->request('POST', self::TOKEN_URL, [
             'headers' => [
-                'Authorization' => 'Basic ' . base64_encode($account->clientId . ':' . $account->clientSecret),
+                'Authorization' => 'Basic ' . base64_encode($profile->clientId . ':' . $profile->clientSecret),
                 'Content-Type' => 'application/x-www-form-urlencoded',
             ],
             'body' => $body,
@@ -294,21 +294,21 @@ class CanvaService
     /**
      * @param array<string, mixed> $data
      */
-    private function storeTokenResponse(CanvaAccountConfig $account, array $data): CanvaAccountConfig
+    private function storeTokenResponse(CanvaProfileConfig $profile, array $data): CanvaProfileConfig
     {
         $accessToken = (string) $data['access_token'];
-        $refreshToken = (string) ($data['refresh_token'] ?? $account->refreshToken);
+        $refreshToken = (string) ($data['refresh_token'] ?? $profile->refreshToken);
         $expiresIn = (int) ($data['expires_in'] ?? 0);
         $expiresAt = $expiresIn > 0 ? time() + $expiresIn : 0;
 
         $this->tokenStore->persistTokens(
             $this->serverContext->getServerName(),
-            $account->key,
+            $profile->key,
             $accessToken,
             $refreshToken,
             $expiresAt,
         );
 
-        return $account->withTokens($accessToken, $refreshToken, $expiresAt);
+        return $profile->withTokens($accessToken, $refreshToken, $expiresAt);
     }
 }

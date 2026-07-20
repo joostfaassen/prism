@@ -33,7 +33,7 @@ class HabitsListHabitsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'habits';
     }

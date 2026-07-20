@@ -14,12 +14,12 @@ class BrowserlessConfigLoader
     }
 
     /**
-     * @return array<string, BrowserlessAccountConfig>
+     * @return array<string, BrowserlessProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('browserless', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('browserless', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $baseUrl = rtrim(trim((string) ($cfg['base_url'] ?? '')), '/');
@@ -29,7 +29,7 @@ class BrowserlessConfigLoader
                 $timeout = 120;
             }
 
-            $accounts[$key] = new BrowserlessAccountConfig(
+            $profiles[$key] = new BrowserlessProfileConfig(
                 key: $key,
                 label: (string) ($cfg['label'] ?? $key),
                 baseUrl: $baseUrl,
@@ -40,21 +40,21 @@ class BrowserlessConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): BrowserlessAccountConfig
+    public function getProfile(string $key): BrowserlessProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Browserless account: "%s". Available: %s',
+                'Unknown Browserless profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)) ?: '(none)',
+                implode(', ', array_keys($profiles)) ?: '(none)',
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

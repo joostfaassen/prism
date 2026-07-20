@@ -1,0 +1,14 @@
+<?php
+
+namespace App\Integrations\SendGrid;
+
+class SendGridProfileConfig
+{
+    public function __construct(
+        public readonly string $key,
+        public readonly string $label,
+        public readonly string $apiKey,
+        public readonly string $baseUrl = 'https://api.sendgrid.com',
+    ) {
+    }
+}

@@ -11,9 +11,9 @@ class MessageCache
     ) {
     }
 
-    public function getFolderSignature(string $accountId, string $folder): ?FolderSignature
+    public function getFolderSignature(string $profileId, string $folder): ?FolderSignature
     {
-        $item = $this->emailCache->getItem($this->folderSignatureKey($accountId, $folder));
+        $item = $this->emailCache->getItem($this->folderSignatureKey($profileId, $folder));
         if (!$item->isHit()) {
             return null;
         }
@@ -26,9 +26,9 @@ class MessageCache
         return FolderSignature::fromArray($value);
     }
 
-    public function setFolderSignature(string $accountId, string $folder, FolderSignature $signature): void
+    public function setFolderSignature(string $profileId, string $folder, FolderSignature $signature): void
     {
-        $item = $this->emailCache->getItem($this->folderSignatureKey($accountId, $folder));
+        $item = $this->emailCache->getItem($this->folderSignatureKey($profileId, $folder));
         $item->set($signature->toArray());
         $this->emailCache->save($item);
     }
@@ -37,7 +37,7 @@ class MessageCache
      * @return array<string, mixed>|null
      */
     public function getMessageBody(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uidValidity,
         int $uid,
@@ -46,7 +46,7 @@ class MessageCache
     ): ?array
     {
         $item = $this->emailCache->getItem(
-            $this->messageBodyKey($accountId, $folder, $uidValidity, $uid, $includeHtml, $maxBodyChars),
+            $this->messageBodyKey($profileId, $folder, $uidValidity, $uid, $includeHtml, $maxBodyChars),
         );
         if (!$item->isHit()) {
             return null;
@@ -61,7 +61,7 @@ class MessageCache
      * @param array<string, mixed> $message
      */
     public function setMessageBody(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uidValidity,
         int $uid,
@@ -70,16 +70,16 @@ class MessageCache
         array $message,
     ): void {
         $item = $this->emailCache->getItem(
-            $this->messageBodyKey($accountId, $folder, $uidValidity, $uid, $includeHtml, $maxBodyChars),
+            $this->messageBodyKey($profileId, $folder, $uidValidity, $uid, $includeHtml, $maxBodyChars),
         );
         $item->set($message);
         $item->expiresAfter(60 * 60 * 24 * 30);
         $this->emailCache->save($item);
     }
 
-    public function getMessagePointer(string $accountId, string $folder, int $uidValidity, int $uid): ?string
+    public function getMessagePointer(string $profileId, string $folder, int $uidValidity, int $uid): ?string
     {
-        $item = $this->emailCache->getItem($this->messagePointerKey($accountId, $folder, $uidValidity, $uid));
+        $item = $this->emailCache->getItem($this->messagePointerKey($profileId, $folder, $uidValidity, $uid));
         if (!$item->isHit()) {
             return null;
         }
@@ -89,13 +89,13 @@ class MessageCache
         return is_string($value) && $value !== '' ? $value : null;
     }
 
-    public function setMessagePointer(string $accountId, string $folder, int $uidValidity, int $uid, string $messageId): void
+    public function setMessagePointer(string $profileId, string $folder, int $uidValidity, int $uid, string $messageId): void
     {
         if ($messageId === '') {
             return;
         }
 
-        $item = $this->emailCache->getItem($this->messagePointerKey($accountId, $folder, $uidValidity, $uid));
+        $item = $this->emailCache->getItem($this->messagePointerKey($profileId, $folder, $uidValidity, $uid));
         $item->set($messageId);
         $item->expiresAfter(60 * 60 * 24 * 30);
         $this->emailCache->save($item);
@@ -105,7 +105,7 @@ class MessageCache
      * @return array<string, mixed>|null
      */
     public function getMessageContentByMessageId(
-        string $accountId,
+        string $profileId,
         string $messageId,
         bool $includeHtml,
         int $maxBodyChars,
@@ -115,7 +115,7 @@ class MessageCache
         }
 
         $item = $this->emailCache->getItem(
-            $this->messageContentKey($accountId, $messageId, $includeHtml, $maxBodyChars),
+            $this->messageContentKey($profileId, $messageId, $includeHtml, $maxBodyChars),
         );
         if (!$item->isHit()) {
             return null;
@@ -130,7 +130,7 @@ class MessageCache
      * @param array<string, mixed> $message
      */
     public function setMessageContentByMessageId(
-        string $accountId,
+        string $profileId,
         string $messageId,
         bool $includeHtml,
         int $maxBodyChars,
@@ -141,7 +141,7 @@ class MessageCache
         }
 
         $item = $this->emailCache->getItem(
-            $this->messageContentKey($accountId, $messageId, $includeHtml, $maxBodyChars),
+            $this->messageContentKey($profileId, $messageId, $includeHtml, $maxBodyChars),
         );
         $item->set($message);
         $item->expiresAfter(60 * 60 * 24 * 30);
@@ -151,9 +151,9 @@ class MessageCache
     /**
      * @return array{seen: bool, flagged: bool, answered: bool, deleted: bool}|null
      */
-    public function getMessageFlags(string $accountId, string $folder, int $uidValidity, int $uid): ?array
+    public function getMessageFlags(string $profileId, string $folder, int $uidValidity, int $uid): ?array
     {
-        $item = $this->emailCache->getItem($this->messageFlagsKey($accountId, $folder, $uidValidity, $uid));
+        $item = $this->emailCache->getItem($this->messageFlagsKey($profileId, $folder, $uidValidity, $uid));
         if (!$item->isHit()) {
             return null;
         }
@@ -172,7 +172,7 @@ class MessageCache
     }
 
     public function setMessageFlags(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uidValidity,
         int $uid,
@@ -181,7 +181,7 @@ class MessageCache
         bool $answered,
         bool $deleted = false,
     ): void {
-        $item = $this->emailCache->getItem($this->messageFlagsKey($accountId, $folder, $uidValidity, $uid));
+        $item = $this->emailCache->getItem($this->messageFlagsKey($profileId, $folder, $uidValidity, $uid));
         $item->set([
             'seen' => $seen,
             'flagged' => $flagged,
@@ -192,18 +192,18 @@ class MessageCache
         $this->emailCache->save($item);
     }
 
-    public function deleteMessageFlags(string $accountId, string $folder, int $uidValidity, int $uid): void
+    public function deleteMessageFlags(string $profileId, string $folder, int $uidValidity, int $uid): void
     {
-        $this->emailCache->deleteItem($this->messageFlagsKey($accountId, $folder, $uidValidity, $uid));
+        $this->emailCache->deleteItem($this->messageFlagsKey($profileId, $folder, $uidValidity, $uid));
     }
 
-    private function folderSignatureKey(string $accountId, string $folder): string
+    private function folderSignatureKey(string $profileId, string $folder): string
     {
-        return sprintf('email.sig.%s.%s', $accountId, $this->folderHash($folder));
+        return sprintf('email.sig.%s.%s', $profileId, $this->folderHash($folder));
     }
 
     private function messageBodyKey(
-        string $accountId,
+        string $profileId,
         string $folder,
         int $uidValidity,
         int $uid,
@@ -213,7 +213,7 @@ class MessageCache
     {
         return sprintf(
             'email.msg.%s.%s.%d.%d.%d.%d',
-            $accountId,
+            $profileId,
             $this->folderHash($folder),
             $uidValidity,
             $uid,
@@ -222,25 +222,25 @@ class MessageCache
         );
     }
 
-    private function messagePointerKey(string $accountId, string $folder, int $uidValidity, int $uid): string
+    private function messagePointerKey(string $profileId, string $folder, int $uidValidity, int $uid): string
     {
-        return sprintf('email.ptr.%s.%s.%d.%d', $accountId, $this->folderHash($folder), $uidValidity, $uid);
+        return sprintf('email.ptr.%s.%s.%d.%d', $profileId, $this->folderHash($folder), $uidValidity, $uid);
     }
 
-    private function messageContentKey(string $accountId, string $messageId, bool $includeHtml, int $maxBodyChars): string
+    private function messageContentKey(string $profileId, string $messageId, bool $includeHtml, int $maxBodyChars): string
     {
         return sprintf(
             'email.content.%s.%s.%d.%d',
-            $accountId,
+            $profileId,
             substr(sha1($messageId), 0, 32),
             $includeHtml ? 1 : 0,
             $maxBodyChars,
         );
     }
 
-    private function messageFlagsKey(string $accountId, string $folder, int $uidValidity, int $uid): string
+    private function messageFlagsKey(string $profileId, string $folder, int $uidValidity, int $uid): string
     {
-        return sprintf('email.flags.%s.%s.%d.%d', $accountId, $this->folderHash($folder), $uidValidity, $uid);
+        return sprintf('email.flags.%s.%s.%d.%d', $profileId, $this->folderHash($folder), $uidValidity, $uid);
     }
 
     private function folderHash(string $folder): string

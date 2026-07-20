@@ -14,17 +14,17 @@ class OpenAiConfigLoader
     }
 
     /**
-     * @return array<string, OpenAiAccountConfig>
+     * @return array<string, OpenAiProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('openai', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('openai', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $timeout = $cfg['timeout'] ?? 60;
 
-            $accounts[$key] = new OpenAiAccountConfig(
+            $profiles[$key] = new OpenAiProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 baseUrl: rtrim($cfg['base_url'] ?? '', '/'),
@@ -34,21 +34,21 @@ class OpenAiConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): OpenAiAccountConfig
+    public function getProfile(string $key): OpenAiProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown OpenAI account: "%s". Available: %s',
+                'Unknown OpenAI profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

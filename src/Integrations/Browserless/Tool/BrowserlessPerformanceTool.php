@@ -31,7 +31,7 @@ class BrowserlessPerformanceTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Browserless account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Browserless profile key. Optional if only one is configured.'],
                 'url' => ['type' => 'string', 'description' => 'The fully-qualified URL to audit (http/https).'],
                 'categories' => [
                     'type' => 'array',
@@ -44,7 +44,7 @@ class BrowserlessPerformanceTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'browserless';
     }
@@ -72,7 +72,7 @@ class BrowserlessPerformanceTool implements ToolInterface
 
         try {
             $result = $this->browserlessService->performance(
-                $arguments['account'] ?? null,
+                $arguments['profile'] ?? null,
                 $url,
                 $config,
                 (bool) ($arguments['full'] ?? false),

@@ -40,9 +40,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key. The draft appears for the agent owning this account\'s API key.',
+                    'description' => 'Libredesk profile key. The draft appears for the agent owning this profile\'s API key.',
                 ],
                 'uuid' => [
                     'type' => 'string',
@@ -53,30 +53,30 @@ DESC;
                     'description' => 'Draft reply body (HTML or plain text)',
                 ],
             ],
-            'required' => ['account', 'uuid', 'content'],
+            'required' => ['profile', 'uuid', 'content'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
         $content = $arguments['content'] ?? '';
 
-        if ($accountKey === '' || $uuid === '' || trim((string) $content) === '') {
+        if ($profileKey === '' || $uuid === '' || trim((string) $content) === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "uuid", and "content" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "uuid", and "content" are required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $result = $this->libredeskService->upsertDraft($accountKey, $uuid, $content);
+            $result = $this->libredeskService->upsertDraft($profileKey, $uuid, $content);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

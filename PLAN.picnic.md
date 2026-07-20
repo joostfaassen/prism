@@ -9,7 +9,7 @@ Voeg een Prism-integratie toe voor [Picnic](https://picnic.app/nl/) zodat agents
 3. **Recepten browsen/bekijken** (incl. plaatjes + ingrediënten)
 4. Optioneel: recept-ingrediënten in één keer op het lijstje zetten
 
-Credentials blijven in Prism YAML (multi-tenant servers/accounts), niet in Cursor/xa-atlas.
+Credentials blijven in Prism YAML (multi-tenant servers/profiles), niet in Cursor/xa-atlas.
 
 ---
 
@@ -92,7 +92,7 @@ Nuttig om shapes van af te kijken; **niet** als productie-afhankelijkheid van de
 | Item toevoegen/verwijderen/wissen | cart mutations |
 | Recepten browsen + detail + ingrediënten | recipe/cookbook Fusion pages |
 | Recept (deels) op lijstje | selling-group assign/remove |
-| Multi-account / multi-server | Prism `type: picnic` accounts |
+| Multi-profile / multi-server | Prism `type: picnic` profiles |
 
 ### Mogelijk, maar fragiel / experimenteel
 
@@ -109,7 +109,7 @@ Nuttig om shapes van af te kijken; **niet** als productie-afhankelijkheid van de
 |---|---|
 | Officiële, supported API | Bestaat niet |
 | Aparte named “boodschappenlijstjes” zoals Apple Reminders | Niet (stabiel) in de storefront API; cart = lijst |
-| Gegarandeerde ToS-compliance | Reverse engineering; Picnic kan endpoints wijzigen of accounts beperken |
+| Gegarandeerde ToS-compliance | Reverse engineering; Picnic kan endpoints wijzigen of profiles beperken |
 | Betrouwbare checkout/order-plaatsing door agents | Te riskant als default; `confirmOrder` / slot booking alleen opt-in later |
 | PHP Composer-package van Picnic zelf | Bestaat niet — we schrijven zelf een dunne client |
 | Node/Python runtime in de Prism PHP-container als kernpad | Past niet bij Prism-architectuur / coding defaults; hoogstens tijdelijke lokale spike buiten de app |
@@ -119,7 +119,7 @@ Nuttig om shapes van af te kijken; **niet** als productie-afhankelijkheid van de
 - Unofficiële toegang tot een private consumer API.
 - Credentials (email + wachtwoord) moeten in `prism.config.yaml` / `prism.kiko.yaml` — **gitignored**, scrubbed examples only.
 - API of agent-headers (`x-picnic-agent`) kunnen plotseling falen → tools moeten duidelijke errors teruggeven.
-- Schrijfacties raken een **echt** huishoud-account: tools moeten idempotent genoeg en duidelijk “destructive” zijn (`clear_cart`).
+- Schrijfacties raken een **echt** huishoud-profile: tools moeten idempotent genoeg en duidelijk “destructive” zijn (`clear_cart`).
 
 ---
 
@@ -131,7 +131,7 @@ Volg het bestaande integratiepatroon (`Telegram` / `Matomo` / `Tmdb`):
 
 ```
 src/Picnic/
-  PicnicAccountConfig.php
+  PicnicProfileConfig.php
   PicnicConfigLoader.php
   PicnicClient.php          # HTTP + headers + login/2FA + auth-key cache
   PicnicService.php         # search/cart/recipe normalisatie
@@ -148,7 +148,7 @@ src/Mcp/Tool/Picnic*Tool.php
 
 ### Optie B — Proxy naar `mcp-picnic` (Pattern C, snelle spike)
 
-Account config met upstream MCP endpoint + credentials; Prism proxied een allowlist van tools.
+Profile config met upstream MCP endpoint + credentials; Prism proxied een allowlist van tools.
 
 **Voordelen:** snel.  
 **Nadelen:** Node-proces, dubbele auth-model, slechtere multi-tenant fit, moeilijker admin UX, niet “Prism-native”. Alleen zinvol als tijdelijke spike op de workstation, niet als eindarchitectuur.
@@ -176,9 +176,9 @@ Tool descriptions moeten dit expliciet maken (“Picnic cart = shopping list”)
 
 ---
 
-## Account type & YAML
+## Profile type & YAML
 
-Account type string: `picnic`.
+Profile type string: `picnic`.
 
 Scrubbed example voor `prism.config.yaml.example`:
 
@@ -200,9 +200,9 @@ Live credentials alleen in gitignored config (`prism.config.yaml` / `prism.kiko.
 
 Aanbevolen gedrag in `PicnicClient`:
 
-1. Als `auth_key` in account config staat → gebruik die.
+1. Als `auth_key` in profile config staat → gebruik die.
 2. Anders: login met username/password; schrijf auth key naar  
-   `var/cache/picnic/{accountKey}.auth` (of Symfony cache pool), file mode 0600.
+   `var/cache/picnic/{profileKey}.auth` (of Symfony cache pool), file mode 0600.
 3. Bij HTTP 401 → één keer re-login, cache verversen, retry.
 4. Als login `second_factor_authentication_required` teruggeeft → tools:
    - `picnic_generate_2fa_code`
@@ -213,9 +213,9 @@ Aanbevolen gedrag in `PicnicClient`:
 
 ## Tool shapes (fase 1 — MVP)
 
-Alle tools: `getAccountType() → 'picnic'`.  
+Alle tools: `getProfileType() → 'picnic'`.  
 Return: MCP text content met JSON (`JSON_THROW_ON_ERROR`).  
-Common optional arg: `account` (string, account key; default = enige/default account).
+Common optional arg: `profile` (string, profile key; default = enige/default profile).
 
 Prijzen in Picnic komen vaak als **centen integer** (`display_price: 599` = €5,99) — normaliseer naar:
 
@@ -223,26 +223,26 @@ Prijzen in Picnic komen vaak als **centen integer** (`display_price: 599` = €5
 { "price_cents": 599, "price_eur": 5.99, "currency": "EUR" }
 ```
 
-### Accounts
+### Profiles
 
 | Tool | Input | Output |
 |---|---|---|
-| `picnic_list_accounts` | — | `[{key, label, country_code}]` (geen secrets) |
+| `picnic_list_profiles` | — | `[{key, label, country_code}]` (geen secrets) |
 
 ### Auth (alleen nodig bij 2FA / sessieproblemen)
 
 | Tool | Input | Output |
 |---|---|---|
-| `picnic_generate_2fa_code` | optional `account`, optional `channel` (default `SMS`) | `{ok: true}` of error |
-| `picnic_verify_2fa_code` | `code` (required), optional `account` | `{ok: true}` — caches new auth key |
+| `picnic_generate_2fa_code` | optional `profile`, optional `channel` (default `SMS`) | `{ok: true}` of error |
+| `picnic_verify_2fa_code` | `code` (required), optional `profile` | `{ok: true}` — caches new auth key |
 
 ### Catalog / search
 
 | Tool | Input | Output |
 |---|---|---|
-| `picnic_search` | `query` (required), optional `limit` (default 20), `account` | `{query, products: [NormalizedProductLight…]}` |
-| `picnic_get_product` | `product_id` (required, bv. `s11295810`), optional `account` | `NormalizedProduct` (details + `image_urls`) |
-| `picnic_get_image_url` | `image_id` (required), optional `size` (default `medium`), `account` | `{image_id, size, url}` |
+| `picnic_search` | `query` (required), optional `limit` (default 20), `profile` | `{query, products: [NormalizedProductLight…]}` |
+| `picnic_get_product` | `product_id` (required, bv. `s11295810`), optional `profile` | `NormalizedProduct` (details + `image_urls`) |
+| `picnic_get_image_url` | `image_id` (required), optional `size` (default `medium`), `profile` | `{image_id, size, url}` |
 
 `NormalizedProductLight`:
 
@@ -267,20 +267,20 @@ Prijzen in Picnic komen vaak als **centen integer** (`display_price: 599` = €5
 
 | Tool | Input | Output |
 |---|---|---|
-| `picnic_get_cart` | optional `account` | `{items: […], item_count, total_price_cents, total_price_eur, raw_summary?}` |
-| `picnic_add_to_cart` | `product_id` (required), optional `quantity` (default 1), `account` | updated cart summary |
-| `picnic_remove_from_cart` | `product_id` (required), optional `quantity` (default 1), `account` | updated cart summary |
-| `picnic_clear_cart` | optional `confirm` (required `true` om te wissen), `account` | emptied cart / error if confirm missing |
+| `picnic_get_cart` | optional `profile` | `{items: […], item_count, total_price_cents, total_price_eur, raw_summary?}` |
+| `picnic_add_to_cart` | `product_id` (required), optional `quantity` (default 1), `profile` | updated cart summary |
+| `picnic_remove_from_cart` | `product_id` (required), optional `quantity` (default 1), `profile` | updated cart summary |
+| `picnic_clear_cart` | optional `confirm` (required `true` om te wissen), `profile` | emptied cart / error if confirm missing |
 
 ### Recipes (fase 1b — direct na cart, zelfde PR of snelle follow-up)
 
 | Tool | Input | Output |
 |---|---|---|
-| `picnic_browse_recipes` | optional `category` / `page` hint, `account` | `{recipes: [RecipeLight…], categories?: […]}` |
-| `picnic_get_recipe` | `recipe_id` (required), `account` | `NormalizedRecipe` (title, time, portions, steps?, ingredients[], `image_url` / `image_urls`, selling_group_id?) |
-| `picnic_add_recipe_to_cart` | `recipe_id` of `selling_group_id` (één required), optional `portions`, `account` | updated cart summary |
-| `picnic_remove_recipe_from_cart` | `selling_group_id` (required), `account` | updated cart summary |
-| `picnic_save_recipe` / `picnic_unsave_recipe` | `recipe_id`, `account` | `{ok: true}` |
+| `picnic_browse_recipes` | optional `category` / `page` hint, `profile` | `{recipes: [RecipeLight…], categories?: […]}` |
+| `picnic_get_recipe` | `recipe_id` (required), `profile` | `NormalizedRecipe` (title, time, portions, steps?, ingredients[], `image_url` / `image_urls`, selling_group_id?) |
+| `picnic_add_recipe_to_cart` | `recipe_id` of `selling_group_id` (één required), optional `portions`, `profile` | updated cart summary |
+| `picnic_remove_recipe_from_cart` | `selling_group_id` (required), `profile` | updated cart summary |
+| `picnic_save_recipe` / `picnic_unsave_recipe` | `recipe_id`, `profile` | `{ok: true}` |
 
 `RecipeLight`:
 
@@ -302,12 +302,12 @@ Als Fusion-parsing van steps/ingredients onbetrouwbaar is: tool returnt best-eff
 ## Bestanden om te maken
 
 ```
-src/Picnic/PicnicAccountConfig.php
+src/Picnic/PicnicProfileConfig.php
 src/Picnic/PicnicConfigLoader.php
 src/Picnic/PicnicClient.php
 src/Picnic/PicnicService.php
 src/Picnic/PicnicImage.php              # URL builder voor static images
-src/Mcp/Tool/PicnicListAccountsTool.php
+src/Mcp/Tool/PicnicListProfilesTool.php
 src/Mcp/Tool/PicnicGenerate2faCodeTool.php
 src/Mcp/Tool/PicnicVerify2faCodeTool.php
 src/Mcp/Tool/PicnicSearchTool.php
@@ -327,7 +327,7 @@ src/Mcp/Tool/PicnicUnsaveRecipeTool.php
 
 Docs/example updates (scrubbed):
 
-- `prism.config.yaml.example` — sample `type: picnic` account
+- `prism.config.yaml.example` — sample `type: picnic` profile
 - `AGENTS.md` — `picnic` toevoegen aan supported types + tool list
 
 Geen Doctrine, geen migrations.
@@ -350,15 +350,15 @@ Acceptatiekader spike: search + cart round-trip werkt; image URL laadt; recipe d
 
 ### Fase 1 — Core PHP integratie (search + cart)
 
-1. `PicnicAccountConfig` + `PicnicConfigLoader` (scoped via `ServerContext`).
+1. `PicnicProfileConfig` + `PicnicConfigLoader` (scoped via `ServerContext`).
 2. `PicnicClient`:
    - base URL per `country_code`
    - headers: `Content-Type`, `x-picnic-auth`, optioneel picnic-agent/did voor page routes
    - `login()` met MD5 secret
    - auth-key file cache + 401 retry
 3. `PicnicService` methods: `search`, `getCart`, `addToCart`, `removeFromCart`, `clearCart`.
-4. Tools uit tabel “Catalog” + “Cart” + `picnic_list_accounts`.
-5. Scrubbed YAML example + kiko local account (gitignored).
+4. Tools uit tabel “Catalog” + “Cart” + `picnic_list_profiles`.
+5. Scrubbed YAML example + kiko local profile (gitignored).
 6. Handmatig via admin Try It of MCP `tools/call` valideren.
 
 **Done when:** agent kan zoeken → product kiezen → op cart zetten → cart lezen → item verwijderen.
@@ -386,7 +386,7 @@ Acceptatiekader spike: search + cart round-trip werkt; image URL laadt; recipe d
 - Rate-limit / friendly errors bij 429/5xx.
 - Never log password of full auth key.
 - `clear_cart` verplicht `confirm: true`.
-- Optioneel: account flag `allow_writes: true` (default true) / later `allow_orders: false`.
+- Optioneel: profile flag `allow_writes: true` (default true) / later `allow_orders: false`.
 - AGENTS.md + korte `docs/picnic.md` (auth, 2FA, cart=list semantieк, risico’s).
 
 ### Fase 5 — Later / out of scope voor v1
@@ -423,7 +423,7 @@ Acceptatiekader spike: search + cart round-trip werkt; image URL laadt; recipe d
 
 ## Testplan (handmatig; geen suite in repo)
 
-1. `picnic_list_accounts` toont scrubbed labels.
+1. `picnic_list_profiles` toont scrubbed labels.
 2. Zonder/met 2FA: auth flow werkt; daarna search.
 3. Search “yoghurt” → ≥1 product met `id`, prijs, `image_url`.
 4. `picnic_add_to_cart` → `picnic_get_cart` bevat item; quantity klopt.
@@ -436,12 +436,12 @@ Acceptatiekader spike: search + cart round-trip werkt; image URL laadt; recipe d
 
 ## Open vragen (vóór/ tijdens fase 0)
 
-1. Heeft het huishoud-account **SMS-2FA** aan? (bepaalt of 2FA-tools day-1 moeten)
+1. Heeft het huishoud-profile **SMS-2FA** aan? (bepaalt of 2FA-tools day-1 moeten)
 2. Willen we **write tools** meteen op de kiko-server, of eerst een dedicated `picnic-dev` server met eigen bearer token?
 3. Is checkout/slots ooit gewenst, of blijft Prism bewust “list + recipes only”?
 4. Mag auth key op disk in `var/cache`, of liever verplicht `auth_key` in YAML na handmatige login?
 
-Defaults als geen antwoord: (1) bouw 2FA-tools mee, (2) eigen account op bestaande personal/kiko server, (3) geen checkout in v1, (4) file cache + optional YAML override.
+Defaults als geen antwoord: (1) bouw 2FA-tools mee, (2) eigen profile op bestaande personal/kiko server, (3) geen checkout in v1, (4) file cache + optional YAML override.
 
 ---
 

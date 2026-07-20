@@ -33,9 +33,9 @@ class MatomoGetReportTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Matomo account key. Optional if only one account is configured.',
+                    'description' => 'Matomo profile key. Optional if only one profile is configured.',
                 ],
                 'method' => [
                     'type' => 'string',
@@ -43,7 +43,7 @@ class MatomoGetReportTool implements ToolInterface
                 ],
                 'idSite' => [
                     'type' => 'integer',
-                    'description' => 'Site id to query (from matomo_list_sites). Optional if a default_id_site is configured for the account.',
+                    'description' => 'Site id to query (from matomo_list_sites). Optional if a default_id_site is configured for the profile.',
                 ],
                 'period' => [
                     'type' => 'string',
@@ -68,7 +68,7 @@ class MatomoGetReportTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'matomo';
     }
@@ -105,7 +105,7 @@ class MatomoGetReportTool implements ToolInterface
 
         try {
             $result = $this->matomoService->getReport(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 method: $method,
                 idSite: isset($arguments['idSite']) ? (int) $arguments['idSite'] : null,
                 period: $arguments['period'] ?? 'day',

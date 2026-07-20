@@ -20,7 +20,7 @@ class EmailListLabelsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'List available email labels for an account. Returns IMAP folders plus standard flags and, where supported, custom IMAP keywords found on messages.';
+        return 'List available email labels for a profile. Returns IMAP folders plus standard flags and, where supported, custom IMAP keywords found on messages.';
     }
 
     public function getInputSchema(): array
@@ -28,9 +28,9 @@ class EmailListLabelsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID.',
+                    'description' => 'Email profile ID.',
                 ],
                 'folder' => [
                     'type' => 'string',
@@ -49,22 +49,22 @@ class EmailListLabelsTool implements ToolInterface
                     'description' => 'Max messages to scan for custom keywords in the folder. Default: 1000, max: 5000',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $folder = (string) ($arguments['folder'] ?? 'INBOX');
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($folder === '') {
@@ -75,7 +75,7 @@ class EmailListLabelsTool implements ToolInterface
 
         try {
             $result = $this->emailService->listLabels(
-                accountId: $account,
+                profileId: $profile,
                 folder: $folder,
                 includeFolders: (bool) ($arguments['include_folders'] ?? true),
                 includeKeywords: (bool) ($arguments['include_keywords'] ?? true),

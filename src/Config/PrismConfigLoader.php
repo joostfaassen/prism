@@ -53,17 +53,17 @@ class PrismConfigLoader
     }
 
     /**
-     * Filter accounts by type for the current server context.
+     * Filter profiles by type for the current server context.
      *
      * @return array<string, array<string, mixed>>
      */
-    public function getAccountsByTypeForServer(string $type, ServerContext $serverContext): array
+    public function getProfilesByTypeForServer(string $type, ServerContext $serverContext): array
     {
         if (!$serverContext->hasServer()) {
             return [];
         }
 
-        return $serverContext->getServer()->getAccountsByType($type);
+        return $serverContext->getServer()->getProfilesByType($type);
     }
 
     /**
@@ -121,7 +121,7 @@ class PrismConfigLoader
             name: $name,
             label: $cfg['label'] ?? $name,
             bearerToken: $cfg['bearer_token'] ?? '',
-            accounts: $cfg['accounts'] ?? [],
+            profiles: $cfg['profiles'] ?? [],
             agentNotify: $agentNotify,
         );
     }

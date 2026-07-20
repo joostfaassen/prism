@@ -20,7 +20,7 @@ class InstagramGetPublishingLimitTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Check how many API-published posts remain in the rolling 24-hour window (Instagram caps accounts at '
+        return 'Check how many API-published posts remain in the rolling 24-hour window (Instagram caps profiles at '
             . '100 published posts per 24h; carousels count as one). Call this before bulk/scheduled publishing to '
             . 'avoid hitting the limit.';
     }
@@ -30,13 +30,13 @@ class InstagramGetPublishingLimitTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -44,7 +44,7 @@ class InstagramGetPublishingLimitTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->instagramService->getPublishingLimit($arguments['account'] ?? null);
+            $result = $this->instagramService->getPublishingLimit($arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],

@@ -20,7 +20,7 @@ class TmdbDeleteRatingTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Remove your personal TMDb rating from a movie or TV series. Requires session_id on the account.';
+        return 'Remove your personal TMDb rating from a movie or TV series. Requires session_id on the profile.';
     }
 
     public function getInputSchema(): array
@@ -37,16 +37,16 @@ class TmdbDeleteRatingTool implements ToolInterface
                     'enum' => ['movie', 'tv'],
                     'description' => 'movie or tv',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key. Optional if only one account is configured.',
+                    'description' => 'TMDb profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['tmdb_id', 'media_type'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -64,7 +64,7 @@ class TmdbDeleteRatingTool implements ToolInterface
             $result = $this->tmdbService->deleteRating(
                 mediaType: (string) $arguments['media_type'],
                 tmdbId: (int) $arguments['tmdb_id'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

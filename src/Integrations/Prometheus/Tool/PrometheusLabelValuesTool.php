@@ -30,9 +30,9 @@ class PrometheusLabelValuesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
                 'label' => [
                     'type' => 'string',
@@ -52,7 +52,7 @@ class PrometheusLabelValuesTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -79,7 +79,7 @@ class PrometheusLabelValuesTool implements ToolInterface
 
         try {
             $values = $this->prometheusService->labelValues(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 label: $label,
                 match: $match,
             );

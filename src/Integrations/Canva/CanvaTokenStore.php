@@ -7,12 +7,12 @@ namespace App\Integrations\Canva;
  *
  * Config is hand-maintained and contains comments, so we deliberately avoid a
  * full YAML round-trip (which would strip comments and reorder keys). Instead we
- * locate the target account block by indentation and replace or insert only the
+ * locate the target profile block by indentation and replace or insert only the
  * token keys, leaving everything else byte-for-byte intact.
  *
  * Two layouts are supported:
- *  - Per-server files `prism.{serverName}.yaml` (flat: `accounts:` at indent 0).
- *  - The legacy `prism.config.yaml` (nested: `servers: > {name}: > accounts:`).
+ *  - Per-server files `prism.{serverName}.yaml` (flat: `profiles:` at indent 0).
+ *  - The legacy `prism.config.yaml` (nested: `servers: > {name}: > profiles:`).
  */
 class CanvaTokenStore
 {
@@ -23,21 +23,21 @@ class CanvaTokenStore
 
     public function persistTokens(
         string $serverName,
-        string $accountKey,
+        string $profileKey,
         string $accessToken,
         string $refreshToken,
         int $tokenExpiresAt,
     ): void {
-        $this->updateAccount($serverName, $accountKey, [
+        $this->updateProfile($serverName, $profileKey, [
             'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
             'token_expires_at' => $tokenExpiresAt,
         ]);
     }
 
-    public function clearTokens(string $serverName, string $accountKey): void
+    public function clearTokens(string $serverName, string $profileKey): void
     {
-        $this->updateAccount($serverName, $accountKey, [
+        $this->updateProfile($serverName, $profileKey, [
             'access_token' => '',
             'refresh_token' => '',
             'token_expires_at' => 0,
@@ -57,19 +57,19 @@ class CanvaTokenStore
     /**
      * @param array<string, string|int> $values
      */
-    private function updateAccount(string $serverName, string $accountKey, array $values): void
+    private function updateProfile(string $serverName, string $profileKey, array $values): void
     {
         $perServer = \dirname($this->configPath) . '/prism.' . $serverName . '.yaml';
 
         if (is_file($perServer)) {
-            // Flat per-server file: accounts: at indent 0.
-            $this->writeIntoFile($perServer, null, $accountKey, $values, 0);
+            // Flat per-server file: profiles: at indent 0.
+            $this->writeIntoFile($perServer, null, $profileKey, $values, 0);
 
             return;
         }
 
-        // Legacy nested file: servers: > {serverName}: > accounts: at indent 4.
-        $this->writeIntoFile($this->configPath, $serverName, $accountKey, $values, 4);
+        // Legacy nested file: servers: > {serverName}: > profiles: at indent 4.
+        $this->writeIntoFile($this->configPath, $serverName, $profileKey, $values, 4);
     }
 
     /**
@@ -78,9 +78,9 @@ class CanvaTokenStore
     private function writeIntoFile(
         string $file,
         ?string $serverName,
-        string $accountKey,
+        string $profileKey,
         array $values,
-        int $accountsIndent,
+        int $profilesIndent,
     ): void {
         if (!is_file($file) || !is_writable($file)) {
             throw new \RuntimeException(sprintf('Config file is not writable: %s', $file));
@@ -112,29 +112,29 @@ class CanvaTokenStore
             $searchEnd = $this->blockEnd($lines, $serverIdx + 1, 2);
         }
 
-        $accountKeyIndent = $accountsIndent + 2;
-        $propIndent = $accountsIndent + 4;
+        $profileKeyIndent = $profilesIndent + 2;
+        $propIndent = $profilesIndent + 4;
 
-        $accountsIdx = $this->findKey($lines, $searchStart, $searchEnd, $accountsIndent, 'accounts');
-        if ($accountsIdx === null) {
-            throw new \RuntimeException(sprintf('Could not locate an "accounts:" block in %s', $file));
+        $profilesIdx = $this->findKey($lines, $searchStart, $searchEnd, $profilesIndent, 'profiles');
+        if ($profilesIdx === null) {
+            throw new \RuntimeException(sprintf('Could not locate an "profiles:" block in %s', $file));
         }
-        $accountsEnd = $this->blockEnd($lines, $accountsIdx + 1, $accountsIndent);
+        $profilesEnd = $this->blockEnd($lines, $profilesIdx + 1, $profilesIndent);
 
-        $accountIdx = $this->findKey($lines, $accountsIdx + 1, $accountsEnd, $accountKeyIndent, $accountKey);
-        if ($accountIdx === null) {
-            throw new \RuntimeException(sprintf('Could not locate account "%s" in %s', $accountKey, $file));
+        $profileIdx = $this->findKey($lines, $profilesIdx + 1, $profilesEnd, $profileKeyIndent, $profileKey);
+        if ($profileIdx === null) {
+            throw new \RuntimeException(sprintf('Could not locate profile "%s" in %s', $profileKey, $file));
         }
 
         foreach ($values as $key => $value) {
-            $accountEnd = $this->blockEnd($lines, $accountIdx + 1, $accountKeyIndent);
+            $profileEnd = $this->blockEnd($lines, $profileIdx + 1, $profileKeyIndent);
             $formatted = str_repeat(' ', $propIndent) . $key . ': ' . $this->formatValue($value);
-            $existing = $this->findKey($lines, $accountIdx + 1, $accountEnd, $propIndent, $key);
+            $existing = $this->findKey($lines, $profileIdx + 1, $profileEnd, $propIndent, $key);
 
             if ($existing !== null) {
                 $lines[$existing] = $formatted;
             } else {
-                array_splice($lines, $accountIdx + 1, 0, [$formatted]);
+                array_splice($lines, $profileIdx + 1, 0, [$formatted]);
             }
         }
 

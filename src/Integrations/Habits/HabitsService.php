@@ -29,7 +29,7 @@ class HabitsService
         if ($token === '') {
             return false;
         }
-        foreach ($server->getAccountsByType('habits') as $cfg) {
+        foreach ($server->getProfilesByType('habits') as $cfg) {
             $t = $cfg['rest_ingest_token'] ?? $cfg['rest_token'] ?? null;
             if (is_string($t) && $t !== '' && hash_equals($t, $token)) {
                 return true;

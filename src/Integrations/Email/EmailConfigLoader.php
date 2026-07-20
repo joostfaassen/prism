@@ -6,12 +6,12 @@ use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
 
 /**
- * Loads `email` accounts from the active server's config and inflates them
+ * Loads `email` profiles from the active server's config and inflates them
  * into typed value objects.
  *
- * Account YAML shape:
+ * Profile YAML shape:
  *
- *   accounts:
+ *   profiles:
  *     work-mail:
  *       type: email
  *       label: "Work mailbox"
@@ -45,45 +45,45 @@ class EmailConfigLoader
     }
 
     /**
-     * @return array<string, EmailAccountConfig>
+     * @return array<string, EmailProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('email', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('email', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $id => $cfg) {
-            $accounts[$id] = $this->buildAccount((string) $id, $cfg);
+            $profiles[$id] = $this->buildAccount((string) $id, $cfg);
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $id): EmailAccountConfig
+    public function getProfile(string $id): EmailProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$id])) {
+        if (!isset($profiles[$id])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown email account: "%s". Available: %s',
+                'Unknown email profile: "%s". Available: %s',
                 $id,
-                implode(', ', array_keys($accounts)) ?: '(none)',
+                implode(', ', array_keys($profiles)) ?: '(none)',
             ));
         }
 
-        return $accounts[$id];
+        return $profiles[$id];
     }
 
     /**
      * @param array<string, mixed> $cfg
      */
-    private function buildAccount(string $id, array $cfg): EmailAccountConfig
+    private function buildAccount(string $id, array $cfg): EmailProfileConfig
     {
         $imapRaw = $this->normalizeImap($cfg);
 
         if ($imapRaw === null) {
             throw new \InvalidArgumentException(sprintf(
-                'Email account "%s" is missing required IMAP configuration.',
+                'Email profile "%s" is missing required IMAP configuration.',
                 $id,
             ));
         }
@@ -122,7 +122,7 @@ class EmailConfigLoader
             );
         }
 
-        return new EmailAccountConfig(
+        return new EmailProfileConfig(
             id: $id,
             label: (string) ($cfg['label'] ?? $id),
             imap: $imap,
@@ -135,7 +135,7 @@ class EmailConfigLoader
 
     /**
      * Accept either a nested {imap: {...}} block or a flat IMAP config (legacy
-     * shape, where imap fields lived directly on the account). The flat form
+     * shape, where imap fields lived directly on the profile). The flat form
      * is preserved here purely so existing yaml that hasn't been migrated yet
      * keeps working — new configs should use the nested form.
      *

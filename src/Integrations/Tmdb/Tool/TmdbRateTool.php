@@ -20,7 +20,7 @@ class TmdbRateTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Rate a TMDb movie or TV series (0.5–10 in half-star steps) on your TMDb account. Requires session_id on the account (see tmdb_create_session).';
+        return 'Rate a TMDb movie or TV series (0.5–10 in half-star steps) on your TMDb profile. Requires session_id on the profile (see tmdb_create_session).';
     }
 
     public function getInputSchema(): array
@@ -41,16 +41,16 @@ class TmdbRateTool implements ToolInterface
                     'type' => 'number',
                     'description' => 'Personal rating from 0.5 to 10 in 0.5 steps (e.g. 7.5)',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'TMDb account key. Optional if only one account is configured.',
+                    'description' => 'TMDb profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['tmdb_id', 'media_type', 'rating'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tmdb';
     }
@@ -69,7 +69,7 @@ class TmdbRateTool implements ToolInterface
                 mediaType: (string) $arguments['media_type'],
                 tmdbId: (int) $arguments['tmdb_id'],
                 value: (float) $arguments['rating'],
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
             );
 
             return [

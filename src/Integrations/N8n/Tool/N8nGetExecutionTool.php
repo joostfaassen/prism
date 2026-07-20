@@ -28,9 +28,9 @@ class N8nGetExecutionTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'n8n account key (from n8n_list_accounts). Optional if only one account is configured.',
+                    'description' => 'n8n profile key (from n8n_list_profiles). Optional if only one profile is configured.',
                 ],
                 'id' => [
                     'type' => 'string',
@@ -45,7 +45,7 @@ class N8nGetExecutionTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'n8n';
     }
@@ -63,7 +63,7 @@ class N8nGetExecutionTool implements ToolInterface
 
         try {
             $execution = $this->n8nService->getExecution(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 id: $id,
                 includeData: isset($arguments['include_data']) ? (bool) $arguments['include_data'] : false,
             );

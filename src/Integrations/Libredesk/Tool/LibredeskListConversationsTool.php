@@ -44,9 +44,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key',
+                    'description' => 'Libredesk profile key',
                 ],
                 'view' => [
                     'type' => 'string',
@@ -83,21 +83,21 @@ DESC;
                     'enum' => ['asc', 'desc'],
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
@@ -113,7 +113,7 @@ DESC;
 
         try {
             $result = $this->libredeskService->listConversations(
-                $accountKey,
+                $profileKey,
                 $view,
                 $page,
                 $pageSize,

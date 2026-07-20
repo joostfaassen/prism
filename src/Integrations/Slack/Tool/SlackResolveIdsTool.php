@@ -28,9 +28,9 @@ class SlackResolveIdsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key',
+                    'description' => 'Slack profile key',
                 ],
                 'user_ids' => [
                     'type' => 'array',
@@ -43,20 +43,20 @@ class SlackResolveIdsTool implements ToolInterface
                     'description' => 'Channel IDs to resolve (e.g. C01ABC123, D01XYZ789)',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = trim((string) ($arguments['account'] ?? ''));
-        if ($accountKey === '') {
-            return $this->error('Parameter "account" is required');
+        $profileKey = trim((string) ($arguments['profile'] ?? ''));
+        if ($profileKey === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         $userIds = $arguments['user_ids'] ?? [];
@@ -88,7 +88,7 @@ class SlackResolveIdsTool implements ToolInterface
         }
 
         try {
-            $result = $this->slackService->resolveIds($accountKey, $normalizedUserIds, $normalizedChannelIds);
+            $result = $this->slackService->resolveIds($profileKey, $normalizedUserIds, $normalizedChannelIds);
 
             return [
                 'content' => [[

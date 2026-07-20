@@ -34,38 +34,38 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key',
+                    'description' => 'Libredesk profile key',
                 ],
                 'uuid' => [
                     'type' => 'string',
                     'description' => 'Conversation UUID',
                 ],
             ],
-            'required' => ['account', 'uuid'],
+            'required' => ['profile', 'uuid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
 
-        if ($accountKey === '' || $uuid === '') {
+        if ($profileKey === '' || $uuid === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account" and "uuid" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile" and "uuid" are required']],
                 'isError' => true,
             ];
         }
 
         try {
-            $this->libredeskService->deleteDraft($accountKey, $uuid);
+            $this->libredeskService->deleteDraft($profileKey, $uuid);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

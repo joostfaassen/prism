@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'mcp:tools', description: 'List all registered MCP tools (name + account type), sorted')]
+#[AsCommand(name: 'mcp:tools', description: 'List all registered MCP tools (name + profile type), sorted')]
 class McpToolsListCommand extends Command
 {
     public function __construct(
@@ -21,7 +21,7 @@ class McpToolsListCommand extends Command
     {
         $lines = [];
         foreach ($this->mcpHandler->getTools() as $tool) {
-            $lines[] = $tool->getName() . "\t" . ($tool->getAccountType() ?? '-');
+            $lines[] = $tool->getName() . "\t" . ($tool->getProfileType() ?? '-');
         }
         sort($lines);
         foreach ($lines as $line) {

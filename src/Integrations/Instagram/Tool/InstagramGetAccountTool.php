@@ -30,9 +30,9 @@ class InstagramGetAccountTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Instagram account key. Optional if only one account is configured.',
+                    'description' => 'Instagram profile key. Optional if only one profile is configured.',
                 ],
                 'fields' => [
                     'type' => 'string',
@@ -43,7 +43,7 @@ class InstagramGetAccountTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -51,8 +51,8 @@ class InstagramGetAccountTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->instagramService->getAccount(
-                accountKey: $arguments['account'] ?? null,
+            $result = $this->instagramService->getProfile(
+                profileKey: $arguments['profile'] ?? null,
                 fields: isset($arguments['fields']) ? (string) $arguments['fields'] : null,
             );
 
@@ -61,7 +61,7 @@ class InstagramGetAccountTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching Instagram account: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching Instagram profile: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

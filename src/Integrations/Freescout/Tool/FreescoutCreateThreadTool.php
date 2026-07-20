@@ -37,9 +37,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Freescout account key',
+                    'description' => 'Freescout profile key',
                 ],
                 'conversation_id' => [
                     'type' => 'integer',
@@ -69,24 +69,24 @@ DESC;
                     'description' => 'User ID to post as. Use freescout_list_users to find IDs. If omitted, uses the API key owner.',
                 ],
             ],
-            'required' => ['account', 'conversation_id', 'text'],
+            'required' => ['profile', 'conversation_id', 'text'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'freescout';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $conversationId = isset($arguments['conversation_id']) ? (int) $arguments['conversation_id'] : 0;
         $text = $arguments['text'] ?? '';
 
-        if ($accountKey === '' || $conversationId === 0 || $text === '') {
+        if ($profileKey === '' || $conversationId === 0 || $text === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "conversation_id", and "text" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "conversation_id", and "text" are required']],
                 'isError' => true,
             ];
         }
@@ -98,7 +98,7 @@ DESC;
 
         try {
             $result = $this->freescoutService->createThread(
-                $accountKey,
+                $profileKey,
                 $conversationId,
                 $text,
                 $type,

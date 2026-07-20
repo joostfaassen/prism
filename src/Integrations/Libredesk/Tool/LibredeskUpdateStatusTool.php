@@ -33,9 +33,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key',
+                    'description' => 'Libredesk profile key',
                 ],
                 'uuid' => [
                     'type' => 'string',
@@ -50,24 +50,24 @@ DESC;
                     'description' => 'Snooze duration (e.g. "1h", "3h", "100h"). Required when status is "Snoozed".',
                 ],
             ],
-            'required' => ['account', 'uuid', 'status'],
+            'required' => ['profile', 'uuid', 'status'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
         $status = $arguments['status'] ?? '';
 
-        if ($accountKey === '' || $uuid === '' || $status === '') {
+        if ($profileKey === '' || $uuid === '' || $status === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "uuid", and "status" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "uuid", and "status" are required']],
                 'isError' => true,
             ];
         }
@@ -75,7 +75,7 @@ DESC;
         $snoozedUntil = $arguments['snoozed_until'] ?? null;
 
         try {
-            $result = $this->libredeskService->updateStatus($accountKey, $uuid, $status, $snoozedUntil);
+            $result = $this->libredeskService->updateStatus($profileKey, $uuid, $status, $snoozedUntil);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

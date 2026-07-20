@@ -28,9 +28,9 @@ class TwilioGetCallTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Twilio account key from configuration',
+                    'description' => 'Twilio profile key from configuration',
                 ],
                 'call_sid' => [
                     'type' => 'string',
@@ -41,29 +41,29 @@ class TwilioGetCallTool implements ToolInterface
                     'description' => 'Also fetch recordings for this call (default true)',
                 ],
             ],
-            'required' => ['account', 'call_sid'],
+            'required' => ['profile', 'call_sid'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'twilio';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $callSid = $arguments['call_sid'] ?? '';
 
-        if ($accountKey === '' || $callSid === '') {
+        if ($profileKey === '' || $callSid === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Missing required parameters: account and call_sid']],
+                'content' => [['type' => 'text', 'text' => 'Missing required parameters: profile and call_sid']],
                 'isError' => true,
             ];
         }
 
         try {
-            $call = $this->twilioService->getCall($accountKey, $callSid);
+            $call = $this->twilioService->getCall($profileKey, $callSid);
 
             $result = [
                 'sid' => $call['sid'],
@@ -88,7 +88,7 @@ class TwilioGetCallTool implements ToolInterface
 
             $includeRecordings = $arguments['include_recordings'] ?? true;
             if ($includeRecordings) {
-                $recordings = $this->twilioService->listRecordings($accountKey, $callSid);
+                $recordings = $this->twilioService->listRecordings($profileKey, $callSid);
                 $result['recordings'] = array_map(fn(array $r) => [
                     'sid' => $r['sid'],
                     'duration' => $r['duration'],
@@ -96,7 +96,7 @@ class TwilioGetCallTool implements ToolInterface
                     'source' => $r['source'] ?? null,
                     'status' => $r['status'],
                     'date_created' => $r['date_created'],
-                    'media_url' => $this->twilioService->getRecordingMediaUrl($accountKey, $r['sid']),
+                    'media_url' => $this->twilioService->getRecordingMediaUrl($profileKey, $r['sid']),
                 ], $recordings);
             }
 

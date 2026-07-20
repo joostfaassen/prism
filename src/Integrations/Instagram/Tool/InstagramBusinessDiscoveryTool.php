@@ -20,7 +20,7 @@ class InstagramBusinessDiscoveryTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Look up ANOTHER public Instagram business/creator account by username — perfect for competitor and '
+        return 'Look up ANOTHER public Instagram business/creator profile by username — perfect for competitor and '
             . 'influencer research. Returns their follower count, follows count, media count, bio, website and recent '
             . 'posts (with like/comment/view counts) in a single call. Combine with instagram_hashtag_search to discover '
             . 'usernames, then profile them here. Only public professional accounts are returned (no private/personal accounts).';
@@ -31,7 +31,7 @@ class InstagramBusinessDiscoveryTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Your Instagram account key used to perform the lookup. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Your Instagram profile key used to perform the lookup. Optional if only one is configured.'],
                 'username' => ['type' => 'string', 'description' => 'The target public business/creator username (with or without leading @).'],
                 'media_limit' => ['type' => 'integer', 'description' => 'How many of the target\'s recent media to include (default 12).'],
                 'fields' => ['type' => 'string', 'description' => 'Optional override of the nested business_discovery fields list.'],
@@ -40,7 +40,7 @@ class InstagramBusinessDiscoveryTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -57,7 +57,7 @@ class InstagramBusinessDiscoveryTool implements ToolInterface
 
         try {
             $result = $this->instagramService->businessDiscovery(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 username: $username,
                 fields: isset($arguments['fields']) ? (string) $arguments['fields'] : null,
                 mediaLimit: isset($arguments['media_limit']) ? (int) $arguments['media_limit'] : 12,

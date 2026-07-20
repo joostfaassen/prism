@@ -28,9 +28,9 @@ class SendGridGetCategoryStatsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'SendGrid account key. Optional if only one account is configured.',
+                    'description' => 'SendGrid profile key. Optional if only one profile is configured.',
                 ],
                 'start_date' => [
                     'type' => 'string',
@@ -55,7 +55,7 @@ class SendGridGetCategoryStatsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'sendgrid';
     }
@@ -89,7 +89,7 @@ class SendGridGetCategoryStatsTool implements ToolInterface
 
         try {
             $stats = $this->sendGridService->getCategoryStats(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 startDate: $startDate,
                 categories: $categories,
                 endDate: $arguments['end_date'] ?? null,

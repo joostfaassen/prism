@@ -33,16 +33,16 @@ class PicnicGetProductTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'Picnic product / selling-unit id, e.g. "s11295810"',
                 ],
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Picnic account key. Defaults to the first configured account.',
+                    'description' => 'Picnic profile key. Defaults to the first configured profile.',
                 ],
             ],
             'required' => ['product_id'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'picnic';
     }
@@ -50,7 +50,7 @@ class PicnicGetProductTool implements ToolInterface
     public function execute(array $arguments): array
     {
         $productId = trim((string) ($arguments['product_id'] ?? ''));
-        $account = $arguments['account'] ?? null;
+        $profile = $arguments['profile'] ?? null;
 
         if ($productId === '') {
             return [
@@ -60,7 +60,7 @@ class PicnicGetProductTool implements ToolInterface
         }
 
         try {
-            $product = $this->picnicService->getProduct($productId, $account);
+            $product = $this->picnicService->getProduct($productId, $profile);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(

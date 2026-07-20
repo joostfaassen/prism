@@ -30,9 +30,9 @@ class PrometheusListTargetsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Prometheus account key. Optional if only one account is configured.',
+                    'description' => 'Prometheus profile key. Optional if only one profile is configured.',
                 ],
                 'state' => [
                     'type' => 'string',
@@ -44,7 +44,7 @@ class PrometheusListTargetsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'prometheus';
     }
@@ -53,7 +53,7 @@ class PrometheusListTargetsTool implements ToolInterface
     {
         try {
             $result = $this->prometheusService->listTargets(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 state: $arguments['state'] ?? null,
             );
 

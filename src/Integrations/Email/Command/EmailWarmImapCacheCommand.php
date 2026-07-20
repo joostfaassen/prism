@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'email:warm-imap-cache',
-    description: 'Warm recent IMAP message cache for email accounts',
+    description: 'Warm recent IMAP message cache for email profiles',
 )]
 class EmailWarmImapCacheCommand extends Command
 {
@@ -31,10 +31,10 @@ class EmailWarmImapCacheCommand extends Command
     {
         $this
             ->addOption('server', null, InputOption::VALUE_REQUIRED, 'Server name from prism.config.yaml')
-            ->addOption('account', null, InputOption::VALUE_REQUIRED, 'Email account key (requires --server)')
+            ->addOption('profile', null, InputOption::VALUE_REQUIRED, 'Email profile key (requires --server)')
             ->addOption('folder', null, InputOption::VALUE_REQUIRED, 'Folder to warm', 'INBOX')
             ->addOption('days', null, InputOption::VALUE_REQUIRED, 'How many recent days to warm', '7')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum messages per account/folder', '200')
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum messages per profile/folder', '200')
         ;
     }
 
@@ -42,13 +42,13 @@ class EmailWarmImapCacheCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $serverFilter = (string) ($input->getOption('server') ?? '');
-        $accountFilter = (string) ($input->getOption('account') ?? '');
+        $profileFilter = (string) ($input->getOption('profile') ?? '');
         $folder = (string) ($input->getOption('folder') ?? 'INBOX');
         $days = (int) $input->getOption('days');
         $limit = (int) $input->getOption('limit');
 
-        if ($accountFilter !== '' && $serverFilter === '') {
-            $io->error('Option "--account" requires "--server".');
+        if ($profileFilter !== '' && $serverFilter === '') {
+            $io->error('Option "--profile" requires "--server".');
 
             return Command::INVALID;
         }
@@ -67,7 +67,7 @@ class EmailWarmImapCacheCommand extends Command
 
         $servers = $this->serversToProcess($serverFilter);
         if ($servers === []) {
-            $io->warning('No servers with email accounts found.');
+            $io->warning('No servers with email profiles found.');
 
             return Command::SUCCESS;
         }
@@ -82,28 +82,28 @@ class EmailWarmImapCacheCommand extends Command
 
         $warmedTotal = 0;
         $inspectedTotal = 0;
-        $accountsProcessed = 0;
+        $profilesProcessed = 0;
         $errors = 0;
 
         foreach ($servers as $server) {
-            $emailAccounts = $this->emailAccountKeys($server, $accountFilter);
-            if ($emailAccounts === []) {
+            $emailProfiles = $this->emailProfileKeys($server, $profileFilter);
+            if ($emailProfiles === []) {
                 continue;
             }
 
             $this->serverContext->setServer($server);
             try {
-                foreach ($emailAccounts as $accountKey) {
+                foreach ($emailProfiles as $profileKey) {
                     try {
-                        $accountLabel = $server->name . '/' . $accountKey;
+                        $profileLabel = $server->name . '/' . $profileKey;
                         $progressCb = null;
                         if ($output->isVerbose()) {
-                            $progressCb = function (array $event) use ($io, $output, $accountLabel): void {
+                            $progressCb = function (array $event) use ($io, $output, $profileLabel): void {
                                 $type = (string) ($event['type'] ?? '');
                                 if ($type === 'cache_scan_done') {
                                     $io->writeln(sprintf(
                                         '  <comment>%s</comment> cache: %d hit, %d miss, %d total',
-                                        $accountLabel,
+                                        $profileLabel,
                                         (int) ($event['cached'] ?? 0),
                                         (int) ($event['missing'] ?? 0),
                                         (int) ($event['total'] ?? 0),
@@ -116,7 +116,7 @@ class EmailWarmImapCacheCommand extends Command
                                     if ($output->isVeryVerbose()) {
                                         $io->writeln(sprintf(
                                             '  <comment>%s</comment> downloading uid=%d (%d/%d)',
-                                            $accountLabel,
+                                            $profileLabel,
                                             (int) ($event['uid'] ?? 0),
                                             (int) ($event['index'] ?? 0),
                                             (int) ($event['total'] ?? 0),
@@ -129,7 +129,7 @@ class EmailWarmImapCacheCommand extends Command
                                 if ($type === 'download_done' && $output->isVerbose()) {
                                     $io->writeln(sprintf(
                                         '  <comment>%s</comment> downloaded: %d',
-                                        $accountLabel,
+                                        $profileLabel,
                                         (int) ($event['downloaded'] ?? 0),
                                     ));
                                 }
@@ -137,14 +137,14 @@ class EmailWarmImapCacheCommand extends Command
                         }
 
                         $result = $this->emailService->warmRecentCache(
-                            accountId: $accountKey,
+                            profileId: $profileKey,
                             folder: $folder,
                             days: $days,
                             limit: $limit,
                             onProgress: $progressCb,
                         );
 
-                        $accountsProcessed++;
+                        $profilesProcessed++;
                         $warmed = (int) ($result['warmed'] ?? 0);
                         $inspected = (int) ($result['inspected'] ?? 0);
                         $cached = (int) ($result['cached'] ?? max(0, $inspected - $warmed));
@@ -154,7 +154,7 @@ class EmailWarmImapCacheCommand extends Command
                         $io->writeln(sprintf(
                             '<info>%s/%s</info> warmed=%d cached=%d inspected=%d folder=%s',
                             $server->name,
-                            $accountKey,
+                            $profileKey,
                             $warmed,
                             $cached,
                             $inspected,
@@ -165,7 +165,7 @@ class EmailWarmImapCacheCommand extends Command
                         $io->warning(sprintf(
                             '%s/%s failed: %s',
                             $server->name,
-                            $accountKey,
+                            $profileKey,
                             $e->getMessage(),
                         ));
                     }
@@ -175,15 +175,15 @@ class EmailWarmImapCacheCommand extends Command
             }
         }
 
-        if ($accountsProcessed === 0 && $errors === 0) {
-            $io->warning('No matching email accounts to warm.');
+        if ($profilesProcessed === 0 && $errors === 0) {
+            $io->warning('No matching email profiles to warm.');
 
             return Command::SUCCESS;
         }
 
         $io->newLine();
         $io->definitionList(
-            ['Accounts processed' => $accountsProcessed],
+            ['Profiles processed' => $profilesProcessed],
             ['Messages warmed' => $warmedTotal],
             ['Messages inspected' => $inspectedTotal],
             ['Errors' => $errors],
@@ -200,12 +200,12 @@ class EmailWarmImapCacheCommand extends Command
         if ($serverFilter !== '') {
             $server = $this->configLoader->getServer($serverFilter);
 
-            return $server->hasAccountType('email') ? [$server] : [];
+            return $server->hasProfileType('email') ? [$server] : [];
         }
 
         $servers = [];
         foreach ($this->configLoader->getServers() as $server) {
-            if ($server->hasAccountType('email')) {
+            if ($server->hasProfileType('email')) {
                 $servers[] = $server;
             }
         }
@@ -216,14 +216,14 @@ class EmailWarmImapCacheCommand extends Command
     /**
      * @return list<string>
      */
-    private function emailAccountKeys(ServerConfig $server, string $accountFilter): array
+    private function emailProfileKeys(ServerConfig $server, string $profileFilter): array
     {
-        $accounts = array_keys($server->getAccountsByType('email'));
+        $profiles = array_keys($server->getProfilesByType('email'));
 
-        if ($accountFilter === '') {
-            return $accounts;
+        if ($profileFilter === '') {
+            return $profiles;
         }
 
-        return in_array($accountFilter, $accounts, true) ? [$accountFilter] : [];
+        return in_array($profileFilter, $profiles, true) ? [$profileFilter] : [];
     }
 }

@@ -14,41 +14,41 @@ class TmdbConfigLoader
     }
 
     /**
-     * @return array<string, TmdbAccountConfig>
+     * @return array<string, TmdbProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('tmdb', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('tmdb', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accountId = $cfg['account_id'] ?? null;
+            $profileId = $cfg['account_id'] ?? null;
 
-            $accounts[$key] = new TmdbAccountConfig(
+            $profiles[$key] = new TmdbProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 apiKey: $cfg['api_key'] ?? '',
                 language: $cfg['language'] ?? 'en-US',
                 sessionId: (string) ($cfg['session_id'] ?? ''),
-                accountId: $accountId !== null && $accountId !== '' ? (int) $accountId : null,
+                accountId: $profileId !== null && $profileId !== '' ? (int) $profileId : null,
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): TmdbAccountConfig
+    public function getProfile(string $key): TmdbProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown TMDb account: "%s". Available: %s',
+                'Unknown TMDb profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

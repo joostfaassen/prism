@@ -28,9 +28,9 @@ class EmailMoveMessageTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Email account ID.',
+                    'description' => 'Email profile ID.',
                 ],
                 'from_folder' => [
                     'type' => 'string',
@@ -45,24 +45,24 @@ class EmailMoveMessageTool implements ToolInterface
                     'description' => 'Destination folder, e.g. Archive.',
                 ],
             ],
-            'required' => ['account', 'uid', 'to_folder'],
+            'required' => ['profile', 'uid', 'to_folder'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'email';
     }
 
     public function execute(array $arguments): array
     {
-        $account = (string) ($arguments['account'] ?? '');
+        $profile = (string) ($arguments['profile'] ?? '');
         $fromFolder = (string) ($arguments['from_folder'] ?? 'INBOX');
         $uid = $arguments['uid'] ?? null;
         $toFolder = (string) ($arguments['to_folder'] ?? '');
 
-        if ($account === '') {
-            return $this->error('Parameter "account" is required');
+        if ($profile === '') {
+            return $this->error('Parameter "profile" is required');
         }
 
         if ($fromFolder === '') {
@@ -79,7 +79,7 @@ class EmailMoveMessageTool implements ToolInterface
 
         try {
             $result = $this->emailService->moveMessage(
-                accountId: $account,
+                profileId: $profile,
                 fromFolder: $fromFolder,
                 uid: $uid,
                 toFolder: $toFolder,

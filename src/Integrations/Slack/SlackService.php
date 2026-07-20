@@ -23,14 +23,14 @@ class SlackService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listChannels(string $accountKey, string $types = 'public_channel,private_channel,mpim,im', int $limit = 200): array
+    public function listChannels(string $profileKey, string $types = 'public_channel,private_channel,mpim,im', int $limit = 200): array
     {
-        $cached = $this->cache->getChannels($accountKey, $types);
+        $cached = $this->cache->getChannels($profileKey, $types);
         if ($cached !== null) {
             return $cached;
         }
 
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
         $channels = [];
         $cursor = null;
 
@@ -61,7 +61,7 @@ class SlackService
             $this->handleSlackError($e, 'conversations.list');
         }
 
-        $this->cache->setChannels($accountKey, $types, $channels);
+        $this->cache->setChannels($profileKey, $types, $channels);
 
         return $channels;
     }
@@ -69,14 +69,14 @@ class SlackService
     /**
      * @return array<string, mixed>
      */
-    public function listMessages(string $accountKey, string $channelId, int $limit = 20, ?string $oldest = null, ?string $cursor = null): array
+    public function listMessages(string $profileKey, string $channelId, int $limit = 20, ?string $oldest = null, ?string $cursor = null): array
     {
-        $cached = $this->cache->getMessagesPage($accountKey, $channelId, $limit, $oldest, $cursor);
+        $cached = $this->cache->getMessagesPage($profileKey, $channelId, $limit, $oldest, $cursor);
         if ($cached !== null) {
             return $cached;
         }
 
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
 
         $params = [
             'channel' => $channelId,
@@ -110,7 +110,7 @@ class SlackService
             'next_cursor' => $response->getResponseMetadata()?->getNextCursor(),
         ];
 
-        $this->cache->setMessagesPage($accountKey, $channelId, $limit, $oldest, $cursor, $result);
+        $this->cache->setMessagesPage($profileKey, $channelId, $limit, $oldest, $cursor, $result);
 
         return $result;
     }
@@ -118,14 +118,14 @@ class SlackService
     /**
      * @return list<array<string, mixed>>
      */
-    public function getThreadReplies(string $accountKey, string $channelId, string $threadTs, int $limit = 50): array
+    public function getThreadReplies(string $profileKey, string $channelId, string $threadTs, int $limit = 50): array
     {
-        $cached = $this->cache->getThreadReplies($accountKey, $channelId, $threadTs, $limit);
+        $cached = $this->cache->getThreadReplies($profileKey, $channelId, $threadTs, $limit);
         if ($cached !== null) {
             return $cached;
         }
 
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
 
         try {
             $response = $client->conversationsReplies([
@@ -146,7 +146,7 @@ class SlackService
             $messages[] = $this->formatMessage($message);
         }
 
-        $this->cache->setThreadReplies($accountKey, $channelId, $threadTs, $limit, $messages);
+        $this->cache->setThreadReplies($profileKey, $channelId, $threadTs, $limit, $messages);
 
         return $messages;
     }
@@ -156,10 +156,10 @@ class SlackService
      *
      * @return array<string, mixed>
      */
-    public function getUnrespondedMessages(string $accountKey, string $channelId, int $limit = 50, ?string $oldest = null): array
+    public function getUnrespondedMessages(string $profileKey, string $channelId, int $limit = 50, ?string $oldest = null): array
     {
-        $client = $this->getClient($accountKey);
-        $userId = $this->getAuthUserId($accountKey);
+        $client = $this->getClient($profileKey);
+        $userId = $this->getAuthUserId($profileKey);
 
         $params = [
             'channel' => $channelId,
@@ -216,9 +216,9 @@ class SlackService
         ];
     }
 
-    public function postMessage(string $accountKey, string $channelId, string $text, ?string $threadTs = null): array
+    public function postMessage(string $profileKey, string $channelId, string $text, ?string $threadTs = null): array
     {
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
 
         $params = [
             'channel' => $channelId,
@@ -238,7 +238,7 @@ class SlackService
             throw new \RuntimeException('Slack API error: chat.postMessage failed');
         }
 
-        $this->cache->bumpChannelVersion($accountKey, $channelId);
+        $this->cache->bumpChannelVersion($profileKey, $channelId);
 
         return [
             'ok' => true,
@@ -247,9 +247,9 @@ class SlackService
         ];
     }
 
-    public function addReaction(string $accountKey, string $channelId, string $timestamp, string $reaction): array
+    public function addReaction(string $profileKey, string $channelId, string $timestamp, string $reaction): array
     {
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
 
         try {
             $response = $client->reactionsAdd([
@@ -265,7 +265,7 @@ class SlackService
             throw new \RuntimeException('Slack API error: reactions.add failed');
         }
 
-        $this->cache->bumpChannelVersion($accountKey, $channelId);
+        $this->cache->bumpChannelVersion($profileKey, $channelId);
 
         return [
             'ok' => true,
@@ -275,20 +275,20 @@ class SlackService
         ];
     }
 
-    public function getAuthUserId(string $accountKey): string
+    public function getAuthUserId(string $profileKey): string
     {
-        if (isset($this->userIds[$accountKey])) {
-            return $this->userIds[$accountKey];
+        if (isset($this->userIds[$profileKey])) {
+            return $this->userIds[$profileKey];
         }
 
-        $cached = $this->cache->getAuthUserId($accountKey);
+        $cached = $this->cache->getAuthUserId($profileKey);
         if ($cached !== null) {
-            $this->userIds[$accountKey] = $cached;
+            $this->userIds[$profileKey] = $cached;
 
             return $cached;
         }
 
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
 
         try {
             $response = $client->authTest();
@@ -300,23 +300,23 @@ class SlackService
             throw new \RuntimeException('Slack API error: auth.test failed');
         }
 
-        $this->userIds[$accountKey] = $response->getUserId() ?? '';
-        $this->cache->setAuthUserId($accountKey, $this->userIds[$accountKey]);
+        $this->userIds[$profileKey] = $response->getUserId() ?? '';
+        $this->cache->setAuthUserId($profileKey, $this->userIds[$profileKey]);
 
-        return $this->userIds[$accountKey];
+        return $this->userIds[$profileKey];
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getAuthInfo(string $accountKey): array
+    public function getAuthInfo(string $profileKey): array
     {
-        $cached = $this->cache->getAuthInfo($accountKey);
+        $cached = $this->cache->getAuthInfo($profileKey);
         if ($cached !== null) {
             return $cached;
         }
 
-        $client = $this->getClient($accountKey);
+        $client = $this->getClient($profileKey);
 
         try {
             $response = $client->authTest();
@@ -336,7 +336,7 @@ class SlackService
             'url' => $response->getUrl(),
         ];
 
-        $this->cache->setAuthInfo($accountKey, $authInfo);
+        $this->cache->setAuthInfo($profileKey, $authInfo);
 
         return $authInfo;
     }
@@ -347,15 +347,15 @@ class SlackService
      *
      * @return array<string, mixed>
      */
-    public function getDirectory(string $accountKey): array
+    public function getDirectory(string $profileKey): array
     {
-        $cached = $this->cache->getDirectory($accountKey);
+        $cached = $this->cache->getDirectory($profileKey);
         if ($cached !== null) {
             return $cached;
         }
 
-        $client = $this->getClient($accountKey);
-        $authInfo = $this->getAuthInfo($accountKey);
+        $client = $this->getClient($profileKey);
+        $authInfo = $this->getAuthInfo($profileKey);
 
         $users = [];
         $cursor = null;
@@ -394,7 +394,7 @@ class SlackService
             $cursor = $response->getResponseMetadata()?->getNextCursor();
         } while ($cursor !== null && $cursor !== '');
 
-        $channels = $this->listChannels($accountKey);
+        $channels = $this->listChannels($profileKey);
 
         $userMap = [];
         foreach ($users as $u) {
@@ -437,7 +437,7 @@ class SlackService
             'group_messages' => $groupMessages,
         ];
 
-        $this->cache->setDirectory($accountKey, $directory);
+        $this->cache->setDirectory($profileKey, $directory);
 
         return $directory;
     }
@@ -448,7 +448,7 @@ class SlackService
      * @return array<string, mixed>
      */
     public function bulkGetThreads(
-        string $accountKey,
+        string $profileKey,
         array $threads,
         int $limit = 50,
     ): array {
@@ -473,7 +473,7 @@ class SlackService
                 $completed[] = [
                     'channel' => $channelId,
                     'thread_ts' => $threadTs,
-                    'messages' => $this->getThreadReplies($accountKey, $channelId, $threadTs, $limit),
+                    'messages' => $this->getThreadReplies($profileKey, $channelId, $threadTs, $limit),
                 ];
             } catch (\Throwable $e) {
                 $failed[] = [
@@ -496,7 +496,7 @@ class SlackService
      * @return array<string, mixed>
      */
     public function getMessagesWithThreads(
-        string $accountKey,
+        string $profileKey,
         string $channelId,
         int $messageLimit = 20,
         int $threadLimit = 50,
@@ -508,7 +508,7 @@ class SlackService
         $threadLimit = max(1, min($threadLimit, 200));
         $maxThreadExpansions = max(0, min($maxThreadExpansions, 20));
 
-        $messagesResult = $this->listMessages($accountKey, $channelId, $messageLimit, $oldest, $cursor);
+        $messagesResult = $this->listMessages($profileKey, $channelId, $messageLimit, $oldest, $cursor);
         $messages = $messagesResult['messages'] ?? [];
 
         $threads = [];
@@ -534,7 +534,7 @@ class SlackService
             }
         }
 
-        $threadResult = $this->bulkGetThreads($accountKey, $threads, $threadLimit);
+        $threadResult = $this->bulkGetThreads($profileKey, $threads, $threadLimit);
 
         return [
             'messages' => $messages,
@@ -550,9 +550,9 @@ class SlackService
      *
      * @return array<string, mixed>
      */
-    public function resolveIds(string $accountKey, array $userIds = [], array $channelIds = []): array
+    public function resolveIds(string $profileKey, array $userIds = [], array $channelIds = []): array
     {
-        $directory = $this->getDirectory($accountKey);
+        $directory = $this->getDirectory($profileKey);
 
         $usersById = [];
         foreach (($directory['users'] ?? []) as $user) {
@@ -618,34 +618,34 @@ class SlackService
     /**
      * @return list<array<string, string>>
      */
-    public function listAccounts(): array
+    public function listProfiles(): array
     {
-        $accounts = [];
-        foreach ($this->configLoader->getAccounts() as $key => $account) {
-            $accounts[] = [
+        $profiles = [];
+        foreach ($this->configLoader->getProfiles() as $key => $profile) {
+            $profiles[] = [
                 'key' => $key,
-                'label' => $account->label,
+                'label' => $profile->label,
             ];
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    private function getClient(string $accountKey): Client
+    private function getClient(string $profileKey): Client
     {
-        if (isset($this->clients[$accountKey])) {
-            return $this->clients[$accountKey];
+        if (isset($this->clients[$profileKey])) {
+            return $this->clients[$profileKey];
         }
 
-        $account = $this->configLoader->getAccount($accountKey);
+        $profile = $this->configLoader->getProfile($profileKey);
 
-        if ($account->token === '') {
-            throw new \RuntimeException(sprintf('Slack account "%s" has no token configured', $accountKey));
+        if ($profile->token === '') {
+            throw new \RuntimeException(sprintf('Slack profile "%s" has no token configured', $profileKey));
         }
 
-        $this->clients[$accountKey] = ClientFactory::create($account->token);
+        $this->clients[$profileKey] = ClientFactory::create($profile->token);
 
-        return $this->clients[$accountKey];
+        return $this->clients[$profileKey];
     }
 
     /**

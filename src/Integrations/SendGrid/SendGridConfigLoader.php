@@ -14,17 +14,17 @@ class SendGridConfigLoader
     }
 
     /**
-     * @return array<string, SendGridAccountConfig>
+     * @return array<string, SendGridProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('sendgrid', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('sendgrid', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
             $baseUrl = $cfg['base_url'] ?? 'https://api.sendgrid.com';
 
-            $accounts[$key] = new SendGridAccountConfig(
+            $profiles[$key] = new SendGridProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 apiKey: $cfg['api_key'] ?? '',
@@ -32,21 +32,21 @@ class SendGridConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): SendGridAccountConfig
+    public function getProfile(string $key): SendGridProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown SendGrid account: "%s". Available: %s',
+                'Unknown SendGrid profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

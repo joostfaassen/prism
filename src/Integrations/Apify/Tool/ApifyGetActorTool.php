@@ -27,9 +27,9 @@ class ApifyGetActorTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Apify account key (from apify_list_accounts). Optional if only one account is configured.',
+                    'description' => 'Apify profile key (from apify_list_profiles). Optional if only one profile is configured.',
                 ],
                 'actor' => [
                     'type' => 'string',
@@ -40,7 +40,7 @@ class ApifyGetActorTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'apify';
     }
@@ -56,7 +56,7 @@ class ApifyGetActorTool implements ToolInterface
 
         try {
             $result = $this->apifyService->getActor(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 actorId: (string) $arguments['actor'],
             );
 

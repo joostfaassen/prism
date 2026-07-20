@@ -19,22 +19,22 @@ repositories all mixed at the same level. Adding integration #29 touches four un
 directories.
 
 Near-term target (Phases 0–8): every integration becomes **one self-contained module**
-under `src/Integrations/{Name}/` holding its account config, config loader, service, MCP
+under `src/Integrations/{Name}/` holding its profile config, config loader, service, MCP
 tools, and (where applicable) its controllers, commands, entities and repositories.
 A new `IntegrationInterface` + `IntegrationRegistry` makes integrations enumerable, and
-a new admin page `/admin/integrations` lists every integration with its account count
+a new admin page `/admin/integrations` lists every integration with its profile count
 and tools.
 
 Strategic target (Phase 9 / Action methodology — see §11): those modules evolve into
 (or are replaced by) **ActionPacks** built on Nebula's `linkorb/action-component` (+
 Symfony host patterns from `linkorb/action-bundle`). Prism becomes a **multi-tenant
 Action host**: it *imports* packs from many repos and *exposes* them over MCP (and
-optionally REST/CLI), with Prism's server/account scoping unchanged.
+optionally REST/CLI), with Prism's server/profile scoping unchanged.
 
 **Externally nothing changes during Phases 0–8** (except the new admin page): MCP
-endpoints, tool names, account `type:` strings, YAML config format, routes, and the
+endpoints, tool names, profile `type:` strings, YAML config format, routes, and the
 database schema all stay identical. Phase 9 may add transports and packaging; tool
-names / account types still must not break unless explicitly planned.
+names / profile types still must not break unless explicitly planned.
 
 ### 1.1 Action methodology (north star)
 
@@ -60,11 +60,11 @@ Desired Prism shape:
 
 ```
 private / work-internal / public Composer packages
-  (each may ship one or more ActionPacks + optional account helpers)
+  (each may ship one or more ActionPacks + optional profile helpers)
         │
         ▼  composer require
 ┌───────────────────┐
-│  Prism (host)     │  servers + accounts + bearer tokens (unchanged)
+│  Prism (host)     │  servers + profiles + bearer tokens (unchanged)
 │  ActionManager    │  ◄── packs from many packages
 │  transports:      │
 │   - MCP  (now)    │  /mcp/{serverName}
@@ -92,12 +92,12 @@ The executor must treat these as failure conditions. If a step would change any 
 them, stop and report instead.
 
 1. **Tool names** — every `ToolInterface::getName()` return value stays identical.
-2. **Account type strings** — `getAccountType()` values and the `type:` values in
+2. **Profile type strings** — `getProfileType()` values and the `type:` values in
    prism config files stay identical.
 3. **Routes** — every route path *and* route name stays identical (new
    `admin_integrations*` routes are the only additions).
 4. **Class basenames** — only namespaces change. `CalendarConfig` stays
-   `CalendarConfig` (do **not** "fix" it to `CalendarAccountConfig`), `Ga4` stays
+   `CalendarConfig` (do **not** "fix" it to `CalendarProfileConfig`), `Ga4` stays
    `Ga4`, `OpenAi` stays `OpenAi`, etc.
 5. **Database schema** — table/column names derive from class basenames (underscore
    naming strategy), which don't change. `doctrine:schema:update --dump-sql` output
@@ -115,7 +115,7 @@ them, stop and report instead.
 
 ## 3. Current state inventory
 
-### 3.1 Integrations (account-type based) — all 28 move
+### 3.1 Integrations (profile-type based) — all 28 move
 
 Tool files live in `src/Mcp/Tool/` and are matched by class-name prefix. The file
 count column is the number of `{Prefix}*Tool.php` files to move (verify with `ls`
@@ -159,8 +159,8 @@ before moving; counts include abstract base classes).
 | `src/Config/` (PrismConfigLoader, ServerConfig, ServerContext) | core config model |
 | `src/Security/` | core auth |
 | `src/Mcp/McpHandler.php`, `src/Mcp/Tool/ToolInterface.php` | core MCP protocol layer |
-| Utility tools: `SumTool`, `DayNameTool` (in `src/Mcp/Tool/`) | no account type |
-| Document feature: `Document*Tool` (4 tools), `src/Entity/Document*`, `src/Repository/Document*Repository`, `DocumentController`, `DocumentTypeController` | utility feature, not account-typed |
+| Utility tools: `SumTool`, `DayNameTool` (in `src/Mcp/Tool/`) | no profile type |
+| Document feature: `Document*Tool` (4 tools), `src/Entity/Document*`, `src/Repository/Document*Repository`, `DocumentController`, `DocumentTypeController` | utility feature, not profile-typed |
 | `src/AgentNotify/` | core per-server notify subsystem (used by AdminController + Habits) |
 | `src/Whisper/` | shared transcription subsystem (own `whisper:` config key, provider tag), consumed by Twilio's command |
 | `src/Controller/` Admin/Mcp/Health/Document controllers | core UI/API |
@@ -181,15 +181,15 @@ src/
 │   ├── IntegrationRegistry.php
 │   ├── Bunq/
 │   │   ├── BunqIntegration.php          # NEW: metadata (type, label, description)
-│   │   ├── BunqAccountConfig.php
+│   │   ├── BunqProfileConfig.php
 │   │   ├── BunqConfigLoader.php
 │   │   ├── BunqService.php
 │   │   └── Tool/
-│   │       ├── BunqListAccountsTool.php
+│   │       ├── BunqListProfilesTool.php
 │   │       └── ...
 │   ├── Habits/
 │   │   ├── HabitsIntegration.php
-│   │   ├── Habits{AccountConfig,ConfigLoader,Service}.php
+│   │   ├── Habits{ProfileConfig,ConfigLoader,Service}.php
 │   │   ├── Command/HabitsProcessCheckInsCommand.php
 │   │   ├── Controller/{HabitsAdminController,HabitsApiController}.php
 │   │   ├── Entity/…                     # 6 habit entities
@@ -234,7 +234,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'mcp:tools', description: 'List all registered MCP tools (name + account type), sorted')]
+#[AsCommand(name: 'mcp:tools', description: 'List all registered MCP tools (name + profile type), sorted')]
 class McpToolsListCommand extends Command
 {
     public function __construct(
@@ -247,7 +247,7 @@ class McpToolsListCommand extends Command
     {
         $lines = [];
         foreach ($this->mcpHandler->getTools() as $tool) {
-            $lines[] = $tool->getName() . "\t" . ($tool->getAccountType() ?? '-');
+            $lines[] = $tool->getName() . "\t" . ($tool->getProfileType() ?? '-');
         }
         sort($lines);
         foreach ($lines as $line) {
@@ -269,8 +269,8 @@ namespace App\Integrations;
 interface IntegrationInterface
 {
     /**
-     * Account type string. Must match the `type:` value in prism config files
-     * and ToolInterface::getAccountType() of this integration's tools.
+     * Profile type string. Must match the `type:` value in prism config files
+     * and ToolInterface::getProfileType() of this integration's tools.
      */
     public function getType(): string;
 
@@ -465,7 +465,7 @@ wc -l var/refactor/tools-baseline.txt   # expect 194 tools
 ```
 
 3. Sanity: `var/refactor/tools-baseline.txt` must contain 194 lines and include e.g.
-   `bunq_list_accounts`, `email_search`, `habits_scoreboard`.
+   `bunq_list_profiles`, `email_search`, `habits_scoreboard`.
 4. Commit: `chore(dev): add mcp:tools inventory command`.
 
 ### Phase 1 — Scaffolding
@@ -515,7 +515,7 @@ ls src/Cyans 2>/dev/null                     # MUST not exist
    copy from §9).
 
 6. Run the verification loop (§6.3). The tools diff must be empty — same 194 tools,
-   same names, same account types.
+   same names, same profile types.
 
 7. Commit: `refactor(cyans): move cyans integration to src/Integrations/Cyans`.
 
@@ -534,25 +534,25 @@ stays in `src/Controller/`):
 Data to assemble per integration (list page):
 
 - `type`, `label`, `description` (from the registry);
-- `toolCount`: count of `McpHandler::getTools()` where `getAccountType() === type`;
-- `accountCount`: sum over `PrismConfigLoader::getServers()` of
-  `count($server->getAccountsByType($type))`;
-- `serverCount`: number of servers with ≥1 account of this type.
+- `toolCount`: count of `McpHandler::getTools()` where `getProfileType() === type`;
+- `profileCount`: sum over `PrismConfigLoader::getServers()` of
+  `count($server->getProfilesByType($type))`;
+- `serverCount`: number of servers with ≥1 profile of this type.
 
 List page additionally shows:
 
-- **Unregistered types warning** (amber callout): account types that occur in any
-  tool's `getAccountType()` or any server account's `type:` but are NOT in the
+- **Unregistered types warning** (amber callout): profile types that occur in any
+  tool's `getProfileType()` or any server profile's `type:` but are NOT in the
   registry. During phases 4–7 this section shows the remaining migration work; after
   Phase 8 it must be empty and acts as a permanent regression guard for future
   integrations.
-- **Utilities card**: tools with `getAccountType() === null` (name + description),
+- **Utilities card**: tools with `getProfileType() === null` (name + description),
   labelled "Utility tools — available on every server".
 
 Detail page (`/admin/integrations/{type}`): label, description, type string, the tool
-list (name, description), and accounts grouped per server (server name/label + account
-key + account label). No secrets — never print tokens/passwords from account config;
-only `label` and the account key.
+list (name, description), and profiles grouped per server (server name/label + profile
+key + profile label). No secrets — never print tokens/passwords from profile config;
+only `label` and the profile key.
 
 Templates: `templates/admin/integrations/list.html.twig` and `detail.html.twig`,
 extending `base.html.twig`. Reuse the visual language of
@@ -583,7 +583,7 @@ Per-integration notes:
   `App\Transip\TransipConfigLoader` — each with a `$projectDir` argument). The
   project-wide string replace in recipe step 3 updates these keys; double-check
   services.yaml afterwards.
-- **Calendar**: files are `CalendarConfig.php` (not `CalendarAccountConfig`),
+- **Calendar**: files are `CalendarConfig.php` (not `CalendarProfileConfig`),
   `CalendarConfigLoader.php`, `CalendarService.php`. Keep names as-is.
 - **GitHub**: dir name and namespace segment stay `GitHub` (capital H).
 - Tool prefix collisions: none — every `{Prefix}*Tool.php` glob in §3.1 matches only
@@ -710,7 +710,7 @@ ls src/Command/          # exactly McpToolsListCommand.php
    be empty (all 28 registered).
 3. **Docs** — update in one commit (`docs: update project docs for src/Integrations layout`):
    - `AGENTS.md`: project-structure tree, "How to Add a New Integration" (now: create
-     `src/Integrations/{Name}/` with AccountConfig + ConfigLoader + Service +
+     `src/Integrations/{Name}/` with ProfileConfig + ConfigLoader + Service +
      `{Name}Integration` + `Tool/` classes; no registration needed), quick-reference
      table.
    - `.cursor/rules/admin-feature-hub.mdc`: update the referenced paths for
@@ -735,7 +735,7 @@ curl -s -X POST "$PRISM_BASE_URL/mcp/<serverName>" \
 
 ## 8. What Phases 0–8 explicitly do NOT do (out of scope for the mechanical move)
 
-- No renames of classes, tools, account types, or routes.
+- No renames of classes, tools, profile types, or routes.
 - No template moves; no per-integration Twig namespaces.
 - No changes to `Whisper`, `AgentNotify`, or the Document feature (they stay core;
   making Documents an "integration" is a possible follow-up).
@@ -756,17 +756,17 @@ curl -s -X POST "$PRISM_BASE_URL/mcp/<serverName>" \
 | `apify` | Apify | Apify actor platform — run scraping actors (Instagram, LinkedIn, web search) and fetch results. |
 | `atlas` | Atlas | Atlas content repositories — browse, search and read structured markdown content. |
 | `browserless` | Browserless | Headless Chrome via Browserless — screenshots, PDFs, page content and performance metrics. |
-| `bunq` | bunq | bunq online banking — list accounts and transactions, read transaction details and notes. |
+| `bunq` | bunq | bunq online banking — list profiles and transactions, read transaction details and notes. |
 | `calendar` | Calendar | ICS calendars — list calendars and events, read event details. |
-| `canva` | Canva | Canva designs — list designs and read design pages via OAuth-connected accounts. |
+| `canva` | Canva | Canva designs — list designs and read design pages via OAuth-connected profiles. |
 | `cyans` | Cyans | Cyans topic tracking — list, search and read topics; add posts. |
 | `email` | Email | IMAP/SMTP email — search, read, send, move and flag messages across folders. |
 | `freescout` | FreeScout | FreeScout helpdesk — mailboxes, conversations, users and replies. |
 | `ga4` | Google Analytics 4 | GA4 Data API — run reports and read property metadata. |
-| `github` | GitHub | GitHub — account activity and issue/PR search. |
+| `github` | GitHub | GitHub — profile activity and issue/PR search. |
 | `habits` | Habits | Habit tracking — users, habits, check-ins, events and scoreboards (database-backed). |
 | `igdb` | IGDB | IGDB games — look up and search games; normalized metadata with absolute cover URLs. |
-| `instagram` | Instagram | Instagram Graph API — media, comments, insights, publishing and account discovery. |
+| `instagram` | Instagram | Instagram Graph API — media, comments, insights, publishing and profile discovery. |
 | `libredesk` | Libredesk | Libredesk helpdesk — conversations, drafts, notes, statuses, agents and teams. |
 | `loki` | Loki | Grafana Loki — LogQL queries, labels and label values. |
 | `matomo` | Matomo | Matomo analytics — sites, visit summaries, top pages and reports. |
@@ -833,7 +833,7 @@ reprioritizes). This section is the agreed direction, not an executor runbook ye
    - **private** repos (personal / household packs),
    - **work-internal** repos (LinkORB / Nebula packs),
    - **public** repos (OSS packs others can reuse).
-3. Keep Prism as the **multi-tenant host**: YAML servers, bearer tokens, account
+3. Keep Prism as the **multi-tenant host**: YAML servers, bearer tokens, profile
    scoping, and MCP endpoints stay Prism's job; packs should not hardcode Prism
    tenants.
 4. **Expose** registered actions over:
@@ -866,16 +866,16 @@ Composer packages (ActionPacks)
         ▼
 ActionManager  ←── ActionPackFactory / DI tag action.pack
         │
-        ├── McpTransport     → existing /mcp/{serverName} (filter by server accounts)
+        ├── McpTransport     → existing /mcp/{serverName} (filter by server profiles)
         ├── RestTransport?   → e.g. /api/actions, /api/actions/{name}/execute
         └── CliTransport?    → action:* commands
 ```
 
 Open decisions to resolve at Phase 9 kickoff (not now):
 
-- Map Prism `account` / `type` into Action input context vs. pack-level config.
-- Whether MCP tool names stay snake_case (`bunq_list_accounts`) or become dotted
-  Action names (`bunq.list_accounts`) with a compatibility alias layer.
+- Map Prism `profile` / `type` into Action input context vs. pack-level config.
+- Whether MCP tool names stay snake_case (`bunq_list_profiles`) or become dotted
+  Action names (`bunq.list_profiles`) with a compatibility alias layer.
 - Extract first pilot pack (likely a small read-only integration) into its own
   package and `composer require` it back into Prism.
 - How much of `action-bundle` to reuse vs. a thin Prism-specific Symfony bridge
@@ -884,7 +884,7 @@ Open decisions to resolve at Phase 9 kickoff (not now):
 ### 11.4 Success criteria (Phase 9)
 
 - At least one integration runs as an ActionPack from an external package.
-- That pack is invokable via MCP on a Prism server with the matching account type.
+- That pack is invokable via MCP on a Prism server with the matching profile type.
 - Business logic of that pack has no dependency on `App\Mcp\Tool\ToolInterface`.
 - Documented recipe: "add a pack from another repo" (private / internal / public).
 - Optional: one non-MCP transport (CLI or REST) executes the same action.

@@ -36,9 +36,9 @@ DESC;
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Libredesk account key',
+                    'description' => 'Libredesk profile key',
                 ],
                 'uuid' => [
                     'type' => 'string',
@@ -64,24 +64,24 @@ DESC;
                     'description' => 'BCC recipients (optional)',
                 ],
             ],
-            'required' => ['account', 'uuid', 'message'],
+            'required' => ['profile', 'uuid', 'message'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'libredesk';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
+        $profileKey = $arguments['profile'] ?? '';
         $uuid = $arguments['uuid'] ?? '';
         $message = $arguments['message'] ?? '';
 
-        if ($accountKey === '' || $uuid === '' || $message === '') {
+        if ($profileKey === '' || $uuid === '' || $message === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameters "account", "uuid", and "message" are required']],
+                'content' => [['type' => 'text', 'text' => 'Parameters "profile", "uuid", and "message" are required']],
                 'isError' => true,
             ];
         }
@@ -92,7 +92,7 @@ DESC;
 
         try {
             $result = $this->libredeskService->sendMessage(
-                accountKey: $accountKey,
+                profileKey: $profileKey,
                 uuid: $uuid,
                 message: $message,
                 private: false,

@@ -14,15 +14,15 @@ class TwilioConfigLoader
     }
 
     /**
-     * @return array<string, TwilioAccountConfig>
+     * @return array<string, TwilioProfileConfig>
      */
-    public function getAccounts(): array
+    public function getProfiles(): array
     {
-        $raw = $this->configLoader->getAccountsByTypeForServer('twilio', $this->serverContext);
-        $accounts = [];
+        $raw = $this->configLoader->getProfilesByTypeForServer('twilio', $this->serverContext);
+        $profiles = [];
 
         foreach ($raw as $key => $cfg) {
-            $accounts[$key] = new TwilioAccountConfig(
+            $profiles[$key] = new TwilioProfileConfig(
                 key: $key,
                 label: $cfg['label'] ?? $key,
                 accountSid: $cfg['account_sid'] ?? '',
@@ -30,21 +30,21 @@ class TwilioConfigLoader
             );
         }
 
-        return $accounts;
+        return $profiles;
     }
 
-    public function getAccount(string $key): TwilioAccountConfig
+    public function getProfile(string $key): TwilioProfileConfig
     {
-        $accounts = $this->getAccounts();
+        $profiles = $this->getProfiles();
 
-        if (!isset($accounts[$key])) {
+        if (!isset($profiles[$key])) {
             throw new \InvalidArgumentException(sprintf(
-                'Unknown Twilio account: "%s". Available: %s',
+                'Unknown Twilio profile: "%s". Available: %s',
                 $key,
-                implode(', ', array_keys($accounts)),
+                implode(', ', array_keys($profiles)),
             ));
         }
 
-        return $accounts[$key];
+        return $profiles[$key];
     }
 }

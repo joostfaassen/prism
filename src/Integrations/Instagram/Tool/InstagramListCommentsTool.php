@@ -30,7 +30,7 @@ class InstagramListCommentsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'media_id' => ['type' => 'string', 'description' => 'The media object id whose comments to list.'],
                 'limit' => ['type' => 'integer', 'description' => 'Max comments per page (default 25).'],
                 'after' => ['type' => 'string', 'description' => 'Pagination cursor from a previous call.'],
@@ -39,7 +39,7 @@ class InstagramListCommentsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -56,7 +56,7 @@ class InstagramListCommentsTool implements ToolInterface
 
         try {
             $result = $this->instagramService->listComments(
-                accountKey: $arguments['account'] ?? null,
+                profileKey: $arguments['profile'] ?? null,
                 mediaId: $mediaId,
                 limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 25,
                 after: isset($arguments['after']) ? (string) $arguments['after'] : null,

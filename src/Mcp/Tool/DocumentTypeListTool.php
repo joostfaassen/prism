@@ -31,7 +31,7 @@ class DocumentTypeListTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return null;
     }

@@ -25,7 +25,7 @@ class InstagramPublishTool implements ToolInterface
             . 'URLs that Instagram can download (host the asset yourself, e.g. generated via Canva). For videos/reels '
             . 'the tool creates the container, waits for processing to finish, then publishes. '
             . 'Set publish=false to only create a ready container (returns creation_id) for scheduled/deferred publishing; '
-            . 'later call again with creation_id to publish it. Accounts are limited to 100 published posts per 24h '
+            . 'later call again with creation_id to publish it. Profiles are limited to 100 published posts per 24h '
             . '(see instagram_get_publishing_limit). Captions support hashtags and @mentions in the text.';
     }
 
@@ -34,7 +34,7 @@ class InstagramPublishTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
+                'profile' => ['type' => 'string', 'description' => 'Instagram profile key. Optional if only one is configured.'],
                 'media_type' => [
                     'type' => 'string',
                     'description' => 'Type of post: IMAGE, VIDEO, REELS, STORIES, or CAROUSEL.',
@@ -70,7 +70,7 @@ class InstagramPublishTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'instagram';
     }
@@ -92,7 +92,7 @@ class InstagramPublishTool implements ToolInterface
         ]));
 
         try {
-            $result = $this->instagramService->publish($arguments['account'] ?? null, $opts);
+            $result = $this->instagramService->publish($arguments['profile'] ?? null, $opts);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]],

@@ -28,30 +28,30 @@ class SlackListChannelsTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Slack account key. Use slack_list_accounts to see available accounts.',
+                    'description' => 'Slack profile key. Use slack_list_profiles to see available profiles.',
                 ],
                 'types' => [
                     'type' => 'string',
                     'description' => 'Comma-separated channel types to include. Options: public_channel, private_channel, mpim, im. Defaults to all types.',
                 ],
             ],
-            'required' => ['account'],
+            'required' => ['profile'],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'slack';
     }
 
     public function execute(array $arguments): array
     {
-        $accountKey = $arguments['account'] ?? '';
-        if ($accountKey === '') {
+        $profileKey = $arguments['profile'] ?? '';
+        if ($profileKey === '') {
             return [
-                'content' => [['type' => 'text', 'text' => 'Parameter "account" is required']],
+                'content' => [['type' => 'text', 'text' => 'Parameter "profile" is required']],
                 'isError' => true,
             ];
         }
@@ -59,7 +59,7 @@ class SlackListChannelsTool implements ToolInterface
         $types = $arguments['types'] ?? 'public_channel,private_channel,mpim,im';
 
         try {
-            $channels = $this->slackService->listChannels($accountKey, $types);
+            $channels = $this->slackService->listChannels($profileKey, $types);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

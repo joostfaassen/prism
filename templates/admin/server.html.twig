@@ -18,7 +18,7 @@
                     </div>
                     <div>
                         <h1 class="text-3xl font-bold text-white">{{ server.label }}</h1>
-                        <p class="text-slate-400 text-sm">{{ server.accountCount }} account{{ server.accountCount != 1 ? 's' : '' }} &middot; {{ server.toolCount }} tool{{ server.toolCount != 1 ? 's' : '' }}</p>
+                        <p class="text-slate-400 text-sm">{{ server.profileCount }} profile{{ server.profileCount != 1 ? 's' : '' }} &middot; {{ server.toolCount }} tool{{ server.toolCount != 1 ? 's' : '' }}</p>
                     </div>
                 </div>
             </div>
@@ -67,25 +67,25 @@
             </div>
             {% endif %}
 
-            {# ──── Accounts ──── #}
-            {% if activeSection == 'accounts' %}
-                {% if server.accountsByType is not empty %}
+            {# ──── Profiles ──── #}
+            {% if activeSection == 'profiles' %}
+                {% if server.profilesByType is not empty %}
                 <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                    {% for type, accounts in server.accountsByType %}
+                    {% for type, profiles in server.profilesByType %}
                     <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800">
                         <div class="flex items-center gap-3 mb-5">
                             <a href="{{ path('admin_server_integration_detail', {serverName: server.name, type: type}) }}"
                                class="font-mono text-xs font-semibold text-violet-300 bg-violet-950 hover:bg-violet-900/80 px-3.5 py-1.5 rounded-lg uppercase tracking-wider transition-colors"
                                title="Open {{ type }} integration">{{ type }}</a>
-                            <span class="text-xs text-slate-500 font-mono">&times; {{ accounts|length }}</span>
+                            <span class="text-xs text-slate-500 font-mono">&times; {{ profiles|length }}</span>
                         </div>
                         <ul class="space-y-3">
-                            {% for account in accounts %}
+                            {% for profile in profiles %}
                             <li class="flex items-center gap-3 bg-slate-800 rounded-lg px-4 py-3">
                                 <span class="w-2 h-2 bg-cyan-400 rounded-full flex-shrink-0"></span>
                                 <div class="min-w-0 flex-1">
-                                    <span class="block text-sm text-slate-200 truncate" title="{{ account.name }}">{{ account.label }}</span>
-                                    <span class="block text-xs text-slate-500 font-mono mt-0.5">{{ account.name }}</span>
+                                    <span class="block text-sm text-slate-200 truncate" title="{{ profile.name }}">{{ profile.label }}</span>
+                                    <span class="block text-xs text-slate-500 font-mono mt-0.5">{{ profile.name }}</span>
                                 </div>
                             </li>
                             {% endfor %}
@@ -95,7 +95,7 @@
                 </div>
                 {% else %}
                 <div class="text-center py-16 text-slate-500">
-                    <p class="text-sm">No accounts configured for this server.</p>
+                    <p class="text-sm">No profiles configured for this server.</p>
                 </div>
                 {% endif %}
             {% endif %}
@@ -119,8 +119,8 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-3 flex-shrink-0 ml-4">
-                            {% if tool.accountType %}
-                            <span class="text-xs font-mono font-semibold text-violet-300 bg-violet-950 px-3 py-1.5 rounded-lg">{{ tool.accountType }}</span>
+                            {% if tool.profileType %}
+                            <span class="text-xs font-mono font-semibold text-violet-300 bg-violet-950 px-3 py-1.5 rounded-lg">{{ tool.profileType }}</span>
                             {% endif %}
                             <svg class="w-4 h-4 text-slate-600 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />

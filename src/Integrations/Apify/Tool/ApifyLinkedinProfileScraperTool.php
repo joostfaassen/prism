@@ -8,7 +8,7 @@ namespace App\Integrations\Apify\Tool;
  * Extracts detailed information from specific LinkedIn profiles in bulk (work
  * experience, education, skills, …), optionally with email search. Profiles
  * can be given as full URLs, public identifiers, profile IDs or search
- * queries. No cookies/account required.
+ * queries. No cookies/profile required.
  *
  * @see https://apify.com/harvestapi/linkedin-profile-scraper
  */
@@ -26,7 +26,7 @@ class ApifyLinkedinProfileScraperTool extends AbstractApifyActorTool
 
     public function getDescription(): string
     {
-        return 'Extract detailed information from specific LinkedIn profiles in bulk (work experience, education, skills and more), optionally with email search. Provide profile URLs, public identifiers, profile IDs or search queries. No LinkedIn cookies/account required. Via the Apify harvestapi/linkedin-profile-scraper actor.';
+        return 'Extract detailed information from specific LinkedIn profiles in bulk (work experience, education, skills and more), optionally with email search. Provide profile URLs, public identifiers, profile IDs or search queries. No LinkedIn cookies/profile required. Via the Apify harvestapi/linkedin-profile-scraper actor.';
     }
 
     protected function getProperties(): array

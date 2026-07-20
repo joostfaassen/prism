@@ -34,7 +34,7 @@ class HabitsAdminController extends AbstractController
         return $this->render('admin/habits/hub.html.twig', [
             ...$this->nav($request, $serverName, $serverConfig),
             'activeSection' => 'habits',
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
             'restBaseUrl' => $baseUrl . '/api/habits/' . rawurlencode($serverName) . '/v1/',
         ]);
     }
@@ -329,26 +329,26 @@ class HabitsAdminController extends AbstractController
 
     private function ensureHabits(ServerConfig $serverConfig): bool
     {
-        return $serverConfig->hasAccountType('habits');
+        return $serverConfig->hasProfileType('habits');
     }
 
     private function redirectNoHabits(string $serverName): Response
     {
-        $this->addFlash('error', 'Add a habits-type account to this server in prism.config.yaml first.');
+        $this->addFlash('error', 'Add a habits-type profile to this server in prism.config.yaml first.');
 
-        return $this->redirectToRoute('admin_server_tab', ['serverName' => $serverName, 'tab' => 'accounts']);
+        return $this->redirectToRoute('admin_server_tab', ['serverName' => $serverName, 'tab' => 'profiles']);
     }
 
     /**
-     * @return array{server: array{name: string, label: string, accountCount: int, toolCount: int, mcpUrl: string}, serverHasHabits: bool, serverHasTracking: bool}
+     * @return array{server: array{name: string, label: string, profileCount: int, toolCount: int, mcpUrl: string}, serverHasHabits: bool, serverHasTracking: bool}
      */
     private function nav(Request $request, string $serverName, ServerConfig $serverConfig): array
     {
         $tools = $this->mcpHandler->getTools();
         $visible = array_values(array_filter(
             $tools,
-            static fn (ToolInterface $tool) => $tool->getAccountType() === null
-                || $serverConfig->hasAccountType($tool->getAccountType()),
+            static fn (ToolInterface $tool) => $tool->getProfileType() === null
+                || $serverConfig->hasProfileType($tool->getProfileType()),
         ));
         $baseUrl = $request->getSchemeAndHttpHost();
 
@@ -357,11 +357,11 @@ class HabitsAdminController extends AbstractController
                 'name' => $serverName,
                 'label' => $serverConfig->label,
                 'mcpUrl' => $baseUrl . '/mcp/' . $serverName,
-                'accountCount' => count($serverConfig->accounts),
+                'profileCount' => count($serverConfig->profiles),
                 'toolCount' => count($visible),
             ],
-            'serverHasHabits' => $serverConfig->hasAccountType('habits'),
-            'serverHasTracking' => $serverConfig->hasAccountType('tracking'),
+            'serverHasHabits' => $serverConfig->hasProfileType('habits'),
+            'serverHasTracking' => $serverConfig->hasProfileType('tracking'),
         ];
     }
 

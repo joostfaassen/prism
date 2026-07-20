@@ -6,7 +6,7 @@ servers:
   demo-server:
     label: "Example MCP server"
     bearer_token: "replace-with-a-long-random-secret"
-    accounts:
+    profiles:
       demo-tracking:
         type: tracking
         label: "Example GPS / zones"
@@ -28,7 +28,7 @@ servers:
         token: "xoxp-replace-with-your-user-token"
       demo-github:
         type: github
-        label: "Example GitHub account"
+        label: "Example GitHub profile"
         # Personal access token (classic or fine-grained) or an OAuth token,
         # e.g. the one the `gh` CLI stores (`gh auth token`). Needs the `repo`
         # scope to read private repos. Read-only usage.
@@ -106,7 +106,7 @@ servers:
         # timeout: 180
       demo-apify:
         type: apify
-        label: "Example Apify account"
+        label: "Example Apify profile"
         # API token from https://console.apify.com/settings/integrations
         api_token: "replace-with-your-apify-api-token"
         # Optional: defaults to "https://api.apify.com/v2".
@@ -136,7 +136,7 @@ servers:
       demo-transip:
         type: transip
         label: "Example TransIP"
-        # Your TransIP account username (the login you use for the control panel).
+        # Your TransIP profile username (the login you use for the control panel).
         login: "replace-with-your-transip-username"
         # RSA private key generated in the TransIP control panel. Provide it
         # inline as a YAML block scalar (note the leading "|")...
@@ -251,7 +251,7 @@ servers:
 #      user chat id here to lock the bot to messaging you.
 #
 # 4. Available tools:
-#    - telegram_list_accounts
+#    - telegram_list_profiles
 #    - telegram_get_me
 #    - telegram_send_message
 #    - telegram_get_updates
@@ -298,7 +298,7 @@ servers:
 #    automatically when they expire.
 #
 # 5. Available tools:
-#    - canva_list_accounts      — list configured Canva accounts + connection
+#    - canva_list_profiles      — list configured Canva profiles + connection
 #                                 status
 #    - canva_list_designs       — list designs (search, ownership, sort,
 #                                 continuation-token pagination)
@@ -306,14 +306,14 @@ servers:
 #    - canva_get_design_pages   — list a design's pages with thumbnails
 #                                 (Canva preview API)
 #
-# 6. Multiple Canva accounts can be configured; connect each one separately
+# 6. Multiple Canva profiles can be configured; connect each one separately
 #    from the admin UI.
 
 # ──────────────────────────────────────────────────────────────────────
 # OpenAI-compatible Setup Instructions
 # ──────────────────────────────────────────────────────────────────────
 #
-# This account type wraps any OpenAI-compatible Chat Completions API and
+# This profile type wraps any OpenAI-compatible Chat Completions API and
 # exposes straight prompt-completion tools over MCP. The benefit: MCP clients
 # can run LLM completions WITHOUT holding their own API key — Prism holds the
 # key per server. No tool/function-calling happens inside the completion; it's
@@ -337,7 +337,7 @@ servers:
 #    with the openai_list_models tool.
 #
 # 4. Available tools:
-#    - openai_list_accounts — list configured OpenAI-compatible accounts
+#    - openai_list_profiles — list configured OpenAI-compatible profiles
 #                             (key, label, base_url, default_model)
 #    - openai_list_models   — list models the endpoint exposes
 #    - openai_complete      — run one chat completion and return the text.
@@ -352,7 +352,7 @@ servers:
 #
 # 5. Multiple endpoints can be configured side by side:
 #
-#    accounts:
+#    profiles:
 #      fast-llm:
 #        type: openai
 #        label: "Groq (fast)"
@@ -374,7 +374,7 @@ servers:
 # RSA private key. Prism does the signing and token handling for you.
 #
 # 1. Log in to the TransIP control panel and enable the API
-#    (https://www.transip.nl/cp/account/api/). Note your account username —
+#    (https://www.transip.nl/cp/profile/api/). Note your profile username —
 #    that is the value for `login`.
 #
 # 2. Under "Key pairs", generate a new key pair. TransIP shows the PRIVATE key
@@ -391,13 +391,13 @@ servers:
 #    read tools exposed on this server.
 #
 # 5. Available tools:
-#    - transip_list_accounts     — list configured TransIP accounts
-#    - transip_list_domains      — list all domains in the account
+#    - transip_list_profiles     — list configured TransIP profiles
+#    - transip_list_domains      — list all domains in the profile
 #    - transip_get_domain        — domain settings, nameservers and contacts
 #    - transip_get_dns_records   — list a domain's DNS zone
 #    - transip_upsert_dns_record — create/update a single DNS record (write)
 #    - transip_delete_dns_record — delete a single DNS record (write)
-#    - transip_list_invoices     — list account invoices (billing info)
+#    - transip_list_invoices     — list profile invoices (billing info)
 #    - transip_get_invoice       — single invoice incl. optional line items
 #
 # 6. The DNS write tools only change the one targeted record (they never
@@ -434,9 +434,9 @@ servers:
 # 4. Copy the "User OAuth Token" (starts with xoxp-) into the config
 #    above as the `token` value.
 #
-# 5. To support multiple workspaces, add multiple slack accounts:
+# 5. To support multiple workspaces, add multiple slack profiles:
 #
-#    accounts:
+#    profiles:
 #      work-slack:
 #        type: slack
 #        label: "Work"
@@ -464,7 +464,7 @@ servers:
 #    "Authorization: token api_key:api_secret" scheme.
 #
 # 4. Available tools:
-#    - libredesk_list_accounts        — list configured Libredesk accounts
+#    - libredesk_list_profiles        — list configured Libredesk profiles
 #    - libredesk_list_conversations   — list conversations by view
 #                                       (all, unassigned, team_unassigned,
 #                                        assigned)
@@ -482,7 +482,7 @@ servers:
 #                                       visible to agents only
 #    - libredesk_upsert_draft         — stage a DRAFT reply WITHOUT sending;
 #                                       it pre-fills the reply editor of the
-#                                       agent owning this account's API key,
+#                                       agent owning this profile's API key,
 #                                       to review and send manually
 #    - libredesk_get_draft            — read the currently staged draft
 #    - libredesk_delete_draft         — discard the staged draft
@@ -497,7 +497,7 @@ servers:
 #
 # 5. Multiple Libredesk instances can be configured:
 #
-#    accounts:
+#    profiles:
 #      main-desk:
 #        type: libredesk
 #        label: "Main Desk"
@@ -529,7 +529,7 @@ servers:
 #    explicit idSite. Discover site ids with the matomo_list_sites tool.
 #
 # 4. Available tools:
-#    - matomo_list_accounts       — list configured Matomo accounts
+#    - matomo_list_profiles       — list configured Matomo profiles
 #    - matomo_list_sites          — list sites (idsite, name, URL) the
 #                                   token can view
 #    - matomo_get_visits_summary  — visits, unique visitors, pageviews,
@@ -545,7 +545,7 @@ servers:
 #
 # 5. Multiple Matomo instances can be configured:
 #
-#    accounts:
+#    profiles:
 #      main-analytics:
 #        type: matomo
 #        label: "Main Analytics"
@@ -576,14 +576,14 @@ servers:
 #
 # 3. Grant the service account access to the GA4 property: in Google Analytics
 #    go to Admin → Property → Property access management, and add the service
-#    account's email address (…@…​.iam.gserviceaccount.com) with the "Viewer"
+#    profile's email address (…@…​.iam.gserviceaccount.com) with the "Viewer"
 #    role. Read access is all these tools need.
 #
 # 4. Set `property_id` to the numeric GA4 property id (Admin → Property
 #    Settings). It is used as the default when a tool call omits property_id.
 #
 # 5. Available tools:
-#    - ga4_list_accounts  — list configured GA4 accounts and default property
+#    - ga4_list_profiles  — list configured GA4 profiles and default property
 #    - ga4_get_metadata   — list the dimensions and metrics available for the
 #                           property (use to discover valid field names)
 #    - ga4_run_report     — run an arbitrary runReport query: any combination
@@ -595,7 +595,7 @@ servers:
 #
 # 6. Multiple GA4 properties can be configured:
 #
-#    accounts:
+#    profiles:
 #      web-analytics:
 #        type: ga4
 #        label: "Website"
@@ -611,7 +611,7 @@ servers:
 # SendGrid Setup Instructions
 # ──────────────────────────────────────────────────────────────────────
 #
-# 1. In your SendGrid account, go to Settings → API Keys → "Create API Key".
+# 1. In your SendGrid profile, go to Settings → API Keys → "Create API Key".
 #    A read-only key with "Stats" (and "Marketing" for Single Send stats)
 #    permission is enough for these tools. Copy the key into `api_key`.
 #
@@ -620,7 +620,7 @@ servers:
 #    key as an "Authorization: Bearer <api_key>" header, never in the URL.
 #
 # 3. Available tools:
-#    - sendgrid_list_accounts           — list configured SendGrid accounts
+#    - sendgrid_list_profiles           — list configured SendGrid profiles
 #    - sendgrid_get_global_stats        — totals over a period: requests,
 #                                         delivered, opens, unique_opens,
 #                                         clicks, unique_clicks, unsubscribes,
@@ -642,24 +642,24 @@ servers:
 #    Dates use YYYY-MM-DD; aggregated_by is one of day/week/month (or
 #    total/day for single sends).
 #
-# 4. Multiple SendGrid accounts (e.g. several subusers or regions) can be
+# 4. Multiple SendGrid profiles (e.g. several subusers or regions) can be
 #    configured:
 #
-#    accounts:
+#    profiles:
 #      marketing-sendgrid:
 #        type: sendgrid
 #        label: "Marketing"
-#        api_key: "key-for-marketing-account"
+#        api_key: "key-for-marketing-profile"
 #      transactional-sendgrid:
 #        type: sendgrid
 #        label: "Transactional"
-#        api_key: "key-for-transactional-account"
+#        api_key: "key-for-transactional-profile"
 
 # ──────────────────────────────────────────────────────────────────────
 # TMDb Setup Instructions
 # ──────────────────────────────────────────────────────────────────────
 #
-# 1. Create a free TMDb account, then open Settings → API and request a
+# 1. Create a free TMDb profile, then open Settings → API and request a
 #    developer API key (v3). Copy the key into `api_key`.
 #    Docs: https://developer.themoviedb.org/reference/
 #
@@ -667,7 +667,7 @@ servers:
 #    language override.
 #
 # 3. Metadata tools (api_key only):
-#    - tmdb_list_accounts  — list configured TMDb accounts
+#    - tmdb_list_profiles  — list configured TMDb profiles
 #    - tmdb_find_by_imdb   — resolve movie/TV from an IMDb id (tt…)
 #    - tmdb_search         — search by title (+ optional year / kind)
 #    - tmdb_get_movie      — fetch movie by numeric TMDb id
@@ -677,7 +677,7 @@ servers:
 #    coverUrl (w780) and backdropUrl (w1280). Prism does not download
 #    image binaries — consumers fetch covers themselves.
 #
-# 4. Account write tools need a user session_id (not just api_key):
+# 4. Profile write tools need a user session_id (not just api_key):
 #    - tmdb_create_session — one-time: username/password → session_id
 #                            (paste into YAML; Prism does not store the password)
 #    - tmdb_rate           — rate movie/TV 0.5–10
@@ -686,7 +686,7 @@ servers:
 #    - tmdb_set_watchlist  — add/remove movie or TV on the watchlist
 #    - tmdb_list_watchlist — list watchlist movies or TV
 #
-# 5. Multiple TMDb accounts can be configured if needed (usually one).
+# 5. Multiple TMDb profiles can be configured if needed (usually one).
 
 # ──────────────────────────────────────────────────────────────────────
 # IGDB Setup Instructions
@@ -697,18 +697,18 @@ servers:
 #    into `client_id` / `client_secret`. IGDB uses Twitch OAuth
 #    (client_credentials). Docs: https://api-docs.igdb.com/
 #
-# 2. Access tokens are cached under var/igdb-token-{accountKey}.json so
+# 2. Access tokens are cached under var/igdb-token-{profileKey}.json so
 #    Twitch is not hit on every tool call.
 #
 # 3. Available tools (all read-only):
-#    - igdb_list_accounts  — list configured IGDB accounts
+#    - igdb_list_profiles  — list configured IGDB profiles
 #    - igdb_find           — look up a game by numeric id or slug
 #    - igdb_search         — search games by name
 #
 #    Responses use the same normalized record shape as TMDb, with
 #    absolute coverUrl (t_1080p) and platforms/genres filled in.
 #
-# 4. Multiple IGDB accounts can be configured if needed (usually one).
+# 4. Multiple IGDB profiles can be configured if needed (usually one).
 
 # ──────────────────────────────────────────────────────────────────────
 # n8n Setup Instructions
@@ -724,7 +724,7 @@ servers:
 #    placed in the URL.
 #
 # 3. Available tools (read-only — no creating/uploading flows):
-#    - n8n_list_accounts    — list configured n8n accounts
+#    - n8n_list_profiles    — list configured n8n profiles
 #    - n8n_list_workflows   — list workflows (flows): id, name, active,
 #                             tags, node count, timestamps. Filter by
 #                             active/name/tags, paginate with a cursor
@@ -739,7 +739,7 @@ servers:
 #
 # 4. Multiple n8n instances can be configured:
 #
-#    accounts:
+#    profiles:
 #      prod-n8n:
 #        type: n8n
 #        label: "Production"
@@ -772,7 +772,7 @@ servers:
 #    Prism waits for. Bump it for slow pages or Lighthouse audits.
 #
 # 3. Available tools:
-#    - browserless_list_accounts — list configured Browserless instances
+#    - browserless_list_profiles — list configured Browserless instances
 #    - browserless_screenshot    — render a page and return a PNG/JPEG image
 #                                  (full_page, viewport width/height, type/quality)
 #    - browserless_content       — return the fully rendered HTML of a page
@@ -785,7 +785,7 @@ servers:
 #
 # 4. Multiple Browserless instances can be configured:
 #
-#    accounts:
+#    profiles:
 #      main-browserless:
 #        type: browserless
 #        label: "Main"
@@ -809,7 +809,7 @@ servers:
 # 2. `base_url` is optional and defaults to "https://api.apify.com/v2".
 #
 # 3. Built-in tools:
-#    - apify_list_accounts — list configured Apify accounts
+#    - apify_list_profiles — list configured Apify profiles
 #    - apify_get_actor      — inspect an actor's metadata + input schema
 #                             (use this to discover an actor's inputs/outputs
 #                             before wrapping it in a dedicated tool)
@@ -828,7 +828,7 @@ servers:
 #    - apify_instagram_reel_scraper    — reels for one or more profiles
 #    - apify_instagram_api_scraper     — fast, login-free general Instagram scraper
 #
-#    LinkedIn actor-backed tools (no LinkedIn cookies/account required):
+#    LinkedIn actor-backed tools (no LinkedIn cookies/profile required):
 #    - apify_linkedin_profile_search_by_name — search profiles by first/last name
 #    - apify_linkedin_profile_search         — search profiles by fuzzy query + filters
 #    - apify_linkedin_company_employees      — employees of one or more companies
@@ -837,12 +837,12 @@ servers:
 #    - apify_linkedin_jobs_scraper           — jobs from LinkedIn job-search URLs
 #
 # 4. Restricting which tools are exposed (optional):
-#    Add a `tools` allowlist to the apify account. Only tools whose name
+#    Add a `tools` allowlist to the apify profile. Only tools whose name
 #    matches a listed pattern are exposed on that server; omit the key to
 #    expose all. Patterns support `*` and `?` wildcards. If multiple apify
-#    accounts each define `tools`, the union of their patterns is used.
+#    profiles each define `tools`, the union of their patterns is used.
 #
-#    accounts:
+#    profiles:
 #      my-apify:
 #        type: apify
 #        api_token: "..."
@@ -854,31 +854,31 @@ servers:
 #    Extend App\Mcp\Tool\Apify\AbstractApifyActorTool — declare the actor id,
 #    the tool name/description and the input properties, and optionally map
 #    the inputs onto the actor input and reshape the output. The tool is then
-#    auto-discovered and exposed on every server with an `apify` account.
+#    auto-discovered and exposed on every server with an `apify` profile.
 #    See src/Mcp/Tool/Apify/ApifyWebSearchTool.php for a worked example.
 #
-# 6. Multiple Apify accounts can be configured:
+# 6. Multiple Apify profiles can be configured:
 #
-#    accounts:
+#    profiles:
 #      personal-apify:
 #        type: apify
 #        label: "Personal"
-#        api_token: "token-for-personal-account"
+#        api_token: "token-for-personal-profile"
 #      team-apify:
 #        type: apify
 #        label: "Team"
-#        api_token: "token-for-team-account"
+#        api_token: "token-for-team-profile"
 
 # ──────────────────────────────────────────────────────────────────────
 # Instagram Setup Instructions  (see docs/instagram.md for the full guide)
 # ──────────────────────────────────────────────────────────────────────
 #
-# Prism uses the Meta Graph API for Instagram *professional* accounts
-# (Business or Creator). Personal accounts are not supported by the API.
+# Prism uses the Meta Graph API for Instagram *professional* profiles
+# (Business or Creator). Personal profiles are not supported by the API.
 #
 # Prerequisites:
-#   - An Instagram Business/Creator account.
-#   - A Facebook Page linked to that Instagram account.
+#   - An Instagram Business/Creator profile.
+#   - A Facebook Page linked to that Instagram profile.
 #   - A Meta app (https://developers.facebook.com/apps) with the
 #     "Instagram" / "Facebook Login for Business" products added.
 #
@@ -908,9 +908,9 @@ servers:
 #    Run instagram_refresh_token periodically (e.g. weekly) to stay logged in.
 #
 # 3. Available tools:
-#    - instagram_list_accounts        — list configured IG accounts + token status
+#    - instagram_list_profiles        — list configured IG profiles + token status
 #    - instagram_get_account          — your profile: followers, media count, bio
-#    - instagram_get_insights         — account analytics (reach, profile views,
+#    - instagram_get_insights         — profile analytics (reach, profile views,
 #                                       follower growth, audience demographics, …)
 #    - instagram_list_media           — list your posts/reels/carousels (paginated)
 #    - instagram_get_media            — one media object incl. carousel children
@@ -922,16 +922,16 @@ servers:
 #    - instagram_hashtag_search       — find content & creators by hashtag
 #                                       (resolve id + top/recent media)
 #    - instagram_business_discovery   — profile ANOTHER public business/creator
-#                                       account by username (competitor research)
+#                                       profile by username (competitor research)
 #    - instagram_publish              — publish image/video/reel/story/carousel
 #                                       (image_url/video_url must be public HTTPS)
 #    - instagram_get_publishing_limit — remaining posts in the 24h window (max 100)
 #    - instagram_refresh_token        — extend the long-lived token (writes back)
 #    - instagram_get                  — arbitrary read-only Graph API GET
 #
-# 4. Multiple Instagram accounts (brands) can be configured:
+# 4. Multiple Instagram profiles (brands) can be configured:
 #
-#    accounts:
+#    profiles:
 #      brand-a-instagram:
 #        type: instagram
 #        label: "Brand A"
@@ -962,7 +962,7 @@ servers:
 #    bearer_token takes precedence over username/password if both are set.
 #
 # 3. Available tools:
-#    - prometheus_list_accounts   — list configured Prometheus accounts
+#    - prometheus_list_profiles   — list configured Prometheus profiles
 #    - prometheus_query           — instant PromQL query (current value)
 #    - prometheus_query_range     — range PromQL query (time series for
 #                                   graphs/trends) with start/end/step
@@ -975,7 +975,7 @@ servers:
 #
 # 4. Multiple Prometheus instances can be configured:
 #
-#    accounts:
+#    profiles:
 #      prod-prometheus:
 #        type: prometheus
 #        label: "Production"
@@ -998,7 +998,7 @@ servers:
 #    `bearer_token`, or `username` + `password`, or leave blank.
 #
 # 3. Available tools:
-#    - alertmanager_list_accounts     — list configured Alertmanager accounts
+#    - alertmanager_list_profiles     — list configured Alertmanager profiles
 #    - alertmanager_list_alerts       — alerts held by Alertmanager; filter by
 #                                       active/silenced/inhibited and label
 #                                       matchers like ["severity=critical"]
@@ -1029,7 +1029,7 @@ servers:
 #    `org_id` — it is sent as the X-Scope-OrgID header on every request.
 #
 # 3. Available tools:
-#    - loki_list_accounts    — list configured Loki accounts
+#    - loki_list_profiles    — list configured Loki profiles
 #    - loki_query_range      — main log search: LogQL over a time range,
 #                              e.g. '{app="api"} |= "error"' (newest first)
 #    - loki_query            — instant LogQL query (metric-style values)

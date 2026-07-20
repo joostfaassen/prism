@@ -28,16 +28,16 @@ class MatomoListSitesTool implements ToolInterface
         return [
             'type' => 'object',
             'properties' => [
-                'account' => [
+                'profile' => [
                     'type' => 'string',
-                    'description' => 'Matomo account key (from matomo_list_accounts). Optional if only one account is configured.',
+                    'description' => 'Matomo profile key (from matomo_list_profiles). Optional if only one profile is configured.',
                 ],
             ],
             'required' => [],
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'matomo';
     }
@@ -45,7 +45,7 @@ class MatomoListSitesTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $sites = $this->matomoService->listSites($arguments['account'] ?? null);
+            $sites = $this->matomoService->listSites($arguments['profile'] ?? null);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([

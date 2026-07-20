@@ -24,7 +24,7 @@ class TrackingDayZoneEventsTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Return all zone check-in and check-out events for every device on one calendar day (midnight-to-midnight in the tracking account timezone).';
+        return 'Return all zone check-in and check-out events for every device on one calendar day (midnight-to-midnight in the tracking profile timezone).';
     }
 
     public function getInputSchema(): array
@@ -41,7 +41,7 @@ class TrackingDayZoneEventsTool implements ToolInterface
         ];
     }
 
-    public function getAccountType(): ?string
+    public function getProfileType(): ?string
     {
         return 'tracking';
     }
