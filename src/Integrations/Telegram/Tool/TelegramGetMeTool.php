@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Telegram\Tool;
 
-use App\Telegram\TelegramService;
+use App\Mcp\Tool\ToolInterface;
 
-class TelegramGetChatTool implements ToolInterface
+use App\Integrations\Telegram\TelegramService;
+
+class TelegramGetMeTool implements ToolInterface
 {
     public function __construct(
         private readonly TelegramService $telegramService,
@@ -13,13 +15,13 @@ class TelegramGetChatTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'telegram_get_chat';
+        return 'telegram_get_me';
     }
 
     public function getDescription(): string
     {
-        return 'Get metadata for a Telegram chat (getChat): title, type, username, description, etc. '
-            . 'The bot must already be a member of the chat (or it must be a private chat with the bot).';
+        return 'Return the Telegram bot identity for a configured account (getMe). '
+            . 'Use this to verify the bot_token works and to see the bot username/id.';
     }
 
     public function getInputSchema(): array
@@ -30,10 +32,6 @@ class TelegramGetChatTool implements ToolInterface
                 'account' => [
                     'type' => 'string',
                     'description' => 'Telegram account key. Optional if only one account is configured.',
-                ],
-                'chat_id' => [
-                    'type' => 'string',
-                    'description' => 'Chat id to look up. Optional if the account has default_chat_id.',
                 ],
             ],
             'required' => [],
@@ -48,9 +46,8 @@ class TelegramGetChatTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->telegramService->getChat(
+            $result = $this->telegramService->getMe(
                 accountKey: $arguments['account'] ?? null,
-                chatId: isset($arguments['chat_id']) ? (string) $arguments['chat_id'] : null,
             );
 
             return [
@@ -61,7 +58,7 @@ class TelegramGetChatTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error getting Telegram chat: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error calling telegram_get_me: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

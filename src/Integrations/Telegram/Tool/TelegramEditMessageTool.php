@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Telegram\Tool;
 
-use App\Telegram\TelegramService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Telegram\TelegramService;
 
 class TelegramEditMessageTool implements ToolInterface
 {

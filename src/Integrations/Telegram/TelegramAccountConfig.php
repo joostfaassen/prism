@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Telegram;
+namespace App\Integrations\Telegram;
 
 class TelegramAccountConfig
 {
