@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ integration.label }} · Integrations{% endblock %}
+
+{% block body %}
+<div class="min-h-full relative">
+    <div class="absolute inset-0 bg-gradient-to-br from-cyan-950 via-slate-950 to-blue-950"></div>
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.4) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 40%), radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 40%);"></div>
+
+    <div class="relative z-10">
+        <nav class="border-b border-slate-800 bg-slate-900 bg-opacity-40">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <a href="{{ path('admin_dashboard') }}" class="flex items-center gap-3 group">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                            </svg>
+                        </div>
+                        <span class="text-lg font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent group-hover:from-cyan-200 group-hover:to-blue-300 transition-colors">Prism</span>
+                    </a>
+                    <a href="{{ path('admin_integrations') }}" class="text-xs font-mono text-slate-500 hidden sm:inline bg-slate-800 px-2.5 py-1 rounded-full hover:text-cyan-300 transition-colors">Integrations</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('admin_integrations') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">All integrations</a>
+                    <a href="{{ path('admin_dashboard') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">Back to dashboard</a>
+                    <a href="{{ path('app_logout') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">Sign Out</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <div class="mb-10">
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                    <h1 class="text-3xl font-bold text-white">{{ integration.label }}</h1>
+                    <span class="font-mono text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg">{{ integration.type }}</span>
+                </div>
+                <p class="text-slate-400">{{ integration.description }}</p>
+            </div>
+
+            <div class="grid gap-8 lg:grid-cols-2">
+                <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h2 class="text-lg font-bold text-white mb-4">Tools <span class="text-sm font-normal text-slate-500 font-mono">({{ tools|length }})</span></h2>
+                    {% if tools is not empty %}
+                    <ul class="divide-y divide-slate-800">
+                        {% for tool in tools %}
+                        <li class="py-3">
+                            <code class="text-sm font-mono text-cyan-300">{{ tool.name }}</code>
+                            <p class="text-sm text-slate-400 mt-1">{{ tool.description }}</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-sm text-slate-500">No tools for this type.</p>
+                    {% endif %}
+                </section>
+
+                <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h2 class="text-lg font-bold text-white mb-4">Accounts by server</h2>
+                    {% if accountsByServer is not empty %}
+                    <div class="space-y-6">
+                        {% for server in accountsByServer %}
+                        <div>
+                            <h3 class="text-sm font-semibold text-white mb-1">{{ server.label }}</h3>
+                            <p class="text-xs font-mono text-slate-500 mb-3">{{ server.name }}</p>
+                            <ul class="space-y-2">
+                                {% for account in server.accounts %}
+                                <li class="flex items-baseline gap-3 text-sm">
+                                    <code class="font-mono text-cyan-300">{{ account.key }}</code>
+                                    <span class="text-slate-400">{{ account.label }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-slate-500">No accounts of this type configured on any server.</p>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

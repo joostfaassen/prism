@@ -21,6 +21,7 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <span class="text-sm text-slate-400 hidden sm:inline font-mono">{{ app.user.userIdentifier }}</span>
+                    <a href="{{ path('admin_integrations') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">Integrations</a>
                     <a href="{{ path('app_logout') }}" class="text-sm text-slate-400 hover:text-cyan-300 transition-colors font-medium">Sign Out</a>
                 </div>
             </div>
