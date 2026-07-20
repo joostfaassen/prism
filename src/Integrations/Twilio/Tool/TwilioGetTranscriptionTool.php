@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Twilio\Tool;
+
+use App\Mcp\Tool\ToolInterface;
 
 use App\Config\ServerContext;
-use App\Twilio\TranscriptionStore;
+use App\Integrations\Twilio\TranscriptionStore;
 
 class TwilioGetTranscriptionTool implements ToolInterface
 {

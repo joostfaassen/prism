@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Twilio;
+namespace App\Integrations\Twilio;
 
 class TwilioAccountConfig
 {

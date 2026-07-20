@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Twilio\Tool;
 
-use App\Twilio\TwilioService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Twilio\TwilioService;
 
 class TwilioListCallsTool implements ToolInterface
 {

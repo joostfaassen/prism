@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Command;
+namespace App\Integrations\Twilio\Command;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
-use App\Twilio\TranscriptionStore;
-use App\Twilio\TwilioService;
+use App\Integrations\Twilio\TranscriptionStore;
+use App\Integrations\Twilio\TwilioService;
 use App\Whisper\WhisperService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
