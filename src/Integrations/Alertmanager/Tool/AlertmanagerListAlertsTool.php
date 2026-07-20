@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Alertmanager\Tool;
 
-use App\Alertmanager\AlertmanagerService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Alertmanager\AlertmanagerService;
 
 class AlertmanagerListAlertsTool implements ToolInterface
 {

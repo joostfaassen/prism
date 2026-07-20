@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Alertmanager;
+namespace App\Integrations\Alertmanager;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

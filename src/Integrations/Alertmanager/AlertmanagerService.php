@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Alertmanager;
+namespace App\Integrations\Alertmanager;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
