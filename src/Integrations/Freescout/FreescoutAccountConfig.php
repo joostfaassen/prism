@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Freescout;
+namespace App\Integrations\Freescout;
 
 class FreescoutAccountConfig
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Freescout;
+namespace App\Integrations\Freescout;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

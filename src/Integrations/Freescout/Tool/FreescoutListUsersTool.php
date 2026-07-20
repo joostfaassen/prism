@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Freescout\Tool;
 
-use App\Freescout\FreescoutService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Freescout\FreescoutService;
 
 class FreescoutListUsersTool implements ToolInterface
 {

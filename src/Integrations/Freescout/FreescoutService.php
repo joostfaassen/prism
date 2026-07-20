@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Freescout;
+namespace App\Integrations\Freescout;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
