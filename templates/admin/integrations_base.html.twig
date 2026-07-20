@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="min-h-full relative">
+    <div class="absolute inset-0 bg-gradient-to-br from-cyan-950 via-slate-950 to-blue-950"></div>
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.4) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 40%), radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 40%);"></div>
+
+    <div class="relative z-10">
+        {% include 'admin/_admin_topnav.html.twig' with { activeNav: 'integrations', crumb: crumb|default(null) } %}
+
+        <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-10">
+            <aside class="w-full lg:w-56 lg:flex-none lg:shrink-0 lg:border-r border-slate-800/80 lg:pr-5 min-w-0 overflow-x-hidden">
+                {% include 'admin/_integrations_sidebar.html.twig' with {
+                    navIntegrations: navIntegrations,
+                    filter: filter|default('all'),
+                    activeType: activeType|default(null),
+                } only %}
+            </aside>
+            <main class="w-full lg:flex-1 lg:min-w-0 min-w-0">
+                {% block integrations_main %}{% endblock %}
+                <div class="mt-16 pt-8 border-t border-slate-800 text-center">
+                    <p class="text-xs text-slate-600 font-mono">Prism &bull; MCP Protocol v2024-11-05 &bull; Built with Symfony</p>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+{% endblock %}

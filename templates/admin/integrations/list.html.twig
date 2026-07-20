@@ -1,16 +1,8 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/integrations_base.html.twig' %}
 
 {% block title %}Integrations{% endblock %}
 
-{% block body %}
-<div class="min-h-full relative">
-    <div class="absolute inset-0 bg-gradient-to-br from-cyan-950 via-slate-950 to-blue-950"></div>
-    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.4) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 40%), radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 40%);"></div>
-
-    <div class="relative z-10">
-        {% include 'admin/_admin_topnav.html.twig' with { activeNav: 'integrations' } %}
-
-        <div class="max-w-7xl mx-auto px-6 py-10">
+{% block integrations_main %}
             <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
                 <div>
                     <h1 class="text-3xl font-bold text-white mb-2">Integrations</h1>
@@ -18,20 +10,6 @@
                         Capability packs available to MCP servers.
                         {{ activeCount }} active with accounts &middot; {{ unusedCount }} unused &middot; {{ totalCount }} registered
                     </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <a href="{{ path('admin_integrations', {filter: 'all'}) }}"
-                       class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors {% if filter == 'all' %}border-cyan-700 bg-cyan-950/40 text-cyan-200{% else %}border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700{% endif %}">
-                        All <span class="font-mono text-xs opacity-70">{{ totalCount }}</span>
-                    </a>
-                    <a href="{{ path('admin_integrations', {filter: 'active'}) }}"
-                       class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors {% if filter == 'active' %}border-emerald-700 bg-emerald-950/40 text-emerald-200{% else %}border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700{% endif %}">
-                        Active <span class="font-mono text-xs opacity-70">{{ activeCount }}</span>
-                    </a>
-                    <a href="{{ path('admin_integrations', {filter: 'unused'}) }}"
-                       class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors {% if filter == 'unused' %}border-slate-600 bg-slate-800/60 text-slate-200{% else %}border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700{% endif %}">
-                        Unused <span class="font-mono text-xs opacity-70">{{ unusedCount }}</span>
-                    </a>
                 </div>
             </div>
 
@@ -131,7 +109,4 @@
                 <p class="text-sm text-slate-500">No utility tools registered.</p>
                 {% endif %}
             </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

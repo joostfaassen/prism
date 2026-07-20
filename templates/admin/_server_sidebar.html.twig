@@ -1,7 +1,7 @@
 {# Expects: server (array name, label, accountCount, toolCount), activeSection, serverHasHabits (bool), serverHasTracking (bool) #}
 {% set nav_items = [
     { key: 'configuration', label: 'Configuration', route: 'admin_server_tab', route_params: {tab: 'configuration'}, icon: 'cog' },
-    { key: 'integrations', label: 'Integrations', route: 'admin_integrations', route_params: {}, icon: 'integrations', global: true },
+    { key: 'integrations', label: 'Integrations', route: 'admin_server_integrations', route_params: {}, icon: 'integrations' },
     { key: 'accounts', label: 'Accounts', route: 'admin_server_tab', route_params: {tab: 'accounts'}, icon: 'accounts', badge: server.accountCount },
     { key: 'tools', label: 'Tools', route: 'admin_server_tab', route_params: {tab: 'tools'}, icon: 'tools', badge: server.toolCount },
     { key: 'canva', label: 'Canva', route: 'admin_server_canva', route_params: {}, icon: 'canva' },
