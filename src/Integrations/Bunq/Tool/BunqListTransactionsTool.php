@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Bunq\Tool;
 
-use App\Bunq\BunqService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Bunq\BunqService;
 
 class BunqListTransactionsTool implements ToolInterface
 {

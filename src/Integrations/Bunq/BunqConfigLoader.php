@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Bunq;
+namespace App\Integrations\Bunq;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

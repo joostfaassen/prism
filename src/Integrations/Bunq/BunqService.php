@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Bunq;
+namespace App\Integrations\Bunq;
 
 use bunq\Context\ApiContext;
 use bunq\Context\BunqContext;

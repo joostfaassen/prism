@@ -25,7 +25,7 @@ services:
         arguments:
             $configPath: '%kernel.project_dir%/prism.config.yaml'
 
-    App\Bunq\BunqConfigLoader:
+    App\Integrations\Bunq\BunqConfigLoader:
         arguments:
             $projectDir: '%kernel.project_dir%'
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Bunq;
+namespace App\Integrations\Bunq;
 
 class BunqAccountConfig
 {
