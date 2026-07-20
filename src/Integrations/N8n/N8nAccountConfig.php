@@ -1,6 +1,6 @@
 <?php
 
-namespace App\N8n;
+namespace App\Integrations\N8n;
 
 class N8nAccountConfig
 {

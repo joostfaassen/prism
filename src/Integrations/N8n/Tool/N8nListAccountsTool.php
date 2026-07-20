@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\N8n\Tool;
 
-use App\N8n\N8nService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\N8n\N8nService;
 
 class N8nListAccountsTool implements ToolInterface
 {

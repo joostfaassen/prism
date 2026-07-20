@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\N8n\Tool;
 
-use App\N8n\N8nService;
+use App\Mcp\Tool\ToolInterface;
 
-class N8nGetWorkflowTool implements ToolInterface
+use App\Integrations\N8n\N8nService;
+
+class N8nGetExecutionTool implements ToolInterface
 {
     public function __construct(
         private readonly N8nService $n8nService,
@@ -13,12 +15,12 @@ class N8nGetWorkflowTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'n8n_get_workflow';
+        return 'n8n_get_execution';
     }
 
     public function getDescription(): string
     {
-        return 'Get (download) a single n8n workflow by id, including its full definition: nodes, connections and settings. The returned "definition" is the complete workflow JSON that can be re-imported into n8n. Use n8n_list_workflows to discover workflow ids.';
+        return 'Get a single n8n execution (run) by id. Returns metadata by default (status, mode, timestamps). Set include_data=true to include the full run data with node inputs/outputs, which can be very large. Use n8n_list_executions to discover execution ids.';
     }
 
     public function getInputSchema(): array
@@ -32,7 +34,11 @@ class N8nGetWorkflowTool implements ToolInterface
                 ],
                 'id' => [
                     'type' => 'string',
-                    'description' => 'Workflow id (from n8n_list_workflows).',
+                    'description' => 'Execution id (from n8n_list_executions).',
+                ],
+                'include_data' => [
+                    'type' => 'boolean',
+                    'description' => 'Include full run data (node inputs/outputs). Defaults to false. Can be very large.',
                 ],
             ],
             'required' => ['id'],
@@ -56,20 +62,21 @@ class N8nGetWorkflowTool implements ToolInterface
         }
 
         try {
-            $workflow = $this->n8nService->getWorkflow(
+            $execution = $this->n8nService->getExecution(
                 accountKey: $arguments['account'] ?? null,
                 id: $id,
+                includeData: isset($arguments['include_data']) ? (bool) $arguments['include_data'] : false,
             );
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode(
-                    $workflow,
+                    $execution,
                     JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
                 )]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error getting n8n workflow: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error getting n8n execution: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

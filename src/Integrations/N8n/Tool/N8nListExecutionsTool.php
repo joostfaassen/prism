@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\N8n\Tool;
 
-use App\N8n\N8nService;
+use App\Mcp\Tool\ToolInterface;
 
-class N8nListWorkflowsTool implements ToolInterface
+use App\Integrations\N8n\N8nService;
+
+class N8nListExecutionsTool implements ToolInterface
 {
     public function __construct(
         private readonly N8nService $n8nService,
@@ -13,12 +15,12 @@ class N8nListWorkflowsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'n8n_list_workflows';
+        return 'n8n_list_executions';
     }
 
     public function getDescription(): string
     {
-        return 'List n8n workflows (flows) on an instance. Returns metadata only: id, name, active state, tags, node count and timestamps. Supports filtering by active state, name and tags, plus cursor-based pagination. Use n8n_get_workflow to read or download the full definition of a single flow.';
+        return 'List n8n executions (runs). Returns metadata by default: id, workflow id, status, mode and timestamps. Filter by workflow id and/or status (success, error, waiting, ...), and paginate with a cursor. Set include_data=true to include the full run data per execution (can be very large).';
     }
 
     public function getInputSchema(): array
@@ -30,21 +32,22 @@ class N8nListWorkflowsTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'n8n account key (from n8n_list_accounts). Optional if only one account is configured.',
                 ],
-                'active' => [
+                'workflow_id' => [
+                    'type' => 'string',
+                    'description' => 'Filter executions by workflow id (from n8n_list_workflows).',
+                ],
+                'status' => [
+                    'type' => 'string',
+                    'description' => 'Filter by execution status.',
+                    'enum' => ['canceled', 'crashed', 'error', 'new', 'running', 'success', 'unknown', 'waiting'],
+                ],
+                'include_data' => [
                     'type' => 'boolean',
-                    'description' => 'Filter by active state. Omit to return both active and inactive workflows.',
-                ],
-                'name' => [
-                    'type' => 'string',
-                    'description' => 'Filter by exact workflow name.',
-                ],
-                'tags' => [
-                    'type' => 'string',
-                    'description' => 'Comma-separated tag names to filter by.',
+                    'description' => 'Include full run data (node inputs/outputs) for each execution. Defaults to false. Can be very large.',
                 ],
                 'limit' => [
                     'type' => 'integer',
-                    'description' => 'Maximum number of workflows to return (default 50, max 250).',
+                    'description' => 'Maximum number of executions to return (default 25, max 250).',
                 ],
                 'cursor' => [
                     'type' => 'string',
@@ -63,25 +66,25 @@ class N8nListWorkflowsTool implements ToolInterface
     public function execute(array $arguments): array
     {
         try {
-            $result = $this->n8nService->listWorkflows(
+            $result = $this->n8nService->listExecutions(
                 accountKey: $arguments['account'] ?? null,
-                active: isset($arguments['active']) ? (bool) $arguments['active'] : null,
-                name: $arguments['name'] ?? null,
-                tags: $arguments['tags'] ?? null,
-                limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 50,
+                workflowId: $arguments['workflow_id'] ?? null,
+                status: $arguments['status'] ?? null,
+                includeData: isset($arguments['include_data']) ? (bool) $arguments['include_data'] : false,
+                limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 25,
                 cursor: $arguments['cursor'] ?? null,
             );
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
                     'count' => count($result['data']),
-                    'workflows' => $result['data'],
+                    'executions' => $result['data'],
                     'nextCursor' => $result['nextCursor'],
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing n8n workflows: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error listing n8n executions: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
