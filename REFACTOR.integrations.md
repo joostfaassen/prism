@@ -1,7 +1,8 @@
 # REFACTOR — Self-contained integrations under `src/Integrations/`
 
-Status: **planned, not started**
+Status: **Phases 0–8 completed** (Phase 9 Action methodology still follow-on)
 Executor: an AI coding agent, working phase by phase, committing per phase.
+Note: Telegram was present in the tree but missing from the original §3.1 inventory; it was migrated with Phase 4. Tool baseline at start was **231** (plan said 194).
 
 **North star:** after (or as a deliberate follow-on to) the mechanical module move,
 integrations become reusable **Action packs** (Nebula action methodology), importable
@@ -782,38 +783,39 @@ curl -s -X POST "$PRISM_BASE_URL/mcp/<serverName>" \
 
 ## 10. Progress checklist (executor: tick + commit as you go)
 
-- [ ] Phase 0 — baseline + `mcp:tools`
-- [ ] Phase 1 — scaffolding (interface, registry, wiring, routes)
-- [ ] Phase 2 — pilot: Cyans
-- [ ] Phase 3 — `/admin/integrations` UI
-- [ ] Phase 4 — Alertmanager
-- [ ] Phase 4 — Atlas
-- [ ] Phase 4 — Browserless
-- [ ] Phase 4 — Bunq
-- [ ] Phase 4 — Calendar
-- [ ] Phase 4 — Freescout
-- [ ] Phase 4 — Ga4
-- [ ] Phase 4 — GitHub
-- [ ] Phase 4 — Igdb
-- [ ] Phase 4 — Libredesk
-- [ ] Phase 4 — Loki
-- [ ] Phase 4 — Matomo
-- [ ] Phase 4 — N8n
-- [ ] Phase 4 — OpenAi
-- [ ] Phase 4 — Picnic
-- [ ] Phase 4 — Prometheus
-- [ ] Phase 4 — SendGrid
-- [ ] Phase 4 — Tmdb
-- [ ] Phase 4 — Transip
-- [ ] Phase 5 — Email
-- [ ] Phase 5 — Slack
-- [ ] Phase 5 — Twilio
-- [ ] Phase 6 — Apify
-- [ ] Phase 6 — Canva
-- [ ] Phase 6 — Instagram
-- [ ] Phase 7 — Habits
-- [ ] Phase 7 — Tracking
-- [ ] Phase 8 — cleanup + docs + final acceptance
+- [x] Phase 0 — baseline + `mcp:tools`
+- [x] Phase 1 — scaffolding (interface, registry, wiring, routes)
+- [x] Phase 2 — pilot: Cyans
+- [x] Phase 3 — `/admin/integrations` UI
+- [x] Phase 4 — Alertmanager
+- [x] Phase 4 — Atlas
+- [x] Phase 4 — Browserless
+- [x] Phase 4 — Bunq
+- [x] Phase 4 — Calendar
+- [x] Phase 4 — Freescout
+- [x] Phase 4 — Ga4
+- [x] Phase 4 — GitHub
+- [x] Phase 4 — Igdb
+- [x] Phase 4 — Libredesk
+- [x] Phase 4 — Loki
+- [x] Phase 4 — Matomo
+- [x] Phase 4 — N8n
+- [x] Phase 4 — OpenAi
+- [x] Phase 4 — Picnic
+- [x] Phase 4 — Prometheus
+- [x] Phase 4 — SendGrid
+- [x] Phase 4 — Tmdb
+- [x] Phase 4 — Transip
+- [x] Phase 4 — Telegram (extra; was in tree, not in original inventory)
+- [x] Phase 5 — Email
+- [x] Phase 5 — Slack
+- [x] Phase 5 — Twilio
+- [x] Phase 6 — Apify
+- [x] Phase 6 — Canva
+- [x] Phase 6 — Instagram
+- [x] Phase 7 — Habits
+- [x] Phase 7 — Tracking
+- [x] Phase 8 — cleanup + docs + final acceptance
 - [ ] Phase 9 — Action methodology (north star; separate plan / user go-ahead) — §11
 
 ---
