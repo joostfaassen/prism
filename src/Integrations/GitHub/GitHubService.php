@@ -1,6 +1,6 @@
 <?php
 
-namespace App\GitHub;
+namespace App\Integrations\GitHub;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

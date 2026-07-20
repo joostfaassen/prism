@@ -1,6 +1,6 @@
 <?php
 
-namespace App\GitHub;
+namespace App\Integrations\GitHub;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

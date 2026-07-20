@@ -1,6 +1,6 @@
 <?php
 
-namespace App\GitHub;
+namespace App\Integrations\GitHub;
 
 class GitHubAccountConfig
 {

@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\GitHub\Tool;
 
-use App\GitHub\GitHubService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\GitHub\GitHubService;
 
 class GitHubListAccountsTool implements ToolInterface
 {
