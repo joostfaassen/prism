@@ -17,7 +17,7 @@ services:
         arguments:
             $configPath: '%kernel.project_dir%/prism.config.yaml'
 
-    App\Canva\CanvaTokenStore:
+    App\Integrations\Canva\CanvaTokenStore:
         arguments:
             $configPath: '%kernel.project_dir%/prism.config.yaml'
 

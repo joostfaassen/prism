@@ -14,7 +14,7 @@ namespace App\Instagram;
  *  - Per-server files `prism.{serverName}.yaml` (flat: `accounts:` at indent 0).
  *  - The legacy `prism.config.yaml` (nested: `servers: > {name}: > accounts:`).
  *
- * Mirrors the approach used by {@see \App\Canva\CanvaTokenStore}.
+ * Mirrors the approach used by {@see \App\Integrations\Canva\CanvaTokenStore}.
  */
 class InstagramTokenStore
 {

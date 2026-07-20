@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Controller;
+namespace App\Integrations\Canva\Controller;
 
-use App\Canva\CanvaConfigLoader;
-use App\Canva\CanvaService;
-use App\Canva\CanvaTokenStore;
+use App\Integrations\Canva\CanvaConfigLoader;
+use App\Integrations\Canva\CanvaService;
+use App\Integrations\Canva\CanvaTokenStore;
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
 use App\Config\ServerContext;

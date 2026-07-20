@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Canva;
+namespace App\Integrations\Canva;
 
 /**
  * Persists OAuth tokens back into the Prism config files.

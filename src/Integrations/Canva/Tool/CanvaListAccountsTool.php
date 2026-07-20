@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Canva\Tool;
 
-use App\Canva\CanvaService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Canva\CanvaService;
 
 class CanvaListAccountsTool implements ToolInterface
 {

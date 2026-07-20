@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Canva;
+namespace App\Integrations\Canva;
 
 class CanvaAccountConfig
 {

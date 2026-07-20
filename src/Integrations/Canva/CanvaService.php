@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Canva;
+namespace App\Integrations\Canva;
 
 use App\Config\ServerContext;
 use Symfony\Contracts\HttpClient\HttpClientInterface;

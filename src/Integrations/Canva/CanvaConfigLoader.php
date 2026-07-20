@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Canva;
+namespace App\Integrations\Canva;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
