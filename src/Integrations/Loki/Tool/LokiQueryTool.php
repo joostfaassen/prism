@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Loki\Tool;
 
-use App\Loki\LokiService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Loki\LokiService;
 
 class LokiQueryTool implements ToolInterface
 {

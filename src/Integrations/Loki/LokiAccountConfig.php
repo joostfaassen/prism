@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Loki;
+namespace App\Integrations\Loki;
 
 class LokiAccountConfig
 {
