@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Instagram;
+namespace App\Integrations\Instagram;
 
 class InstagramAccountConfig
 {

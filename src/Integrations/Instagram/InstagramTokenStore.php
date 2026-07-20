@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Instagram;
+namespace App\Integrations\Instagram;
 
 /**
  * Persists refreshed Instagram long-lived tokens back into the Prism config.

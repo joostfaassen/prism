@@ -21,7 +21,7 @@ services:
         arguments:
             $configPath: '%kernel.project_dir%/prism.config.yaml'
 
-    App\Instagram\InstagramTokenStore:
+    App\Integrations\Instagram\InstagramTokenStore:
         arguments:
             $configPath: '%kernel.project_dir%/prism.config.yaml'
 

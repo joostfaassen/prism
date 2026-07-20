@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Instagram\Tool;
 
-use App\Instagram\InstagramService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Instagram\InstagramService;
 
 class InstagramReplyCommentTool implements ToolInterface
 {

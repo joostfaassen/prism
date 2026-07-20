@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Instagram;
+namespace App\Integrations\Instagram;
 
 use App\Config\ServerContext;
 use Symfony\Contracts\HttpClient\HttpClientInterface;

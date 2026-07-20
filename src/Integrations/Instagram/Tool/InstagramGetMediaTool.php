@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Instagram\Tool;
 
-use App\Instagram\InstagramService;
+use App\Mcp\Tool\ToolInterface;
 
-class InstagramListCommentsTool implements ToolInterface
+use App\Integrations\Instagram\InstagramService;
+
+class InstagramGetMediaTool implements ToolInterface
 {
     public function __construct(
         private readonly InstagramService $instagramService,
@@ -13,14 +15,14 @@ class InstagramListCommentsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'instagram_list_comments';
+        return 'instagram_get_media';
     }
 
     public function getDescription(): string
     {
-        return 'List comments on one of your media objects, including threaded replies, like counts and whether '
-            . 'each comment is hidden. Use this to triage engagement and find comments worth replying to. Returns '
-            . '"data" plus "paging" cursors for pagination.';
+        return 'Get a single Instagram media object by its id, including carousel children. Returns caption, '
+            . 'media type, URLs, permalink, timestamp and like/comment counts. Pass a custom fields list to '
+            . 'fetch other Graph API fields.';
     }
 
     public function getInputSchema(): array
@@ -29,9 +31,8 @@ class InstagramListCommentsTool implements ToolInterface
             'type' => 'object',
             'properties' => [
                 'account' => ['type' => 'string', 'description' => 'Instagram account key. Optional if only one is configured.'],
-                'media_id' => ['type' => 'string', 'description' => 'The media object id whose comments to list.'],
-                'limit' => ['type' => 'integer', 'description' => 'Max comments per page (default 25).'],
-                'after' => ['type' => 'string', 'description' => 'Pagination cursor from a previous call.'],
+                'media_id' => ['type' => 'string', 'description' => 'The media object id (from instagram_list_media).'],
+                'fields' => ['type' => 'string', 'description' => 'Optional comma-separated Graph API fields override.'],
             ],
             'required' => ['media_id'],
         ];
@@ -53,11 +54,10 @@ class InstagramListCommentsTool implements ToolInterface
         }
 
         try {
-            $result = $this->instagramService->listComments(
+            $result = $this->instagramService->getMedia(
                 accountKey: $arguments['account'] ?? null,
                 mediaId: $mediaId,
-                limit: isset($arguments['limit']) ? (int) $arguments['limit'] : 25,
-                after: isset($arguments['after']) ? (string) $arguments['after'] : null,
+                fields: isset($arguments['fields']) ? (string) $arguments['fields'] : null,
             );
 
             return [
@@ -65,7 +65,7 @@ class InstagramListCommentsTool implements ToolInterface
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error listing Instagram comments: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching Instagram media: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }
