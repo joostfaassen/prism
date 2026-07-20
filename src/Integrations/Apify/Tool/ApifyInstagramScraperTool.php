@@ -1,31 +1,31 @@
 <?php
 
-namespace App\Mcp\Tool\Apify;
+namespace App\Integrations\Apify\Tool;
 
 /**
- * Wraps the "apify/instagram-api-scraper" actor.
+ * Wraps the general-purpose "apify/instagram-scraper" actor.
  *
- * A fast, login-free Instagram scraper that mirrors the general
- * instagram-scraper inputs: feed it Instagram URLs and/or a search query and
- * pick what to scrape (posts, comments, details, mentions, reels).
+ * The Swiss-army knife of Instagram scraping: feed it Instagram URLs
+ * (profiles, posts, hashtags, places) and/or a search query, and pick what
+ * kind of content to extract (posts, details, comments, reels, mentions).
  *
- * @see https://apify.com/apify/instagram-api-scraper
+ * @see https://apify.com/apify/instagram-scraper
  */
-class ApifyInstagramApiScraperTool extends AbstractApifyActorTool
+class ApifyInstagramScraperTool extends AbstractApifyActorTool
 {
     protected function getActorId(): string
     {
-        return 'apify/instagram-api-scraper';
+        return 'apify/instagram-scraper';
     }
 
     public function getName(): string
     {
-        return 'apify_instagram_api_scraper';
+        return 'apify_instagram_scraper';
     }
 
     public function getDescription(): string
     {
-        return 'Fast, login-free Instagram scraper: scrape posts, comments, profile/post/hashtag/place details, mentions or reels from Instagram URLs and/or a search query. Via the Apify instagram-api-scraper actor.';
+        return 'General-purpose Instagram scraper: scrape posts, profile/hashtag/place details, comments, reels or mentions from Instagram URLs and/or a search query. Via the Apify instagram-scraper actor.';
     }
 
     protected function getProperties(): array
@@ -34,11 +34,11 @@ class ApifyInstagramApiScraperTool extends AbstractApifyActorTool
             'direct_urls' => [
                 'type' => 'array',
                 'items' => ['type' => 'string'],
-                'description' => 'Instagram URLs to scrape (profiles, posts, hashtags or places).',
+                'description' => 'Instagram URLs to scrape (profiles, posts, hashtags or places), e.g. ["https://www.instagram.com/natgeo/"].',
             ],
             'results_type' => [
                 'type' => 'string',
-                'enum' => ['posts', 'comments', 'details', 'mentions', 'reels', 'stories'],
+                'enum' => ['posts', 'details', 'comments', 'reels', 'mentions', 'stories'],
                 'description' => 'What to scrape from each URL. Default "posts".',
             ],
             'results_limit' => [
@@ -47,11 +47,11 @@ class ApifyInstagramApiScraperTool extends AbstractApifyActorTool
             ],
             'search' => [
                 'type' => 'string',
-                'description' => 'Search query to look up users, hashtags or places instead of (or in addition to) direct_urls.',
+                'description' => 'Search query to look up profiles, hashtags or places instead of (or in addition to) direct_urls.',
             ],
             'search_type' => [
                 'type' => 'string',
-                'enum' => ['user', 'hashtag', 'place'],
+                'enum' => ['hashtag', 'profile', 'place', 'user'],
                 'description' => 'What the search query refers to. Default "hashtag".',
             ],
             'search_limit' => [

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Apify;
+namespace App\Integrations\Apify;
 
 class ApifyAccountConfig
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mcp\Tool\Apify;
+namespace App\Integrations\Apify\Tool;
 
 /**
  * Wraps the "curious_coder/linkedin-jobs-scraper" actor.

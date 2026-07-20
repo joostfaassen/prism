@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Mcp\Tool\Apify;
+namespace App\Integrations\Apify\Tool;
 
-use App\Apify\ApifyService;
+use App\Integrations\Apify\ApifyService;
 use App\Mcp\Tool\ToolInterface;
 
 class ApifyListAccountsTool implements ToolInterface

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Controller;
+namespace App\Integrations\Apify\Controller;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
 use App\Mcp\McpHandler;
-use App\Mcp\Tool\Apify\AbstractApifyActorTool;
+use App\Integrations\Apify\Tool\AbstractApifyActorTool;
 use App\Mcp\Tool\ToolInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

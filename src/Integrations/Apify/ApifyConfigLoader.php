@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Apify;
+namespace App\Integrations\Apify;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

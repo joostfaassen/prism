@@ -53,6 +53,6 @@
                 {% endfor %}
             </div>
 
-            <p class="text-xs text-slate-600 mt-6">Restrict which tools are exposed by adding a <span class="font-mono text-slate-400">tools:</span> allowlist to the <span class="font-mono text-slate-400">apify</span> account in your prism config (supports wildcards, e.g. <span class="font-mono text-slate-400">apify_get_*</span>). Omit it to expose all. Add new actor-backed tools by extending <code class="text-slate-400">App\Mcp\Tool\Apify\AbstractApifyActorTool</code>; use <span class="font-mono text-slate-400">apify_get_actor</span> to inspect an actor first.</p>
+            <p class="text-xs text-slate-600 mt-6">Restrict which tools are exposed by adding a <span class="font-mono text-slate-400">tools:</span> allowlist to the <span class="font-mono text-slate-400">apify</span> account in your prism config (supports wildcards, e.g. <span class="font-mono text-slate-400">apify_get_*</span>). Omit it to expose all. Add new actor-backed tools by extending <code class="text-slate-400">App\Integrations\Apify\Tool\AbstractApifyActorTool</code>; use <span class="font-mono text-slate-400">apify_get_actor</span> to inspect an actor first.</p>
             {% endif %}
 {% endblock %}

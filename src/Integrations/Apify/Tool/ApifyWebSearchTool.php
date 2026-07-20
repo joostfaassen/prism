@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mcp\Tool\Apify;
+namespace App\Integrations\Apify\Tool;
 
 /**
  * Example tool wrapping the "apify/rag-web-browser" actor.

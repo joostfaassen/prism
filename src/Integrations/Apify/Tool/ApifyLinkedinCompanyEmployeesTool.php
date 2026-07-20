@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mcp\Tool\Apify;
+namespace App\Integrations\Apify\Tool;
 
 /**
  * Wraps the "harvestapi/linkedin-company-employees" actor.
