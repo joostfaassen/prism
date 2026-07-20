@@ -1,6 +1,6 @@
 <?php
 
-namespace App\SendGrid;
+namespace App\Integrations\SendGrid;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

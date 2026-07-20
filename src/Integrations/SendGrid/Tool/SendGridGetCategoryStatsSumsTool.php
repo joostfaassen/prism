@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\SendGrid\Tool;
 
-use App\SendGrid\SendGridService;
+use App\Mcp\Tool\ToolInterface;
 
-class SendGridGetCategoryStatsTool implements ToolInterface
+use App\Integrations\SendGrid\SendGridService;
+
+class SendGridGetCategoryStatsSumsTool implements ToolInterface
 {
     public function __construct(
         private readonly SendGridService $sendGridService,
@@ -13,12 +15,12 @@ class SendGridGetCategoryStatsTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'sendgrid_get_category_stats';
+        return 'sendgrid_get_category_stats_sums';
     }
 
     public function getDescription(): string
     {
-        return 'Get SendGrid email statistics broken down by category over a date range. Categories are commonly used to tag emails by template, campaign or message type, so this reveals opens, clicks, unsubscribes etc. per category, optionally bucketed by day/week/month. You must name the categories to retrieve (up to 10). To rank categories by a metric instead, use sendgrid_get_category_stats_sums.';
+        return 'Get summed SendGrid email statistics per category over a date range, ranked by a chosen metric. Best tool to answer "which categories/templates generated the most clicks (or opens, etc.)" because it sorts categories by a metric and does not require naming them up front. Categories are commonly used to tag emails by template or campaign.';
     }
 
     public function getInputSchema(): array
@@ -38,10 +40,22 @@ class SendGridGetCategoryStatsTool implements ToolInterface
                     'type' => 'string',
                     'description' => 'End date of the statistics, format YYYY-MM-DD. Defaults to today.',
                 ],
-                'categories' => [
-                    'type' => 'array',
-                    'description' => 'Category names to retrieve statistics for (up to 10). Required.',
-                    'items' => ['type' => 'string'],
+                'sort_by_metric' => [
+                    'type' => 'string',
+                    'description' => 'Single metric to sort the categories by, e.g. "clicks", "unique_clicks", "opens", "delivered", "unsubscribes". Defaults to "delivered".',
+                ],
+                'sort_by_direction' => [
+                    'type' => 'string',
+                    'description' => 'Sort direction. Defaults to "desc" (highest first).',
+                    'enum' => ['desc', 'asc'],
+                ],
+                'limit' => [
+                    'type' => 'integer',
+                    'description' => 'Number of categories to return. Defaults to 5 on the SendGrid side.',
+                ],
+                'offset' => [
+                    'type' => 'integer',
+                    'description' => 'Point in the list to begin retrieving results.',
                 ],
                 'aggregated_by' => [
                     'type' => 'string',
@@ -49,7 +63,7 @@ class SendGridGetCategoryStatsTool implements ToolInterface
                     'enum' => ['day', 'week', 'month'],
                 ],
             ],
-            'required' => ['start_date', 'categories'],
+            'required' => ['start_date'],
         ];
     }
 
@@ -69,28 +83,15 @@ class SendGridGetCategoryStatsTool implements ToolInterface
             ];
         }
 
-        $categories = [];
-        if (isset($arguments['categories']) && is_array($arguments['categories'])) {
-            foreach ($arguments['categories'] as $category) {
-                if (is_scalar($category) && (string) $category !== '') {
-                    $categories[] = (string) $category;
-                }
-            }
-        }
-
-        if ($categories === []) {
-            return [
-                'content' => [['type' => 'text', 'text' => 'The "categories" argument is required and must contain at least one category name.']],
-                'isError' => true,
-            ];
-        }
-
         try {
-            $stats = $this->sendGridService->getCategoryStats(
+            $stats = $this->sendGridService->getCategoryStatsSums(
                 accountKey: $arguments['account'] ?? null,
                 startDate: $startDate,
-                categories: $categories,
                 endDate: $arguments['end_date'] ?? null,
+                sortByMetric: $arguments['sort_by_metric'] ?? null,
+                sortByDirection: $arguments['sort_by_direction'] ?? null,
+                limit: isset($arguments['limit']) ? (int) $arguments['limit'] : null,
+                offset: isset($arguments['offset']) ? (int) $arguments['offset'] : null,
                 aggregatedBy: $arguments['aggregated_by'] ?? null,
             );
 
@@ -98,14 +99,13 @@ class SendGridGetCategoryStatsTool implements ToolInterface
                 'content' => [['type' => 'text', 'text' => json_encode([
                     'start_date' => $startDate,
                     'end_date' => $arguments['end_date'] ?? null,
-                    'categories' => $categories,
-                    'aggregated_by' => $arguments['aggregated_by'] ?? null,
+                    'sort_by_metric' => $arguments['sort_by_metric'] ?? 'delivered',
                     'stats' => $stats,
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)]],
             ];
         } catch (\Throwable $e) {
             return [
-                'content' => [['type' => 'text', 'text' => 'Error fetching SendGrid category stats: ' . $e->getMessage()]],
+                'content' => [['type' => 'text', 'text' => 'Error fetching SendGrid category stats sums: ' . $e->getMessage()]],
                 'isError' => true,
             ];
         }

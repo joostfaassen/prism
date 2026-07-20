@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\SendGrid\Tool;
 
-use App\SendGrid\SendGridService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\SendGrid\SendGridService;
 
 class SendGridGetTool implements ToolInterface
 {
