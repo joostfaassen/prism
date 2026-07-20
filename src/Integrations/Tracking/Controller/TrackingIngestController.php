@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Controller;
+namespace App\Integrations\Tracking\Controller;
 
 use App\Config\PrismConfigLoader;
-use App\Tracking\TrackingService;
+use App\Integrations\Tracking\TrackingService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tracking;
+namespace App\Integrations\Tracking;
 
 /**
  * Human-readable "since last ping" for admin UI and future stale-device alerts.
@@ -8,7 +8,7 @@ namespace App\Tracking;
 final class LastPingFormatter
 {
     /**
-     * @param list<\App\Entity\TrackingDevice> $devices
+     * @param list<\App\Integrations\Tracking\Entity\TrackingDevice> $devices
      * @param array<int, \DateTimeImmutable>   $lastAtByDeviceId
      *
      * @return array<string, array{last_ping_at: ?string, since: string, seconds_ago: ?int, has_ping: bool}>

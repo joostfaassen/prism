@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Repository;
+namespace App\Integrations\Tracking\Repository;
 
-use App\Entity\TrackingDevice;
-use App\Entity\TrackingZone;
-use App\Entity\ZoneEvent;
+use App\Integrations\Tracking\Entity\TrackingDevice;
+use App\Integrations\Tracking\Entity\TrackingZone;
+use App\Integrations\Tracking\Entity\ZoneEvent;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

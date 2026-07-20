@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Integrations\Tracking\Entity;
 
-use App\Repository\GpsSampleRepository;
+use App\Integrations\Tracking\Repository\GpsSampleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 

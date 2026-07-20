@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Integrations\Tracking\Entity;
 
-use App\Repository\ZoneEventRepository;
+use App\Integrations\Tracking\Repository\ZoneEventRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Xuid\Xuid;

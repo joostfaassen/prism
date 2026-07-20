@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Controller;
+namespace App\Integrations\Tracking\Controller;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerConfig;
-use App\Entity\TrackingDevice;
-use App\Entity\TrackingZone;
+use App\Integrations\Tracking\Entity\TrackingDevice;
+use App\Integrations\Tracking\Entity\TrackingZone;
 use App\Mcp\McpHandler;
 use App\Mcp\Tool\ToolInterface;
-use App\Repository\GpsSampleRepository;
-use App\Repository\TrackingDeviceRepository;
-use App\Repository\TrackingZoneRepository;
-use App\Tracking\LastPingFormatter;
-use App\Tracking\TrackingService;
+use App\Integrations\Tracking\Repository\GpsSampleRepository;
+use App\Integrations\Tracking\Repository\TrackingDeviceRepository;
+use App\Integrations\Tracking\Repository\TrackingZoneRepository;
+use App\Integrations\Tracking\LastPingFormatter;
+use App\Integrations\Tracking\TrackingService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

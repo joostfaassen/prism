@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Integrations\Tracking\Entity;
 
-use App\Repository\TrackingDeviceRepository;
+use App\Integrations\Tracking\Repository\TrackingDeviceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tracking;
+namespace App\Integrations\Tracking;
 
 class TrackingAccountConfig
 {

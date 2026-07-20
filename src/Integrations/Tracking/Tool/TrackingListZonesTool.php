@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tracking\Tool;
+
+use App\Mcp\Tool\ToolInterface;
 
 use App\Config\ServerContext;
-use App\Tracking\TrackingService;
+use App\Integrations\Tracking\TrackingService;
 
-class TrackingListDevicesTool implements ToolInterface
+class TrackingListZonesTool implements ToolInterface
 {
     public function __construct(
         private readonly TrackingService $trackingService,
@@ -15,12 +17,12 @@ class TrackingListDevicesTool implements ToolInterface
 
     public function getName(): string
     {
-        return 'tracking_list_devices';
+        return 'tracking_list_zones';
     }
 
     public function getDescription(): string
     {
-        return 'List GPS tracking devices for this server (slug, label, map color, ingest format preset). Use slugs in the REST ingest URL.';
+        return 'List geofence locations (zones) for this server: center coordinates, radius in meters, and xuid for event queries.';
     }
 
     public function getInputSchema(): array
@@ -41,12 +43,12 @@ class TrackingListDevicesTool implements ToolInterface
     {
         try {
             $serverName = $this->serverContext->getServerName();
-            $devices = $this->trackingService->listDevices($serverName);
+            $zones = $this->trackingService->listZones($serverName);
 
             return [
                 'content' => [['type' => 'text', 'text' => json_encode([
                     'server' => $serverName,
-                    'devices' => $devices,
+                    'zones' => $zones,
                 ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT)]],
             ];
         } catch (\Throwable $e) {

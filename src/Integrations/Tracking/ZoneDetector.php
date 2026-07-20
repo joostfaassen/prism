@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Tracking;
+namespace App\Integrations\Tracking;
 
-use App\Entity\GpsSample;
-use App\Entity\ZoneEvent;
-use App\Repository\GpsSampleRepository;
-use App\Repository\TrackingZoneRepository;
+use App\Integrations\Tracking\Entity\GpsSample;
+use App\Integrations\Tracking\Entity\ZoneEvent;
+use App\Integrations\Tracking\Repository\GpsSampleRepository;
+use App\Integrations\Tracking\Repository\TrackingZoneRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ZoneDetector

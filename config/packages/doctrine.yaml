@@ -11,6 +11,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Integrations/Habits/Entity'
                 prefix: 'App\Integrations\Habits\Entity'
                 alias: Habits
+            TrackingEntity:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Integrations/Tracking/Entity'
+                prefix: 'App\Integrations\Tracking\Entity'
+                alias: Tracking
             Entity:
                 type: attribute
                 is_bundle: false

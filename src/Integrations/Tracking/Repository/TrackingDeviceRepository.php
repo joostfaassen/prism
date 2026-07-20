@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository;
+namespace App\Integrations\Tracking\Repository;
 
-use App\Entity\TrackingDevice;
+use App\Integrations\Tracking\Entity\TrackingDevice;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

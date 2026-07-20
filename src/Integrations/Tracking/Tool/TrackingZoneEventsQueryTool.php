@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Tracking\Tool;
+
+use App\Mcp\Tool\ToolInterface;
 
 use App\Config\ServerContext;
-use App\Tracking\TrackingService;
+use App\Integrations\Tracking\TrackingService;
 
 class TrackingZoneEventsQueryTool implements ToolInterface
 {

@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Tracking;
+namespace App\Integrations\Tracking;
 
 use App\Config\PrismConfigLoader;
-use App\Entity\GpsSample;
-use App\Entity\TrackingDevice;
-use App\Entity\TrackingZone;
-use App\Repository\GpsSampleRepository;
-use App\Repository\TrackingDeviceRepository;
-use App\Repository\TrackingZoneRepository;
-use App\Repository\ZoneEventRepository;
+use App\Integrations\Tracking\Entity\GpsSample;
+use App\Integrations\Tracking\Entity\TrackingDevice;
+use App\Integrations\Tracking\Entity\TrackingZone;
+use App\Integrations\Tracking\Repository\GpsSampleRepository;
+use App\Integrations\Tracking\Repository\TrackingDeviceRepository;
+use App\Integrations\Tracking\Repository\TrackingZoneRepository;
+use App\Integrations\Tracking\Repository\ZoneEventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

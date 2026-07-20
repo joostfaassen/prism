@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tracking;
+namespace App\Integrations\Tracking;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
