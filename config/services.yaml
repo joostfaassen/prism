@@ -62,6 +62,10 @@ services:
         arguments:
             $tools: !tagged_iterator app.mcp_tool
 
+    App\Integrations\IntegrationRegistry:
+        arguments:
+            $integrations: !tagged_iterator app.integration
+
     App\AgentNotify\AgentNotifyService:
         arguments:
             $clients: !tagged_iterator app.agent_notify_client
@@ -77,6 +81,8 @@ services:
     _instanceof:
         App\Mcp\Tool\ToolInterface:
             tags: ['app.mcp_tool']
+        App\Integrations\IntegrationInterface:
+            tags: ['app.integration']
         App\Whisper\WhisperProviderInterface:
             tags: ['app.whisper_provider']
         App\AgentNotify\AgentNotifyClientInterface:
