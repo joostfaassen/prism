@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Calendar;
+namespace App\Integrations\Calendar;
 
 class CalendarConfig
 {

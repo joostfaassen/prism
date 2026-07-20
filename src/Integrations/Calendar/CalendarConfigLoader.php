@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Calendar;
+namespace App\Integrations\Calendar;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

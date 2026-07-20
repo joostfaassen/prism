@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Calendar\Tool;
 
-use App\Calendar\CalendarService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Calendar\CalendarService;
 
 class CalendarListCalendarsTool implements ToolInterface
 {

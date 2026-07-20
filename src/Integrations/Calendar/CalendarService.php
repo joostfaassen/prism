@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Calendar;
+namespace App\Integrations\Calendar;
 
 use Sabre\VObject;
 use Sabre\VObject\Component\VCalendar;
