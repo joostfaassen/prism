@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Matomo\Tool;
 
-use App\Matomo\MatomoService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Matomo\MatomoService;
 
 class MatomoListSitesTool implements ToolInterface
 {

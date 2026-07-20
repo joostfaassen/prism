@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Matomo;
+namespace App\Integrations\Matomo;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;

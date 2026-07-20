@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Matomo;
+namespace App\Integrations\Matomo;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
