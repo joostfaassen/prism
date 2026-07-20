@@ -29,7 +29,7 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
-    App\Ga4\Ga4ConfigLoader:
+    App\Integrations\Ga4\Ga4ConfigLoader:
         arguments:
             $projectDir: '%kernel.project_dir%'
 

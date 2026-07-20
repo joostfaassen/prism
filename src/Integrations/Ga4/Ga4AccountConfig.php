@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Ga4;
+namespace App\Integrations\Ga4;
 
 class Ga4AccountConfig
 {

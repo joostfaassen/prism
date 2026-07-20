@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Ga4\Tool;
 
-use App\Ga4\Ga4Service;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Ga4\Ga4Service;
 
 class Ga4GetMetadataTool implements ToolInterface
 {
