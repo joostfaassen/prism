@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Mcp\Tool;
+namespace App\Integrations\Browserless\Tool;
 
-use App\Browserless\BrowserlessService;
+use App\Mcp\Tool\ToolInterface;
+
+use App\Integrations\Browserless\BrowserlessService;
 
 class BrowserlessPerformanceTool implements ToolInterface
 {

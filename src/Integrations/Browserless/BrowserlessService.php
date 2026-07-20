@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Browserless;
+namespace App\Integrations\Browserless;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Browserless;
+namespace App\Integrations\Browserless;
 
 use App\Config\PrismConfigLoader;
 use App\Config\ServerContext;
