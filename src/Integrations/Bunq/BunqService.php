@@ -4,12 +4,15 @@ namespace App\Integrations\Bunq;
 
 use bunq\Context\ApiContext;
 use bunq\Context\BunqContext;
+use bunq\Model\Generated\Endpoint\DraftPaymentApiObject;
 use bunq\Model\Generated\Endpoint\MonetaryAccountApiObject;
 use bunq\Model\Generated\Endpoint\NoteAttachmentPaymentApiObject;
 use bunq\Model\Generated\Endpoint\NoteTextPaymentApiObject;
 use bunq\Model\Generated\Endpoint\PaymentApiObject;
 use bunq\Model\Generated\Object\AmountObject;
+use bunq\Model\Generated\Object\DraftPaymentEntryObject;
 use bunq\Model\Generated\Object\LabelMonetaryAccountObject;
+use bunq\Model\Generated\Object\PointerObject;
 use bunq\Util\BunqEnumApiEnvironmentType;
 
 class BunqService
@@ -264,6 +267,229 @@ class BunqService
         $payment = PaymentApiObject::get($paymentId, $monetaryAccountId)->getValue();
 
         return $this->formatPaymentDetail($payment);
+    }
+
+    /**
+     * Create a draft payment that must be accepted in the bunq app before money moves.
+     *
+     * Uses POST /user/{userID}/monetary-account/{monetaryAccountID}/draft-payment.
+     * Counterparty may be IBAN (name required), EMAIL, or PHONE_NUMBER.
+     *
+     * @return array<string, mixed>
+     */
+    public function createDraftPayment(
+        string $profileKey,
+        string $amount,
+        string $currency,
+        string $counterpartyType,
+        string $counterpartyValue,
+        string $description,
+        ?string $counterpartyName = null,
+        ?int $monetaryAccountId = null,
+        ?string $merchantReference = null,
+    ): array {
+        $profile = $this->configLoader->getProfile($profileKey);
+        $this->ensureContext($profileKey);
+
+        $normalizedAmount = $this->normalizeAmount($amount);
+        $normalizedCurrency = strtoupper(trim($currency));
+        $normalizedType = strtoupper(trim($counterpartyType));
+        $normalizedValue = $this->normalizeCounterpartyValue($normalizedType, $counterpartyValue);
+        $normalizedName = $counterpartyName !== null ? trim($counterpartyName) : null;
+
+        $this->assertDraftPaymentArguments(
+            $normalizedAmount,
+            $normalizedCurrency,
+            $normalizedType,
+            $normalizedValue,
+            $normalizedName,
+            $description,
+        );
+
+        $resolvedMonetaryAccountId = $this->resolveSingleMonetaryAccountId($profile, $monetaryAccountId);
+
+        $pointer = new PointerObject(
+            $normalizedType,
+            $normalizedValue,
+            $normalizedType === 'IBAN' ? $normalizedName : ($normalizedName !== '' ? $normalizedName : null),
+        );
+
+        $entry = new DraftPaymentEntryObject(
+            new AmountObject($normalizedAmount, $normalizedCurrency),
+            $pointer,
+            $description,
+            $merchantReference,
+        );
+
+        $draftPaymentId = DraftPaymentApiObject::create(
+            [$entry],
+            1,
+            $resolvedMonetaryAccountId,
+        )->getValue();
+
+        $draft = DraftPaymentApiObject::get($draftPaymentId, $resolvedMonetaryAccountId)->getValue();
+
+        return $this->formatDraftPayment($draft, $profileKey);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatDraftPayment(DraftPaymentApiObject $draft, string $profileKey): array
+    {
+        $entries = [];
+        foreach ($draft->getEntries() ?? [] as $entry) {
+            $amount = $entry->getAmount();
+            $counterparty = $entry->getCounterpartyAlias();
+
+            $entries[] = [
+                'id' => $entry->getId(),
+                'amount' => $amount instanceof AmountObject ? $amount->getValue() : null,
+                'currency' => $amount instanceof AmountObject ? $amount->getCurrency() : null,
+                'description' => $entry->getDescription(),
+                'merchant_reference' => $entry->getMerchantReference(),
+                'type' => $entry->getType(),
+                'counterparty_name' => $counterparty instanceof LabelMonetaryAccountObject
+                    ? $counterparty->getDisplayName()
+                    : null,
+                'counterparty_iban' => $counterparty instanceof LabelMonetaryAccountObject
+                    ? $counterparty->getIban()
+                    : null,
+            ];
+        }
+
+        return [
+            'id' => $draft->getId(),
+            'profile_key' => $profileKey,
+            'monetary_account_id' => $draft->getMonetaryAccountId(),
+            'status' => $draft->getStatus(),
+            'type' => $draft->getType(),
+            'entries' => $entries,
+            'next_step' => 'Open the bunq app and accept this draft payment to execute the transfer. '
+                . 'No money has been sent yet.',
+        ];
+    }
+
+    private function normalizeAmount(string $amount): string
+    {
+        $trimmed = trim(str_replace(',', '.', $amount));
+
+        if (!is_numeric($trimmed)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid amount "%s". Use a positive decimal like "12.50".',
+                $amount,
+            ));
+        }
+
+        $value = (float) $trimmed;
+        if ($value <= 0) {
+            throw new \InvalidArgumentException('Amount must be greater than zero.');
+        }
+
+        return number_format($value, 2, '.', '');
+    }
+
+    private function normalizeCounterpartyValue(string $type, string $value): string
+    {
+        $trimmed = trim($value);
+
+        return match ($type) {
+            'IBAN' => strtoupper(preg_replace('/\s+/', '', $trimmed) ?? $trimmed),
+            'PHONE_NUMBER' => preg_replace('/\s+/', '', $trimmed) ?? $trimmed,
+            'EMAIL' => strtolower($trimmed),
+            default => $trimmed,
+        };
+    }
+
+    private function assertDraftPaymentArguments(
+        string $amount,
+        string $currency,
+        string $type,
+        string $value,
+        ?string $name,
+        string $description,
+    ): void {
+        if (!preg_match('/^[A-Z]{3}$/', $currency)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid currency "%s". Use an ISO 4217 code like "EUR".',
+                $currency,
+            ));
+        }
+
+        $allowedTypes = ['IBAN', 'EMAIL', 'PHONE_NUMBER'];
+        if (!in_array($type, $allowedTypes, true)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid counterparty_type "%s". Allowed: %s',
+                $type,
+                implode(', ', $allowedTypes),
+            ));
+        }
+
+        if ($value === '') {
+            throw new \InvalidArgumentException('counterparty_value is required.');
+        }
+
+        if ($type === 'IBAN') {
+            if ($name === null || $name === '') {
+                throw new \InvalidArgumentException(
+                    'counterparty_name is required when counterparty_type is IBAN.',
+                );
+            }
+
+            if (!preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/', $value)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Invalid IBAN "%s".',
+                    $value,
+                ));
+            }
+
+            // External IBAN descriptions are capped at 140 characters by bunq.
+            if (mb_strlen($description) > 140) {
+                throw new \InvalidArgumentException(
+                    'description must be at most 140 characters for IBAN draft payments.',
+                );
+            }
+        }
+
+        if ($type === 'EMAIL' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException(sprintf('Invalid email "%s".', $value));
+        }
+
+        if ($type === 'PHONE_NUMBER' && !preg_match('/^\+[1-9]\d{6,14}$/', $value)) {
+            throw new \InvalidArgumentException(
+                'Phone numbers must be E.123 without spaces (e.g. +31612345678).',
+            );
+        }
+
+        if (mb_strlen($description) > 9000) {
+            throw new \InvalidArgumentException('description must be at most 9000 characters.');
+        }
+    }
+
+    /**
+     * Prefer an explicit monetary_account_id, then the profile default, else the only active account.
+     */
+    private function resolveSingleMonetaryAccountId(BunqProfileConfig $profile, ?int $monetaryAccountId): int
+    {
+        if ($monetaryAccountId !== null) {
+            return $monetaryAccountId;
+        }
+
+        if ($profile->monetaryAccountId !== null) {
+            return $profile->monetaryAccountId;
+        }
+
+        $ids = $this->resolveMonetaryAccountIds($profile);
+
+        if (count($ids) === 1) {
+            return $ids[0];
+        }
+
+        throw new \InvalidArgumentException(sprintf(
+            'Profile "%s" has multiple monetary accounts (%s). Pass monetary_account_id explicitly.',
+            $profile->key,
+            implode(', ', $ids),
+        ));
     }
 
     /**
