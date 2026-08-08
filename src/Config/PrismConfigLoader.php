@@ -99,10 +99,17 @@ class PrismConfigLoader
         // configs in separate, more editable files and override inline servers
         // with the same name.
         foreach ($this->discoverServerFiles() as $name => $file) {
-            $cfg = Yaml::parseFile($file);
-            if (!is_array($cfg)) {
+            if (!is_file($file) || filesize($file) === 0) {
+                // Empty per-server files must not silently register a server
+                // with a blank bearer token (that breaks MCP auth with 401).
                 continue;
             }
+
+            $cfg = Yaml::parseFile($file);
+            if (!is_array($cfg) || $cfg === []) {
+                continue;
+            }
+
             $this->addServer($name, $cfg);
         }
     }
@@ -117,11 +124,17 @@ class PrismConfigLoader
             $agentNotify = null;
         }
 
+        // Accept legacy `accounts` key as alias for `profiles`.
+        $profiles = $cfg['profiles'] ?? $cfg['accounts'] ?? [];
+        if (!is_array($profiles)) {
+            $profiles = [];
+        }
+
         $this->servers[$name] = new ServerConfig(
             name: $name,
             label: $cfg['label'] ?? $name,
             bearerToken: $cfg['bearer_token'] ?? '',
-            profiles: $cfg['profiles'] ?? [],
+            profiles: $profiles,
             agentNotify: $agentNotify,
         );
     }
