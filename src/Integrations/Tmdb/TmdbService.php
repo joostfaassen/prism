@@ -41,59 +41,6 @@ class TmdbService
     }
 
     /**
-     * One-time helper: exchange TMDb username/password for a session_id to
-     * paste into prism config. Does not write the config file.
-     *
-     * @return array{session_id: string, account_id: int, username: string}
-     */
-    public function createSession(string $username, string $password, ?string $profileKey = null): array
-    {
-        $username = trim($username);
-        $password = trim($password);
-        if ($username === '' || $password === '') {
-            throw new \InvalidArgumentException('username and password are required');
-        }
-
-        $tokenRes = $this->get($profileKey, '/authentication/token/new');
-        $requestToken = (string) ($tokenRes['request_token'] ?? '');
-        if ($requestToken === '') {
-            throw new \RuntimeException('TMDb did not return a request_token');
-        }
-
-        $this->post($profileKey, '/authentication/token/validate_with_login', [
-            'username' => $username,
-            'password' => $password,
-            'request_token' => $requestToken,
-        ]);
-
-        $sessionRes = $this->post($profileKey, '/authentication/session/new', [
-            'request_token' => $requestToken,
-        ]);
-        $sessionId = (string) ($sessionRes['session_id'] ?? '');
-        if ($sessionId === '') {
-            throw new \RuntimeException('TMDb did not return a session_id');
-        }
-
-        $profile = $this->resolveProfile($profileKey);
-        $details = $this->get($profileKey, '/profile', ['session_id' => $sessionId]);
-        $profileId = (int) ($details['id'] ?? 0);
-        if ($profileId <= 0) {
-            throw new \RuntimeException('TMDb did not return a profile id for the new session');
-        }
-
-        return [
-            'session_id' => $sessionId,
-            'account_id' => $profileId,
-            'username' => (string) ($details['username'] ?? $username),
-            'hint' => sprintf(
-                'Add session_id (and optional account_id: %d) under the "%s" tmdb profile in your prism.*.yaml, then restart/reload.',
-                $profileId,
-                $profile->key,
-            ),
-        ];
-    }
-
-    /**
      * Rate a movie or TV series (0.5–10 in 0.5 steps).
      *
      * @return array<string, mixed>
@@ -486,7 +433,7 @@ class TmdbService
         $profile = $this->resolveProfile($profileKey);
         if (!$profile->hasSession()) {
             throw new \RuntimeException(sprintf(
-                'TMDb profile "%s" has no session_id. Use tmdb_create_session once, then add session_id to the profile YAML.',
+                'TMDb profile "%s" has no session_id. Add session_id to the profile YAML (TMDb Authentication API).',
                 $profile->key,
             ));
         }

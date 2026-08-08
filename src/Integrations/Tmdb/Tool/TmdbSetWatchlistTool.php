@@ -20,7 +20,7 @@ class TmdbSetWatchlistTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Add or remove a movie or TV series on your TMDb watchlist (wishlist / want-to-watch). Requires session_id on the profile (see tmdb_create_session).';
+        return 'Add or remove a movie or TV series on your TMDb watchlist (wishlist / want-to-watch). Requires session_id on the profile.';
     }
 
     public function getInputSchema(): array

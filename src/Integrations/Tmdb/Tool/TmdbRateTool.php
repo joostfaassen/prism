@@ -20,7 +20,7 @@ class TmdbRateTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Rate a TMDb movie or TV series (0.5–10 in half-star steps) on your TMDb profile. Requires session_id on the profile (see tmdb_create_session).';
+        return 'Rate a TMDb movie or TV series (0.5–10 in half-star steps) on your TMDb profile. Requires session_id on the profile.';
     }
 
     public function getInputSchema(): array
