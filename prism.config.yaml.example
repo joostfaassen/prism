@@ -76,10 +76,10 @@ servers:
         api_key: "replace-with-tmdb-v3-api-key"
         # Optional: default language for metadata (agents may override per call).
         language: "en-US"
-        # Required for rating + watchlist tools. Create once via tmdb_create_session
-        # (username/password) and paste the returned session_id here.
+        # Required for rating + watchlist tools. Obtain a user session via the
+        # TMDb Authentication API and paste session_id here.
         # session_id: "replace-with-tmdb-session-id"
-        # Optional: skip a lookup on every write (returned by tmdb_create_session).
+        # Optional: skip a lookup on every write (from GET /account).
         # account_id: 123456
       demo-igdb:
         type: igdb
@@ -677,9 +677,9 @@ servers:
 #    coverUrl (w780) and backdropUrl (w1280). Prism does not download
 #    image binaries — consumers fetch covers themselves.
 #
-# 4. Profile write tools need a user session_id (not just api_key):
-#    - tmdb_create_session — one-time: username/password → session_id
-#                            (paste into YAML; Prism does not store the password)
+# 4. Profile write tools need a user session_id (not just api_key).
+#    Create one with the TMDb Authentication API, then set session_id
+#    (and optionally account_id) on the profile in YAML:
 #    - tmdb_rate           — rate movie/TV 0.5–10
 #    - tmdb_delete_rating  — remove a rating
 #    - tmdb_list_rated     — list your rated movies or TV
