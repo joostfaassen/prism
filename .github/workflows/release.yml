@@ -42,7 +42,7 @@ jobs:
             @semantic-release/release-notes-generator \
             @semantic-release/github \
             @semantic-release/commit-analyzer \
-            conventional-changelog-conventionalcommits
+            conventional-changelog-conventionalcommits@7
           npx semantic-release --repository-url "${{ github.server_url }}/${{ github.repository }}"
           if [ -f .gitrelease ]; then
             echo "version=$(cat .gitrelease)" >> "$GITHUB_OUTPUT"
