@@ -1,3 +1,10 @@
 var/
 node_modules/
 .git/
+.env.local
+.env.*.local
+prism.config.yaml
+prism.*.yaml
+!prism.config.yaml.example
+prism.db
+

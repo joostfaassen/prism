@@ -1,0 +1,86 @@
+name: Release
+
+# Auto-version from Conventional Commits (semantic-release), then build and
+# publish the app image to GHCR — same pattern as pax / xolver.
+#
+# linux/amd64 only: multi-arch via QEMU makes this PHP+Node image take an hour+
+# on GitHub runners without ever pushing.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Semantic release
+        id: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/changelog \
+            @semantic-release/git \
+            @semantic-release/exec \
+            @semantic-release/release-notes-generator \
+            @semantic-release/github \
+            @semantic-release/commit-analyzer \
+            conventional-changelog-conventionalcommits
+          npx semantic-release --repository-url "${{ github.server_url }}/${{ github.repository }}"
+          if [ -f .gitrelease ]; then
+            echo "version=$(cat .gitrelease)" >> "$GITHUB_OUTPUT"
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-main.${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ steps.semantic-release.outputs.released == 'true' }}
+            type=raw,value=${{ steps.semantic-release.outputs.version }},enable=${{ steps.semantic-release.outputs.released == 'true' }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
