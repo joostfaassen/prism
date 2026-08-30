@@ -34,8 +34,8 @@ Each server exposes the same tool *types* but scoped to its own profiles. A pers
 |---|---|---|
 | **bunq** | `bunq_list_profiles` | List configured bank profiles |
 | | `bunq_list_transactions` | List transactions with date/amount filters |
-| | `bunq_get_transaction` | Get full transaction details |
-| | `bunq_get_transaction_notes` | Get notes and attachments on a transaction |
+| | `bunq_get_transaction` | Get full transaction details, notes, and attachment references |
+| | `bunq_get_transaction_attachment` | Download a transaction photo or file |
 | | `bunq_create_draft_payment` | Create a draft payment for confirmation in the bunq app |
 | **Email** | `email_list_profiles` | List configured email profiles |
 | | `email_list_folders` | List mailbox folders with unread counts |

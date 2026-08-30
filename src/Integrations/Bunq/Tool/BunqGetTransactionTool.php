@@ -20,8 +20,10 @@ class BunqGetTransactionTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Get full details of a specific bunq transaction by payment ID. '
-            . 'Returns amount, counterparty, balance after mutation, geolocation, and more.';
+        return 'Get full details of a bunq transaction: amount, counterparty, geolocation, '
+            . 'text notes, and attachment references. '
+            . 'has_attachments / attachment_ids tell you if files exist; '
+            . 'download bytes only with bunq_get_transaction_attachment.';
     }
 
     public function getInputSchema(): array
@@ -36,6 +38,10 @@ class BunqGetTransactionTool implements ToolInterface
                 'monetary_account_id' => [
                     'type' => 'integer',
                     'description' => 'The monetary account ID. Optional — omit to use the primary profile.',
+                ],
+                'profile' => [
+                    'type' => 'string',
+                    'description' => 'bunq profile key. Optional if only one profile is configured.',
                 ],
             ],
             'required' => ['payment_id'],
@@ -62,6 +68,9 @@ class BunqGetTransactionTool implements ToolInterface
             $result = $this->bunqService->getTransaction(
                 paymentId: (int) $paymentId,
                 monetaryAccountId: isset($arguments['monetary_account_id']) ? (int) $arguments['monetary_account_id'] : null,
+                profileKey: isset($arguments['profile']) && $arguments['profile'] !== ''
+                    ? (string) $arguments['profile']
+                    : null,
             );
 
             return [

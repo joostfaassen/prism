@@ -22,7 +22,8 @@ class BunqListTransactionsTool implements ToolInterface
     {
         return 'List transactions across one or more bunq bank profiles. Supports date range filtering. '
             . 'Use profile key (e.g. "personal"), comma-separated keys (e.g. "personal,shared-household"), '
-            . 'or "*" for all configured profiles.';
+            . 'or "*" for all configured profiles. '
+            . 'Summaries only — call bunq_get_transaction for notes and attachment references.';
     }
 
     public function getInputSchema(): array
