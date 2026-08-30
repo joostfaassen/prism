@@ -1,3 +1,8 @@
+## 1.1.0 (2026-08-30)
+
+* feat: add mcp:call CLI harness for invoking tools ([311b9aa](https://github.com/joostfaassen/prism/commit/311b9aa))
+* feat(bunq): include notes and download transaction attachments ([6ee00ae](https://github.com/joostfaassen/prism/commit/6ee00ae))
+
 ## 1.0.0 (2026-08-24)
 
 * fix(admin): add left nav on integrations pages ([ffb0334](https://github.com/joostfaassen/prism/commit/ffb0334))
